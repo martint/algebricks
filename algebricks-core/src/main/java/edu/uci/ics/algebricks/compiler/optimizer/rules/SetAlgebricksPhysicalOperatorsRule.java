@@ -63,7 +63,7 @@ import edu.uci.ics.algebricks.compiler.optimizer.base.IAlgebraicRewriteRule;
 import edu.uci.ics.algebricks.compiler.optimizer.base.IOptimizationContext;
 import edu.uci.ics.algebricks.compiler.optimizer.base.JoinUtils;
 import edu.uci.ics.algebricks.compiler.optimizer.base.PhysicalOptimizationsUtil;
-import edu.uci.ics.hyracks.api.util.Pair;
+import edu.uci.ics.algebricks.utils.Pair;
 
 public class SetAlgebricksPhysicalOperatorsRule implements IAlgebraicRewriteRule {
 

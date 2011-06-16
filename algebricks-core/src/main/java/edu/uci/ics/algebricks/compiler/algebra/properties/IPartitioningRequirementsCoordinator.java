@@ -24,7 +24,7 @@ import edu.uci.ics.algebricks.compiler.algebra.base.EquivalenceClass;
 import edu.uci.ics.algebricks.compiler.algebra.base.ILogicalOperator;
 import edu.uci.ics.algebricks.compiler.algebra.base.LogicalVariable;
 import edu.uci.ics.algebricks.compiler.optimizer.base.IOptimizationContext;
-import edu.uci.ics.hyracks.api.util.Pair;
+import edu.uci.ics.algebricks.utils.Pair;
 
 /**
  * 

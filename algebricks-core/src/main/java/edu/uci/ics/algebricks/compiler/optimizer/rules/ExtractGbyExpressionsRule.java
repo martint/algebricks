@@ -24,7 +24,7 @@ import edu.uci.ics.algebricks.compiler.algebra.expressions.VariableReferenceExpr
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.AbstractLogicalOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.GroupByOperator;
 import edu.uci.ics.algebricks.compiler.optimizer.base.IOptimizationContext;
-import edu.uci.ics.hyracks.api.util.Pair;
+import edu.uci.ics.algebricks.utils.Pair;
 
 /**
  * Needed only bc. current Hyrax operators require keys to be fields.

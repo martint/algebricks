@@ -34,7 +34,7 @@ import edu.uci.ics.algebricks.compiler.algebra.operators.logical.ProjectOperator
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.visitors.VariableUtilities;
 import edu.uci.ics.algebricks.compiler.optimizer.base.IAlgebraicRewriteRule;
 import edu.uci.ics.algebricks.compiler.optimizer.base.IOptimizationContext;
-import edu.uci.ics.hyracks.api.util.Pair;
+import edu.uci.ics.algebricks.utils.Pair;
 
 /**
  * 

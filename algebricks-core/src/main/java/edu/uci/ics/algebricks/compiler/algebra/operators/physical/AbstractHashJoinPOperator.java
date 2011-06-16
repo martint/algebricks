@@ -35,7 +35,7 @@ import edu.uci.ics.algebricks.compiler.algebra.properties.PhysicalRequirements;
 import edu.uci.ics.algebricks.compiler.algebra.properties.StructuralPropertiesVector;
 import edu.uci.ics.algebricks.compiler.algebra.properties.UnorderedPartitionedProperty;
 import edu.uci.ics.algebricks.compiler.optimizer.base.IOptimizationContext;
-import edu.uci.ics.hyracks.api.util.Pair;
+import edu.uci.ics.algebricks.utils.Pair;
 
 public abstract class AbstractHashJoinPOperator extends AbstractJoinPOperator {
 
@@ -58,7 +58,8 @@ public abstract class AbstractHashJoinPOperator extends AbstractJoinPOperator {
     }
 
     @Override
-    public void computeDeliveredProperties(ILogicalOperator iop, IOptimizationContext context) throws AlgebricksException {
+    public void computeDeliveredProperties(ILogicalOperator iop, IOptimizationContext context)
+            throws AlgebricksException {
         IPartitioningProperty pp;
         AbstractLogicalOperator op = (AbstractLogicalOperator) iop;
 

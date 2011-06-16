@@ -25,7 +25,7 @@ import edu.uci.ics.algebricks.compiler.algebra.operators.logical.AbstractOperato
 import edu.uci.ics.algebricks.compiler.algebra.prettyprint.LogicalOperatorPrettyPrintVisitor;
 import edu.uci.ics.algebricks.compiler.algebra.prettyprint.PlanPrettyPrinter;
 import edu.uci.ics.algebricks.config.AlgebricksConfig;
-import edu.uci.ics.hyracks.api.util.Pair;
+import edu.uci.ics.algebricks.utils.Pair;
 
 public class HeuristicOptimizer {
 

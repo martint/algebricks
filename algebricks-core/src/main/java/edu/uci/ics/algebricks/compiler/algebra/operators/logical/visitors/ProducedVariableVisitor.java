@@ -48,8 +48,8 @@ import edu.uci.ics.algebricks.compiler.algebra.operators.logical.UnnestOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.WriteOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.WriteResultOperator;
 import edu.uci.ics.algebricks.compiler.algebra.visitors.ILogicalOperatorVisitor;
+import edu.uci.ics.algebricks.utils.Pair;
 import edu.uci.ics.algebricks.utils.Triple;
-import edu.uci.ics.hyracks.api.util.Pair;
 
 public class ProducedVariableVisitor implements ILogicalOperatorVisitor<Void, Void> {
 

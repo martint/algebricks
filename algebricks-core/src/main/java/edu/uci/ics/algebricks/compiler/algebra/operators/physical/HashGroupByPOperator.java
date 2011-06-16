@@ -49,12 +49,12 @@ import edu.uci.ics.algebricks.runtime.hyracks.jobgen.base.IHyracksJobBuilder;
 import edu.uci.ics.algebricks.runtime.hyracks.jobgen.impl.JobGenContext;
 import edu.uci.ics.algebricks.runtime.hyracks.jobgen.impl.JobGenHelper;
 import edu.uci.ics.algebricks.runtime.hyracks.operators.aggreg.SimpleAlgebricksAccumulatingAggregatorFactory;
+import edu.uci.ics.algebricks.utils.Pair;
 import edu.uci.ics.hyracks.api.dataflow.value.IBinaryComparatorFactory;
 import edu.uci.ics.hyracks.api.dataflow.value.IBinaryHashFunctionFactory;
 import edu.uci.ics.hyracks.api.dataflow.value.ITuplePartitionComputerFactory;
 import edu.uci.ics.hyracks.api.dataflow.value.RecordDescriptor;
 import edu.uci.ics.hyracks.api.job.JobSpecification;
-import edu.uci.ics.hyracks.api.util.Pair;
 import edu.uci.ics.hyracks.dataflow.common.data.partition.FieldHashPartitionComputerFactory;
 import edu.uci.ics.hyracks.dataflow.std.group.HashGroupOperatorDescriptor;
 import edu.uci.ics.hyracks.dataflow.std.group.IAccumulatingAggregatorFactory;
@@ -149,13 +149,15 @@ public class HashGroupByPOperator extends AbstractPhysicalOperator {
         }
 
         if (gby.getNestedPlans().size() != 1) {
-            throw new AlgebricksException("Hash group-by currently works only for one nested plan with one root containing"
-                    + "an aggregate and a nested-tuple-source.");
+            throw new AlgebricksException(
+                    "Hash group-by currently works only for one nested plan with one root containing"
+                            + "an aggregate and a nested-tuple-source.");
         }
         ILogicalPlan p0 = gby.getNestedPlans().get(0);
         if (p0.getRoots().size() != 1) {
-            throw new AlgebricksException("Hash group-by currently works only for one nested plan with one root containing"
-                    + "an aggregate and a nested-tuple-source.");
+            throw new AlgebricksException(
+                    "Hash group-by currently works only for one nested plan with one root containing"
+                            + "an aggregate and a nested-tuple-source.");
         }
         LogicalOperatorReference r0 = p0.getRoots().get(0);
         AggregateOperator aggOp = (AggregateOperator) r0.getOperator();

@@ -40,7 +40,7 @@ import edu.uci.ics.algebricks.compiler.algebra.operators.logical.visitors.Variab
 import edu.uci.ics.algebricks.compiler.algebra.plan.ALogicalPlanImpl;
 import edu.uci.ics.algebricks.compiler.optimizer.base.IAlgebraicRewriteRule;
 import edu.uci.ics.algebricks.compiler.optimizer.base.IOptimizationContext;
-import edu.uci.ics.hyracks.api.util.Pair;
+import edu.uci.ics.algebricks.utils.Pair;
 
 public class IntroduceCombinerRule implements IAlgebraicRewriteRule {
 

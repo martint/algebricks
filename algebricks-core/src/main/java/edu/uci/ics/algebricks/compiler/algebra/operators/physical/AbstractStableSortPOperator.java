@@ -37,7 +37,7 @@ import edu.uci.ics.algebricks.compiler.algebra.properties.OrderColumn;
 import edu.uci.ics.algebricks.compiler.algebra.properties.PhysicalRequirements;
 import edu.uci.ics.algebricks.compiler.algebra.properties.StructuralPropertiesVector;
 import edu.uci.ics.algebricks.compiler.optimizer.base.IOptimizationContext;
-import edu.uci.ics.hyracks.api.util.Pair;
+import edu.uci.ics.algebricks.utils.Pair;
 
 public abstract class AbstractStableSortPOperator extends AbstractPhysicalOperator {
 

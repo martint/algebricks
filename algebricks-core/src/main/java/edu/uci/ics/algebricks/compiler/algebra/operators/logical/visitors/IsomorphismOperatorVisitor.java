@@ -60,8 +60,8 @@ import edu.uci.ics.algebricks.compiler.algebra.plan.ALogicalPlanImpl;
 import edu.uci.ics.algebricks.compiler.algebra.properties.IPartitioningProperty;
 import edu.uci.ics.algebricks.compiler.algebra.properties.IPhysicalPropertiesVector;
 import edu.uci.ics.algebricks.compiler.algebra.visitors.ILogicalOperatorVisitor;
+import edu.uci.ics.algebricks.utils.Pair;
 import edu.uci.ics.algebricks.utils.Triple;
-import edu.uci.ics.hyracks.api.util.Pair;
 
 public class IsomorphismOperatorVisitor implements ILogicalOperatorVisitor<Boolean, ILogicalOperator> {
 
@@ -76,8 +76,9 @@ public class IsomorphismOperatorVisitor implements ILogicalOperatorVisitor<Boole
         if (aop.getOperatorTag() != LogicalOperatorTag.AGGREGATE)
             return Boolean.FALSE;
         AggregateOperator aggOpArg = (AggregateOperator) copyAndSubstituteVar(op, arg);
-        boolean isomorphic = VariableUtilities.varListEqualUnordered(getPairList(op.getVariables(), op.getExpressions()), getPairList(
-                aggOpArg.getVariables(), aggOpArg.getExpressions()));
+        boolean isomorphic = VariableUtilities.varListEqualUnordered(
+                getPairList(op.getVariables(), op.getExpressions()),
+                getPairList(aggOpArg.getVariables(), aggOpArg.getExpressions()));
         return isomorphic;
     }
 
@@ -88,8 +89,9 @@ public class IsomorphismOperatorVisitor implements ILogicalOperatorVisitor<Boole
         if (aop.getOperatorTag() != LogicalOperatorTag.RUNNINGAGGREGATE)
             return Boolean.FALSE;
         RunningAggregateOperator aggOpArg = (RunningAggregateOperator) copyAndSubstituteVar(op, arg);
-        boolean isomorphic = VariableUtilities.varListEqualUnordered(getPairList(op.getVariables(), op.getExpressions()), getPairList(
-                aggOpArg.getVariables(), aggOpArg.getExpressions()));
+        boolean isomorphic = VariableUtilities.varListEqualUnordered(
+                getPairList(op.getVariables(), op.getExpressions()),
+                getPairList(aggOpArg.getVariables(), aggOpArg.getExpressions()));
         return isomorphic;
     }
 
@@ -174,7 +176,8 @@ public class IsomorphismOperatorVisitor implements ILogicalOperatorVisitor<Boole
     }
 
     @Override
-    public Boolean visitLeftOuterJoinOperator(LeftOuterJoinOperator op, ILogicalOperator arg) throws AlgebricksException {
+    public Boolean visitLeftOuterJoinOperator(LeftOuterJoinOperator op, ILogicalOperator arg)
+            throws AlgebricksException {
         AbstractLogicalOperator aop = (AbstractLogicalOperator) arg;
         if (aop.getOperatorTag() != LogicalOperatorTag.LEFTOUTERJOIN)
             return Boolean.FALSE;
@@ -208,8 +211,9 @@ public class IsomorphismOperatorVisitor implements ILogicalOperatorVisitor<Boole
         if (aop.getOperatorTag() != LogicalOperatorTag.ASSIGN)
             return Boolean.FALSE;
         AssignOperator assignOpArg = (AssignOperator) copyAndSubstituteVar(op, arg);
-        boolean isomorphic = VariableUtilities.varListEqualUnordered(getPairList(op.getVariables(), op.getExpressions()), getPairList(
-                assignOpArg.getVariables(), assignOpArg.getExpressions()));
+        boolean isomorphic = VariableUtilities.varListEqualUnordered(
+                getPairList(op.getVariables(), op.getExpressions()),
+                getPairList(assignOpArg.getVariables(), assignOpArg.getExpressions()));
         return isomorphic;
     }
 
@@ -240,8 +244,8 @@ public class IsomorphismOperatorVisitor implements ILogicalOperatorVisitor<Boole
         if (aop.getOperatorTag() != LogicalOperatorTag.PARTITIONINGSPLIT)
             return Boolean.FALSE;
         PartitioningSplitOperator partitionOpArg = (PartitioningSplitOperator) copyAndSubstituteVar(op, arg);
-        boolean isomorphic = compareExpressions(Arrays.asList(op.getExpressions()), Arrays.asList(partitionOpArg
-                .getExpressions()));
+        boolean isomorphic = compareExpressions(Arrays.asList(op.getExpressions()),
+                Arrays.asList(partitionOpArg.getExpressions()));
         return isomorphic;
     }
 
@@ -447,7 +451,8 @@ public class IsomorphismOperatorVisitor implements ILogicalOperatorVisitor<Boole
         return IsomorphismUtilities.isOperatorIsomorphic(op1, op2);
     }
 
-    private ILogicalOperator copyAndSubstituteVar(ILogicalOperator op, ILogicalOperator argOp) throws AlgebricksException {
+    private ILogicalOperator copyAndSubstituteVar(ILogicalOperator op, ILogicalOperator argOp)
+            throws AlgebricksException {
         ILogicalOperator newOp = IsomorphismOperatorVisitor.deepCopy(argOp);
         variableMapping.clear();
         IsomorphismUtilities.mapVariablesTopDown(op, argOp, variableMapping);
@@ -570,7 +575,8 @@ public class IsomorphismOperatorVisitor implements ILogicalOperatorVisitor<Boole
         }
 
         @Override
-        public ILogicalOperator visitLeftOuterJoinOperator(LeftOuterJoinOperator op, Void arg) throws AlgebricksException {
+        public ILogicalOperator visitLeftOuterJoinOperator(LeftOuterJoinOperator op, Void arg)
+                throws AlgebricksException {
             return new LeftOuterJoinOperator(deepCopyExpressionRef(op.getCondition()), op.getInputs().get(0), op
                     .getInputs().get(1));
         }
@@ -612,8 +618,8 @@ public class IsomorphismOperatorVisitor implements ILogicalOperatorVisitor<Boole
                 throws AlgebricksException {
             ArrayList<LogicalExpressionReference> newExpressions = new ArrayList<LogicalExpressionReference>();
             deepCopyExpressionRefs(newExpressions, Arrays.asList(op.getExpressions()));
-            return new PartitioningSplitOperator(newExpressions.toArray(new LogicalExpressionReference[0]), op
-                    .hasDefault());
+            return new PartitioningSplitOperator(newExpressions.toArray(new LogicalExpressionReference[0]),
+                    op.hasDefault());
         }
 
         @Override
@@ -651,8 +657,8 @@ public class IsomorphismOperatorVisitor implements ILogicalOperatorVisitor<Boole
 
         @Override
         public ILogicalOperator visitUnnestOperator(UnnestOperator op, Void arg) throws AlgebricksException {
-            return new UnnestOperator(op.getVariable(), deepCopyExpressionRef(op.getExpressionRef()), op
-                    .getPositionalVariable());
+            return new UnnestOperator(op.getVariable(), deepCopyExpressionRef(op.getExpressionRef()),
+                    op.getPositionalVariable());
         }
 
         @Override
@@ -704,8 +710,8 @@ public class IsomorphismOperatorVisitor implements ILogicalOperatorVisitor<Boole
         }
 
         private LogicalExpressionReference deepCopyExpressionRef(LogicalExpressionReference oldExpr) {
-            return new LogicalExpressionReference(((AbstractLogicalExpression) oldExpr.getExpression())
-                    .cloneExpression());
+            return new LogicalExpressionReference(
+                    ((AbstractLogicalExpression) oldExpr.getExpression()).cloneExpression());
         }
 
         private List<Pair<IOrder, LogicalExpressionReference>> deepCopyOrderAndExpression(

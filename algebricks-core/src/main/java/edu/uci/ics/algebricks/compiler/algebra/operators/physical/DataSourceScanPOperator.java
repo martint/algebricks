@@ -29,8 +29,8 @@ import edu.uci.ics.algebricks.compiler.algebra.operators.logical.IOperatorSchema
 import edu.uci.ics.algebricks.compiler.optimizer.base.IOptimizationContext;
 import edu.uci.ics.algebricks.runtime.hyracks.jobgen.base.IHyracksJobBuilder;
 import edu.uci.ics.algebricks.runtime.hyracks.jobgen.impl.JobGenContext;
+import edu.uci.ics.algebricks.utils.Pair;
 import edu.uci.ics.hyracks.api.dataflow.IOperatorDescriptor;
-import edu.uci.ics.hyracks.api.util.Pair;
 
 public class DataSourceScanPOperator extends AbstractScanPOperator {
 
@@ -69,8 +69,8 @@ public class DataSourceScanPOperator extends AbstractScanPOperator {
             ++i;
         }
 
-        Pair<IOperatorDescriptor, AlgebricksPartitionConstraint> p = mp.getScannerRuntime(dataSource, vars, context, builder
-                .getJobSpec());
+        Pair<IOperatorDescriptor, AlgebricksPartitionConstraint> p = mp.getScannerRuntime(dataSource, vars, context,
+                builder.getJobSpec());
         builder.contributeHyracksOperator(scan, p.first);
         if (p.second != null) {
             builder.contributeAlgebricksPartitionConstraint(p.first, p.second);

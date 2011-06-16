@@ -54,8 +54,8 @@ import edu.uci.ics.algebricks.compiler.algebra.operators.logical.UnnestOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.WriteOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.WriteResultOperator;
 import edu.uci.ics.algebricks.compiler.algebra.visitors.ILogicalOperatorVisitor;
+import edu.uci.ics.algebricks.utils.Pair;
 import edu.uci.ics.algebricks.utils.Triple;
-import edu.uci.ics.hyracks.api.util.Pair;
 
 public class IsomorphismVariableMappingVisitor implements ILogicalOperatorVisitor<Void, ILogicalOperator> {
 
@@ -73,14 +73,16 @@ public class IsomorphismVariableMappingVisitor implements ILogicalOperatorVisito
     }
 
     @Override
-    public Void visitRunningAggregateOperator(RunningAggregateOperator op, ILogicalOperator arg) throws AlgebricksException {
+    public Void visitRunningAggregateOperator(RunningAggregateOperator op, ILogicalOperator arg)
+            throws AlgebricksException {
         mapChildren(op, arg);
         mapVariablesForAbstractAssign(op, arg);
         return null;
     }
 
     @Override
-    public Void visitEmptyTupleSourceOperator(EmptyTupleSourceOperator op, ILogicalOperator arg) throws AlgebricksException {
+    public Void visitEmptyTupleSourceOperator(EmptyTupleSourceOperator op, ILogicalOperator arg)
+            throws AlgebricksException {
         mapVariablesStandard(op, arg);
         return null;
     }
@@ -112,7 +114,8 @@ public class IsomorphismVariableMappingVisitor implements ILogicalOperatorVisito
     }
 
     @Override
-    public Void visitNestedTupleSourceOperator(NestedTupleSourceOperator op, ILogicalOperator arg) throws AlgebricksException {
+    public Void visitNestedTupleSourceOperator(NestedTupleSourceOperator op, ILogicalOperator arg)
+            throws AlgebricksException {
         ILogicalOperator inputToCreator1 = op.getDataSourceReference().getOperator();
         NestedTupleSourceOperator nts = (NestedTupleSourceOperator) arg;
         ILogicalOperator inputToCreator2 = nts.getDataSourceReference().getOperator();
@@ -146,7 +149,8 @@ public class IsomorphismVariableMappingVisitor implements ILogicalOperatorVisito
     }
 
     @Override
-    public Void visitPartitioningSplitOperator(PartitioningSplitOperator op, ILogicalOperator arg) throws AlgebricksException {
+    public Void visitPartitioningSplitOperator(PartitioningSplitOperator op, ILogicalOperator arg)
+            throws AlgebricksException {
         mapVariablesStandard(op, arg);
         return null;
     }
@@ -250,7 +254,8 @@ public class IsomorphismVariableMappingVisitor implements ILogicalOperatorVisito
         }
     }
 
-    private void mapVariablesForAbstractAssign(ILogicalOperator left, ILogicalOperator right) throws AlgebricksException {
+    private void mapVariablesForAbstractAssign(ILogicalOperator left, ILogicalOperator right)
+            throws AlgebricksException {
         AbstractAssignOperator leftOp = (AbstractAssignOperator) left;
         AbstractAssignOperator rightOp = (AbstractAssignOperator) right;
         List<LogicalVariable> producedVarLeft = new ArrayList<LogicalVariable>();

@@ -77,7 +77,7 @@ import edu.uci.ics.algebricks.compiler.optimizer.base.IOptimizationContext;
 import edu.uci.ics.algebricks.compiler.optimizer.base.OptimizationUtil;
 import edu.uci.ics.algebricks.compiler.optimizer.base.PhysicalOptimizationsUtil;
 import edu.uci.ics.algebricks.config.AlgebricksConfig;
-import edu.uci.ics.hyracks.api.util.Pair;
+import edu.uci.ics.algebricks.utils.Pair;
 
 public class EnforceStructuralPropertiesRule implements IAlgebraicRewriteRule {
 

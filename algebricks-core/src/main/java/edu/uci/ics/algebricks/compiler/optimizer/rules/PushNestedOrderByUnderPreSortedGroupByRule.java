@@ -35,7 +35,7 @@ import edu.uci.ics.algebricks.compiler.algebra.operators.physical.StableSortPOpe
 import edu.uci.ics.algebricks.compiler.optimizer.base.IAlgebraicRewriteRule;
 import edu.uci.ics.algebricks.compiler.optimizer.base.IOptimizationContext;
 import edu.uci.ics.algebricks.compiler.optimizer.base.OptimizationUtil;
-import edu.uci.ics.hyracks.api.util.Pair;
+import edu.uci.ics.algebricks.utils.Pair;
 
 public class PushNestedOrderByUnderPreSortedGroupByRule implements IAlgebraicRewriteRule {
 
