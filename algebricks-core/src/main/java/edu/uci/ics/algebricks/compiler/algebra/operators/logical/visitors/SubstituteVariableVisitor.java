@@ -1,0 +1,319 @@
+/*
+ * Copyright 2009-2010 by The Regents of the University of California
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * you may obtain a copy of the License from
+ * 
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package edu.uci.ics.algebricks.compiler.algebra.operators.logical.visitors;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import edu.uci.ics.algebricks.api.exceptions.AlgebricksException;
+import edu.uci.ics.algebricks.compiler.algebra.base.ILogicalExpression;
+import edu.uci.ics.algebricks.compiler.algebra.base.ILogicalPlan;
+import edu.uci.ics.algebricks.compiler.algebra.base.LogicalExpressionReference;
+import edu.uci.ics.algebricks.compiler.algebra.base.LogicalOperatorReference;
+import edu.uci.ics.algebricks.compiler.algebra.base.LogicalVariable;
+import edu.uci.ics.algebricks.compiler.algebra.operators.logical.AbstractLogicalOperator;
+import edu.uci.ics.algebricks.compiler.algebra.operators.logical.AggregateOperator;
+import edu.uci.ics.algebricks.compiler.algebra.operators.logical.AssignOperator;
+import edu.uci.ics.algebricks.compiler.algebra.operators.logical.DataSourceScanOperator;
+import edu.uci.ics.algebricks.compiler.algebra.operators.logical.DistinctOperator;
+import edu.uci.ics.algebricks.compiler.algebra.operators.logical.EmptyTupleSourceOperator;
+import edu.uci.ics.algebricks.compiler.algebra.operators.logical.ExchangeOperator;
+import edu.uci.ics.algebricks.compiler.algebra.operators.logical.GroupByOperator;
+import edu.uci.ics.algebricks.compiler.algebra.operators.logical.InnerJoinOperator;
+import edu.uci.ics.algebricks.compiler.algebra.operators.logical.LeftOuterJoinOperator;
+import edu.uci.ics.algebricks.compiler.algebra.operators.logical.LimitOperator;
+import edu.uci.ics.algebricks.compiler.algebra.operators.logical.NestedTupleSourceOperator;
+import edu.uci.ics.algebricks.compiler.algebra.operators.logical.OrderOperator;
+import edu.uci.ics.algebricks.compiler.algebra.operators.logical.OrderOperator.IOrder;
+import edu.uci.ics.algebricks.compiler.algebra.operators.logical.PartitioningSplitOperator;
+import edu.uci.ics.algebricks.compiler.algebra.operators.logical.ProjectOperator;
+import edu.uci.ics.algebricks.compiler.algebra.operators.logical.ReplicateOperator;
+import edu.uci.ics.algebricks.compiler.algebra.operators.logical.RunningAggregateOperator;
+import edu.uci.ics.algebricks.compiler.algebra.operators.logical.ScriptOperator;
+import edu.uci.ics.algebricks.compiler.algebra.operators.logical.SelectOperator;
+import edu.uci.ics.algebricks.compiler.algebra.operators.logical.SubplanOperator;
+import edu.uci.ics.algebricks.compiler.algebra.operators.logical.UnionAllOperator;
+import edu.uci.ics.algebricks.compiler.algebra.operators.logical.UnnestMapOperator;
+import edu.uci.ics.algebricks.compiler.algebra.operators.logical.UnnestOperator;
+import edu.uci.ics.algebricks.compiler.algebra.operators.logical.WriteOperator;
+import edu.uci.ics.algebricks.compiler.algebra.operators.logical.WriteResultOperator;
+import edu.uci.ics.algebricks.compiler.algebra.visitors.ILogicalOperatorVisitor;
+import edu.uci.ics.algebricks.compiler.optimizer.base.OperatorManipulationUtil;
+import edu.uci.ics.algebricks.utils.Triple;
+import edu.uci.ics.hyracks.api.util.Pair;
+
+public class SubstituteVariableVisitor implements ILogicalOperatorVisitor<Void, Pair<LogicalVariable, LogicalVariable>> {
+
+    public SubstituteVariableVisitor() {
+    }
+
+    @Override
+    public Void visitAggregateOperator(AggregateOperator op, Pair<LogicalVariable, LogicalVariable> pair) {
+        List<LogicalVariable> variables = op.getVariables();
+        int n = variables.size();
+        for (int i = 0; i < n; i++) {
+            if (variables.get(i).equals(pair.first)) {
+                variables.set(i, pair.second);
+            } else {
+                op.getExpressions().get(i).getExpression().substituteVar(pair.first, pair.second);
+            }
+        }
+        return null;
+    }
+
+    @Override
+    public Void visitAssignOperator(AssignOperator op, Pair<LogicalVariable, LogicalVariable> pair) {
+        List<LogicalVariable> variables = op.getVariables();
+        int n = variables.size();
+        for (int i = 0; i < n; i++) {
+            if (variables.get(i).equals(pair.first)) {
+                variables.set(i, pair.second);
+            } else {
+                op.getExpressions().get(i).getExpression().substituteVar(pair.first, pair.second);
+            }
+        }
+        return null;
+    }
+
+    @Override
+    public Void visitDataScanOperator(DataSourceScanOperator op, Pair<LogicalVariable, LogicalVariable> pair) {
+        List<LogicalVariable> variables = op.getVariables();
+        for (int i = 0; i < variables.size(); i++) {
+            if (variables.get(i) == pair.first) {
+                variables.set(i, pair.second);
+                return null;
+            }
+        }
+        return null;
+    }
+
+    @Override
+    public Void visitDistinctOperator(DistinctOperator op, Pair<LogicalVariable, LogicalVariable> pair) {
+        for (LogicalExpressionReference eRef : op.getExpressions()) {
+            eRef.getExpression().substituteVar(pair.first, pair.second);
+        }
+        return null;
+    }
+
+    @Override
+    public Void visitEmptyTupleSourceOperator(EmptyTupleSourceOperator op, Pair<LogicalVariable, LogicalVariable> pair) {
+        // does not use any variable
+        return null;
+    }
+
+    @Override
+    public Void visitExchangeOperator(ExchangeOperator op, Pair<LogicalVariable, LogicalVariable> pair) {
+        // does not use any variable
+        return null;
+    }
+
+    @Override
+    public Void visitGroupByOperator(GroupByOperator op, Pair<LogicalVariable, LogicalVariable> pair)
+            throws AlgebricksException {
+        subst(pair.first, pair.second, op.getGroupByList());
+        subst(pair.first, pair.second, op.getDecorList());
+        for (ILogicalPlan p : op.getNestedPlans()) {
+            for (LogicalOperatorReference r : p.getRoots()) {
+                OperatorManipulationUtil.substituteVarRec((AbstractLogicalOperator) r.getOperator(), pair.first,
+                        pair.second);
+            }
+        }
+        return null;
+    }
+
+    @Override
+    public Void visitInnerJoinOperator(InnerJoinOperator op, Pair<LogicalVariable, LogicalVariable> pair) {
+        op.getCondition().getExpression().substituteVar(pair.first, pair.second);
+        return null;
+    }
+
+    @Override
+    public Void visitLeftOuterJoinOperator(LeftOuterJoinOperator op, Pair<LogicalVariable, LogicalVariable> pair) {
+        op.getCondition().getExpression().substituteVar(pair.first, pair.second);
+        return null;
+    }
+
+    @Override
+    public Void visitLimitOperator(LimitOperator op, Pair<LogicalVariable, LogicalVariable> pair) {
+        op.getMaxObjects().getExpression().substituteVar(pair.first, pair.second);
+        ILogicalExpression offset = op.getOffset().getExpression();
+        if (offset != null) {
+            offset.substituteVar(pair.first, pair.second);
+        }
+        return null;
+    }
+
+    @Override
+    public Void visitNestedTupleSourceOperator(NestedTupleSourceOperator op, Pair<LogicalVariable, LogicalVariable> pair)
+            throws AlgebricksException {
+        return null;
+    }
+
+    @Override
+    public Void visitOrderOperator(OrderOperator op, Pair<LogicalVariable, LogicalVariable> pair) {
+        for (Pair<IOrder, LogicalExpressionReference> oe : op.getOrderExpressions()) {
+            oe.second.getExpression().substituteVar(pair.first, pair.second);
+        }
+        return null;
+    }
+
+    @Override
+    public Void visitPartitioningSplitOperator(PartitioningSplitOperator op, Pair<LogicalVariable, LogicalVariable> pair) {
+        for (LogicalExpressionReference e : op.getExpressions()) {
+            e.getExpression().substituteVar(pair.first, pair.second);
+        }
+        return null;
+    }
+
+    @Override
+    public Void visitProjectOperator(ProjectOperator op, Pair<LogicalVariable, LogicalVariable> pair) {
+        List<LogicalVariable> usedVariables = op.getVariables();
+        int n = usedVariables.size();
+        for (int i = 0; i < n; i++) {
+            LogicalVariable v = usedVariables.get(i);
+            if (v.equals(pair.first)) {
+                usedVariables.set(i, pair.second);
+            }
+        }
+        return null;
+    }
+
+    @Override
+    public Void visitRunningAggregateOperator(RunningAggregateOperator op, Pair<LogicalVariable, LogicalVariable> pair) {
+        List<LogicalVariable> variables = op.getVariables();
+        int n = variables.size();
+        for (int i = 0; i < n; i++) {
+            if (variables.get(i).equals(pair.first)) {
+                variables.set(i, pair.second);
+            } else {
+                op.getExpressions().get(i).getExpression().substituteVar(pair.first, pair.second);
+            }
+        }
+        return null;
+    }
+
+    @Override
+    public Void visitScriptOperator(ScriptOperator op, Pair<LogicalVariable, LogicalVariable> pair) {
+        substInArray(op.getInputVariables(), pair.first, pair.second);
+        substInArray(op.getOutputVariables(), pair.first, pair.second);
+        return null;
+    }
+
+    @Override
+    public Void visitSelectOperator(SelectOperator op, Pair<LogicalVariable, LogicalVariable> pair) {
+        op.getCondition().getExpression().substituteVar(pair.first, pair.second);
+        return null;
+    }
+
+    @Override
+    public Void visitSubplanOperator(SubplanOperator op, Pair<LogicalVariable, LogicalVariable> pair)
+            throws AlgebricksException {
+        for (ILogicalPlan p : op.getNestedPlans()) {
+            for (LogicalOperatorReference r : p.getRoots()) {
+                OperatorManipulationUtil.substituteVarRec((AbstractLogicalOperator) r.getOperator(), pair.first,
+                        pair.second);
+            }
+        }
+        return null;
+    }
+
+    @Override
+    public Void visitUnionOperator(UnionAllOperator op, Pair<LogicalVariable, LogicalVariable> pair) {
+        List<Triple<LogicalVariable, LogicalVariable, LogicalVariable>> varMap = op.getVariableMappings();
+        for (Triple<LogicalVariable, LogicalVariable, LogicalVariable> t : varMap) {
+            if (t.first.equals(pair.first)) {
+                t.first = pair.second;
+            }
+            if (t.second.equals(pair.first)) {
+                t.second = pair.second;
+            }
+            if (t.third.equals(pair.first)) {
+                t.third = pair.second;
+            }
+        }
+        return null;
+    }
+
+    @Override
+    public Void visitUnnestMapOperator(UnnestMapOperator op, Pair<LogicalVariable, LogicalVariable> pair) {
+        List<LogicalVariable> variables = op.getVariables();
+        for (int i = 0; i < variables.size(); i++) {
+            if (variables.get(i) == pair.first) {
+                variables.set(i, pair.second);
+                return null;
+            }
+        }
+        op.getExpressionRef().getExpression().substituteVar(pair.first, pair.second);
+        return null;
+    }
+
+    @Override
+    public Void visitUnnestOperator(UnnestOperator op, Pair<LogicalVariable, LogicalVariable> pair) {
+        List<LogicalVariable> variables = op.getVariables();
+        for (int i = 0; i < variables.size(); i++) {
+            if (variables.get(i) == pair.first) {
+                variables.set(i, pair.second);
+                return null;
+            }
+        }
+        op.getExpressionRef().getExpression().substituteVar(pair.first, pair.second);
+        return null;
+    }
+
+    @Override
+    public Void visitWriteOperator(WriteOperator op, Pair<LogicalVariable, LogicalVariable> pair) {
+        for (LogicalExpressionReference e : op.getExpressions()) {
+            e.getExpression().substituteVar(pair.first, pair.second);
+        }
+        return null;
+    }
+
+    @Override
+    public Void visitWriteResultOperator(WriteResultOperator op, Pair<LogicalVariable, LogicalVariable> pair) {
+        op.getPayloadExpression().getExpression().substituteVar(pair.first, pair.second);
+        for (LogicalExpressionReference e : op.getKeyExpressions()) {
+            e.getExpression().substituteVar(pair.first, pair.second);
+        }
+        return null;
+    }
+
+    private void subst(LogicalVariable v1, LogicalVariable v2,
+            List<Pair<LogicalVariable, LogicalExpressionReference>> varExprPairList) {
+        for (Pair<LogicalVariable, LogicalExpressionReference> ve : varExprPairList) {
+            if (ve.first.equals(v1)) {
+                ve.first = v2;
+                return;
+            }
+            ve.second.getExpression().substituteVar(v1, v2);
+        }
+    }
+
+    private void substInArray(ArrayList<LogicalVariable> varArray, LogicalVariable v1, LogicalVariable v2) {
+        for (int i = 0; i < varArray.size(); i++) {
+            LogicalVariable v = varArray.get(i);
+            if (v == v1) {
+                varArray.set(i, v2);
+            }
+        }
+    }
+
+    @Override
+    public Void visitReplicateOperator(ReplicateOperator op, Pair<LogicalVariable, LogicalVariable> arg)
+            throws AlgebricksException {
+        op.substituteVar(arg.first, arg.second);
+        return null;
+    }
+
+}

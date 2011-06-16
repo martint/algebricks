@@ -1,0 +1,66 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>edu.uci.ics.algebricks</groupId>
+  <artifactId>algebricks</artifactId>
+  <version>0.0.1-SNAPSHOT</version>
+  <packaging>pom</packaging>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-release-plugin</artifactId>
+        <version>2.0</version>
+        <configuration>
+            <goals>package source:jar javadoc:jar deploy:deploy</goals>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
+
+  <scm>
+    <connection>scm:svn:https://algebricks.googlecode.com/svn/trunk/algebricks</connection>
+    <developerConnection>scm:svn:https://algebricks.googlecode.com/svn/trunk/algebricks</developerConnection>
+    <url>http://code.google.com/p/algebricks/source/browse/#svn/trunk/algebricks</url>
+  </scm>
+
+  <distributionManagement>
+    <repository>
+      <id>asterix-releases</id>
+      <url>http://obelix.ics.uci.edu/nexus/content/repositories/asterix-releases/</url>
+    </repository>
+    <snapshotRepository>
+      <id>asterix-snapshots</id>
+      <url>http://obelix.ics.uci.edu/nexus/content/repositories/asterix-snapshots/</url>
+    </snapshotRepository>
+  </distributionManagement>
+
+  <reporting>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-changelog-plugin</artifactId>
+      </plugin>
+    </plugins>
+  </reporting>
+
+  <repositories>
+    <repository>
+      <id>asterix-public</id>
+      <url>http://obelix.ics.uci.edu/nexus/content/groups/asterix-public/</url>
+    </repository>
+    <repository>
+      <id>hyracks-releases</id>
+      <url>http://obelix.ics.uci.edu/nexus/content/repositories/hyracks-releases/</url>
+      <releases>
+        <enabled>true</enabled>
+        <updatePolicy>always</updatePolicy>
+      </releases>
+    </repository>
+  </repositories>
+
+  <modules>
+    <module>algebricks-core</module>
+    <module>algebricks-tests</module>
+  </modules>
+</project>
