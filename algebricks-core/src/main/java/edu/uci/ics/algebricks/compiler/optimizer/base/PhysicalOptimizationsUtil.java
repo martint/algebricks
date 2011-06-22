@@ -58,8 +58,9 @@ public class PhysicalOptimizationsUtil {
         }
         op.accept(visitor, ctx);
         if (AlgebricksConfig.DEBUG) {
-            AlgebricksConfig.ALGEBRICKS_LOGGER.fine("--> op. type = " + op.getOperatorTag() + "\n" + "    equiv. classes = "
-                    + ctx.getEquivalenceClassMap(op) + "\n" + "    FDs = " + ctx.getFDList(op) + "\n");
+            AlgebricksConfig.ALGEBRICKS_LOGGER.fine("--> op. type = " + op.getOperatorTag() + "\n"
+                    + "    equiv. classes = " + ctx.getEquivalenceClassMap(op) + "\n" + "    FDs = "
+                    + ctx.getFDList(op) + "\n");
         }
     }
 
