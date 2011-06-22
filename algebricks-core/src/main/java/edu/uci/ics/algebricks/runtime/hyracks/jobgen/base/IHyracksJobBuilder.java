@@ -34,11 +34,10 @@ public interface IHyracksJobBuilder {
 
     public void contributeAlgebricksPartitionConstraint(IOperatorDescriptor opDesc, AlgebricksPartitionConstraint apc);
 
-    public void contributeMicroOperator(ILogicalOperator op, IPushRuntimeFactory runtime,
-            RecordDescriptor recDesc);
+    public void contributeMicroOperator(ILogicalOperator op, IPushRuntimeFactory runtime, RecordDescriptor recDesc);
 
-    public void contributeMicroOperator(ILogicalOperator op, IPushRuntimeFactory runtime,
-            RecordDescriptor recDesc, AlgebricksPartitionConstraint pc);
+    public void contributeMicroOperator(ILogicalOperator op, IPushRuntimeFactory runtime, RecordDescriptor recDesc,
+            AlgebricksPartitionConstraint pc);
 
     /**
      * inputs are numbered starting from 0

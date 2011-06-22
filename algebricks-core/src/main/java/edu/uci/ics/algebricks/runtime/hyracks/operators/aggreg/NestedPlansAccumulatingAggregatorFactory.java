@@ -42,7 +42,8 @@ public class NestedPlansAccumulatingAggregatorFactory implements IAccumulatingAg
     private int[] keyFieldIdx;
     private int[] decorFieldIdx;
 
-    public NestedPlansAccumulatingAggregatorFactory(AlgebricksPipeline[] subplans, int[] keyFieldIdx, int[] decorFieldIdx) {
+    public NestedPlansAccumulatingAggregatorFactory(AlgebricksPipeline[] subplans, int[] keyFieldIdx,
+            int[] decorFieldIdx) {
         this.subplans = subplans;
         this.keyFieldIdx = keyFieldIdx;
         this.decorFieldIdx = decorFieldIdx;

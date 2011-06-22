@@ -41,7 +41,8 @@ public class StringStreamingScriptPOperator extends AbstractPropagatePropertiesF
     }
 
     @Override
-    public PhysicalRequirements getRequiredPropertiesForChildren(ILogicalOperator op, IPhysicalPropertiesVector reqdByParent) {
+    public PhysicalRequirements getRequiredPropertiesForChildren(ILogicalOperator op,
+            IPhysicalPropertiesVector reqdByParent) {
         return emptyUnaryRequirements();
     }
 
@@ -58,8 +59,8 @@ public class StringStreamingScriptPOperator extends AbstractPropagatePropertiesF
         for (Pair<LogicalVariable, Object> p : scriptDesc.getVarTypePairs()) {
             context.setVarType(p.first, p.second);
         }
-        StringStreamingRuntimeFactory runtime = new StringStreamingRuntimeFactory(sssd.getCommand(), sssd
-                .getPrinterFactories(), sssd.getFieldDelimiter(), sssd.getParserFactory());
+        StringStreamingRuntimeFactory runtime = new StringStreamingRuntimeFactory(sssd.getCommand(),
+                sssd.getPrinterFactories(), sssd.getFieldDelimiter(), sssd.getParserFactory());
         RecordDescriptor recDesc = JobGenHelper.mkRecordDescriptor(propagatedSchema, context);
         builder.contributeMicroOperator(scriptOp, runtime, recDesc);
         // and contribute one edge from its child

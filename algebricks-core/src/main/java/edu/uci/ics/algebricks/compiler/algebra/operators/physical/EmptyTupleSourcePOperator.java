@@ -46,7 +46,8 @@ public class EmptyTupleSourcePOperator extends AbstractPhysicalOperator {
     }
 
     @Override
-    public PhysicalRequirements getRequiredPropertiesForChildren(ILogicalOperator op, IPhysicalPropertiesVector reqdByParent) {
+    public PhysicalRequirements getRequiredPropertiesForChildren(ILogicalOperator op,
+            IPhysicalPropertiesVector reqdByParent) {
         return null;
     }
 

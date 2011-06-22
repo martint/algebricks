@@ -151,7 +151,8 @@ public class GroupByOperator extends AbstractOperatorWithNestedPlans {
         return new VariablePropagationPolicy() {
 
             @Override
-            public void propagateVariables(IOperatorSchema target, IOperatorSchema... sources) throws AlgebricksException {
+            public void propagateVariables(IOperatorSchema target, IOperatorSchema... sources)
+                    throws AlgebricksException {
                 for (Pair<LogicalVariable, LogicalExpressionReference> p : gByList) {
                     ILogicalExpression expr = p.second.getExpression();
                     if (p.first != null) {

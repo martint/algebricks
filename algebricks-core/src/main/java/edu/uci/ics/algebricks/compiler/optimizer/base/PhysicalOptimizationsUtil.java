@@ -1,17 +1,3 @@
-/*
- * Copyright 2009-2010 by The Regents of the University of California
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * you may obtain a copy of the License from
- * 
- *     http://www.apache.org/licenses/LICENSE-2.0
- * 
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
 package edu.uci.ics.algebricks.compiler.optimizer.base;
 
 import java.util.HashSet;
@@ -33,9 +19,11 @@ public class PhysicalOptimizationsUtil {
     private final static int MB = 1048576;
     // private final static int GB = 1024 * MB;
     private final static int DEFAULT_FRAME_SIZE = 32768;
-    public final static int MAX_FRAMES_EXTERNAL_SORT = (int) (((long) 128 * MB) / DEFAULT_FRAME_SIZE);
+    public final static int MAX_FRAMES_EXTERNAL_SORT = (int) (((long) 512 * MB) / DEFAULT_FRAME_SIZE);
+    public final static int MAX_FRAMES_EXTERNAL_GROUP_BY = (int) (((long) 4 * MB) / DEFAULT_FRAME_SIZE);;
 
     public static final int DEFAULT_HASH_GROUP_TABLE_SIZE = 10485767;
+    public static final int DEFAULT_EXTERNAL_GROUP_TABLE_SIZE = 5485767;
     public static final int DEFAULT_IN_MEM_HASH_JOIN_TABLE_SIZE = 10485767;
 
     // use http://www.rsok.com/~jrm/printprimes.html to find prime numbers

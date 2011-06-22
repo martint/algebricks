@@ -55,12 +55,14 @@ public abstract class VariablePropagationPolicy {
         }
     };
 
-    public abstract void propagateVariables(IOperatorSchema target, IOperatorSchema... sources) throws AlgebricksException;
+    public abstract void propagateVariables(IOperatorSchema target, IOperatorSchema... sources)
+            throws AlgebricksException;
 
     public static VariablePropagationPolicy concat(final VariablePropagationPolicy... policies) {
         return new VariablePropagationPolicy() {
             @Override
-            public void propagateVariables(IOperatorSchema target, IOperatorSchema... sources) throws AlgebricksException {
+            public void propagateVariables(IOperatorSchema target, IOperatorSchema... sources)
+                    throws AlgebricksException {
                 if (policies.length != sources.length) {
                     throw new IllegalArgumentException();
                 }

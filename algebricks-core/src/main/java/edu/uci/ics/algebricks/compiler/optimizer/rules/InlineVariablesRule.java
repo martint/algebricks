@@ -68,7 +68,8 @@ public class InlineVariablesRule implements IAlgebraicRewriteRule {
     }
 
     private Pair<Boolean, Boolean> collectEqClassesAndRemoveRedundantOps(LogicalOperatorReference opRef,
-            IOptimizationContext context, boolean first, List<EquivalenceClass> equivClasses) throws AlgebricksException {
+            IOptimizationContext context, boolean first, List<EquivalenceClass> equivClasses)
+            throws AlgebricksException {
         AbstractLogicalOperator op = (AbstractLogicalOperator) opRef.getOperator();
         // if (context.checkIfInDontApplySet(this, opRef.getOperator())) {
         // return false;
@@ -91,8 +92,8 @@ public class InlineVariablesRule implements IAlgebraicRewriteRule {
 
             if (isInnerInputBranch) {
                 if (AlgebricksConfig.DEBUG) {
-                    AlgebricksConfig.ALGEBRICKS_LOGGER.finest("--- Equivalence classes for inner branch of outer op.: " + eqc
-                            + "\n");
+                    AlgebricksConfig.ALGEBRICKS_LOGGER.finest("--- Equivalence classes for inner branch of outer op.: "
+                            + eqc + "\n");
                 }
                 for (EquivalenceClass ec : eqc) {
                     if (!ec.representativeIsConst()) {
@@ -221,8 +222,8 @@ public class InlineVariablesRule implements IAlgebraicRewriteRule {
             if (ec != null) {
                 if (ec.representativeIsConst()) {
                     LogicalOperatorReference opRef = op.getInputs().get(0);
-                    AssignOperator a = new AssignOperator(prVars.get(i), new LogicalExpressionReference(ec
-                            .getConstRepresentative()));
+                    AssignOperator a = new AssignOperator(prVars.get(i), new LogicalExpressionReference(
+                            ec.getConstRepresentative()));
                     a.getInputs().add(new LogicalOperatorReference(opRef.getOperator()));
                     opRef.setOperator(a);
                     // context.addToDontApplySet(this, a);

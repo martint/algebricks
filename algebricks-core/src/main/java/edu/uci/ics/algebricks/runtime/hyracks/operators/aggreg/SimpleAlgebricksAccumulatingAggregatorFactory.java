@@ -37,7 +37,8 @@ public class SimpleAlgebricksAccumulatingAggregatorFactory implements IAccumulat
     private int[] keys;
     private int[] fdColumns;
 
-    public SimpleAlgebricksAccumulatingAggregatorFactory(IAggregateFunctionFactory[] aggFactories, int[] keys, int[] fdColumns) {
+    public SimpleAlgebricksAccumulatingAggregatorFactory(IAggregateFunctionFactory[] aggFactories, int[] keys,
+            int[] fdColumns) {
         this.aggFactories = aggFactories;
         this.keys = keys;
         this.fdColumns = fdColumns;
@@ -110,9 +111,7 @@ public class SimpleAlgebricksAccumulatingAggregatorFactory implements IAccumulat
                     for (int i = 0; i < agg.length; i++) {
                         try {
                             agg[i].finish();
-                            tb
-                                    .addField(aggOutput[i].getBytes(), aggOutput[i].getStartIndex(), aggOutput[i]
-                                            .getLength());
+                            tb.addField(aggOutput[i].getBytes(), aggOutput[i].getStartIndex(), aggOutput[i].getLength());
                         } catch (AlgebricksException e) {
                             throw new HyracksDataException(e);
                         }

@@ -1,17 +1,3 @@
-/*
- * Copyright 2009-2010 by The Regents of the University of California
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * you may obtain a copy of the License from
- * 
- *     http://www.apache.org/licenses/LICENSE-2.0
- * 
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
 package edu.uci.ics.algebricks.compiler.optimizer.rules;
 
 import java.util.ArrayList;
@@ -43,6 +29,7 @@ import edu.uci.ics.algebricks.compiler.algebra.operators.physical.AggregatePOper
 import edu.uci.ics.algebricks.compiler.algebra.operators.physical.AssignPOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.physical.DataSourceScanPOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.physical.EmptyTupleSourcePOperator;
+import edu.uci.ics.algebricks.compiler.algebra.operators.physical.ExternalGroupByPOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.physical.HashGroupByPOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.physical.InMemoryStableSortPOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.physical.NestedTupleSourcePOperator;
@@ -142,6 +129,30 @@ public class SetAlgebricksPhysicalOperatorsRule implements IAlgebraicRewriteRule
                                         ((GroupByOperator) op).getGroupByList(),
                                         PhysicalOptimizationsUtil.DEFAULT_HASH_GROUP_TABLE_SIZE);
                                 op.setPhysicalOperator(hashGby);
+                                break;
+                                // }
+                                // }
+                            }
+                            if (gby.getAnnotations().get(OperatorAnnotations.USE_EXTERNAL_GROUP_BY) == Boolean.TRUE) {
+                                // LogicalOperatorReference r0 =
+                                // p0.getRoots().get(0);
+                                // AbstractLogicalOperator op1 =
+                                // (AbstractLogicalOperator) r0.getOperator();
+                                // if (op1.getOperatorTag() ==
+                                // LogicalOperatorTag.AGGREGATE) {
+                                // AbstractLogicalOperator op2 =
+                                // (AbstractLogicalOperator)
+                                // op1.getInputs().get(0)
+                                // .getOperator();
+                                // if (op2.getOperatorTag() ==
+                                // LogicalOperatorTag.NESTEDTUPLESOURCE) {
+                                Boolean localGby = (Boolean) gby.getAnnotations().get(OperatorAnnotations.LOCAL_GBY);
+                                if (localGby == null)
+                                    localGby = false;
+                                HashGroupByPOperator externalGby = new ExternalGroupByPOperator(
+                                        ((GroupByOperator) op).getGroupByList(),
+                                        PhysicalOptimizationsUtil.DEFAULT_EXTERNAL_GROUP_TABLE_SIZE, localGby);
+                                op.setPhysicalOperator(externalGby);
                                 break;
                                 // }
                                 // }

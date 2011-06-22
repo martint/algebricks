@@ -39,9 +39,10 @@ public class AlgebricksBuiltinFunctions {
 
     // booleans
     public final static FunctionIdentifier NOT = new FunctionIdentifier(ALGEBRICKS_NS, "not", 1, true);
-    public final static FunctionIdentifier AND = new FunctionIdentifier(ALGEBRICKS_NS, "and", FunctionIdentifier.VARARGS,
+    public final static FunctionIdentifier AND = new FunctionIdentifier(ALGEBRICKS_NS, "and",
+            FunctionIdentifier.VARARGS, true);
+    public final static FunctionIdentifier OR = new FunctionIdentifier(ALGEBRICKS_NS, "or", FunctionIdentifier.VARARGS,
             true);
-    public final static FunctionIdentifier OR = new FunctionIdentifier(ALGEBRICKS_NS, "or", FunctionIdentifier.VARARGS, true);
 
     // numerics
     public final static FunctionIdentifier NUMERIC_ADD = new FunctionIdentifier(ALGEBRICKS_NS, "numeric-add", 2, true);

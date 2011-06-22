@@ -48,7 +48,8 @@ public class UnionAllOperator extends AbstractLogicalOperator {
         return new VariablePropagationPolicy() {
 
             @Override
-            public void propagateVariables(IOperatorSchema target, IOperatorSchema... sources) throws AlgebricksException {
+            public void propagateVariables(IOperatorSchema target, IOperatorSchema... sources)
+                    throws AlgebricksException {
                 // TODO Auto-generated method stub
                 for (Triple<LogicalVariable, LogicalVariable, LogicalVariable> t : varMap) {
                     target.addVariable(t.third);

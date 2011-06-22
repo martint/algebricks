@@ -28,7 +28,8 @@ public class TupleCountRunningAggregateFunctionFactory implements IRunningAggreg
     private static final long serialVersionUID = 1L;
 
     @Override
-    public IRunningAggregateFunction createRunningAggregateFunction(IDataOutputProvider provider) throws AlgebricksException {
+    public IRunningAggregateFunction createRunningAggregateFunction(IDataOutputProvider provider)
+            throws AlgebricksException {
 
         final DataOutput out = provider.getDataOutput();
 

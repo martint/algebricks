@@ -302,8 +302,7 @@ public class LogicalOperatorPrettyPrintVisitor implements ILogicalOperatorVisito
     @Override
     public String visitReplicateOperator(ReplicateOperator op, Integer indent) throws AlgebricksException {
         StringBuilder buffer = new StringBuilder();
-        addIndent(buffer, indent).append(
-                "replicate ");
+        addIndent(buffer, indent).append("replicate ");
         return buffer.toString();
     }
 

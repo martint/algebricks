@@ -58,7 +58,8 @@ public class AssignOperator extends AbstractAssignOperator {
         return new VariablePropagationPolicy() {
 
             @Override
-            public void propagateVariables(IOperatorSchema target, IOperatorSchema... sources) throws AlgebricksException {
+            public void propagateVariables(IOperatorSchema target, IOperatorSchema... sources)
+                    throws AlgebricksException {
                 target.addAllVariables(sources[0]);
                 for (LogicalVariable v : variables) {
                     target.addVariable(v);

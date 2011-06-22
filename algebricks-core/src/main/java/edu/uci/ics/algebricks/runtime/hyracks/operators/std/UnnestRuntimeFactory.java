@@ -97,8 +97,8 @@ public class UnnestRuntimeFactory extends AbstractOneInputOneOutputRuntimeFactor
                         } else {
                             for (int f = 0; f < projectionList.length; f++) {
                                 if (projectionList[f] == outCol) {
-                                    tb.addField(evalOutput.getBytes(), evalOutput.getStartIndex(), evalOutput
-                                            .getLength());
+                                    tb.addField(evalOutput.getBytes(), evalOutput.getStartIndex(),
+                                            evalOutput.getLength());
                                 } else {
                                     tb.addField(accessor, tIndex, f);
                                 }

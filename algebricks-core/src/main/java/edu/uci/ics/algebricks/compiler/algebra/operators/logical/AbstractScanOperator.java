@@ -47,7 +47,8 @@ public abstract class AbstractScanOperator extends AbstractLogicalOperator {
         return new VariablePropagationPolicy() {
 
             @Override
-            public void propagateVariables(IOperatorSchema target, IOperatorSchema... sources) throws AlgebricksException {
+            public void propagateVariables(IOperatorSchema target, IOperatorSchema... sources)
+                    throws AlgebricksException {
                 if (sources.length > 0) {
                     target.addAllVariables(sources[0]);
                 }

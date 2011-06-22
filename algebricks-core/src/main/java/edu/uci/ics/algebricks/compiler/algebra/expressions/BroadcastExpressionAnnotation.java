@@ -18,10 +18,12 @@ public class BroadcastExpressionAnnotation implements IExpressionAnnotation {
 
     public static final String BROADCAST_ANNOTATION_KEY = "broadcast";
 
-    public enum BroadcastSide {LEFT, RIGHT};
-    
+    public enum BroadcastSide {
+        LEFT, RIGHT
+    };
+
     private BroadcastSide side;
-    
+
     @Override
     public Object getObject() {
         return side;
@@ -29,7 +31,7 @@ public class BroadcastExpressionAnnotation implements IExpressionAnnotation {
 
     @Override
     public void setObject(Object side) {
-        this.side = (BroadcastSide)side;
+        this.side = (BroadcastSide) side;
     }
 
     @Override

@@ -98,7 +98,8 @@ public class PushLimitDownRule implements IAlgebraicRewriteRule {
             clone2 = new LimitOperator(opLim.getMaxObjects().getExpression(), false);
         } else {
             // push limit (max+offset)
-            IFunctionInfo finfoAdd = AlgebricksBuiltinFunctions.getBuiltinFunctionInfo(AlgebricksBuiltinFunctions.NUMERIC_ADD);
+            IFunctionInfo finfoAdd = AlgebricksBuiltinFunctions
+                    .getBuiltinFunctionInfo(AlgebricksBuiltinFunctions.NUMERIC_ADD);
             ScalarFunctionCallExpression maxPlusOffset = new ScalarFunctionCallExpression(finfoAdd,
                     opLim.getMaxObjects(), opLim.getOffset());
             clone2 = new LimitOperator(maxPlusOffset, false);

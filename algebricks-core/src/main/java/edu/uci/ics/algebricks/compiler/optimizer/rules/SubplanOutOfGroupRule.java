@@ -40,8 +40,8 @@ import edu.uci.ics.algebricks.compiler.optimizer.base.OptimizationUtil;
  * 
  * }
  * 
- * select (function-call: algebricks:not, Args:[function-call: algebricks:is-null,
- * Args:[...]])
+ * select (function-call: algebricks:not, Args:[function-call:
+ * algebricks:is-null, Args:[...]])
  * 
  * nested tuple source -- |UNPARTITIONED|
  * 

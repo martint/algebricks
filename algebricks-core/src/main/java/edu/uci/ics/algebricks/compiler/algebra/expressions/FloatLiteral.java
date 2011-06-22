@@ -15,7 +15,7 @@
 package edu.uci.ics.algebricks.compiler.algebra.expressions;
 
 public class FloatLiteral implements ILiteral {
-   /**
+    /**
      * 
      */
     private static final long serialVersionUID = 3273563021227964396L;

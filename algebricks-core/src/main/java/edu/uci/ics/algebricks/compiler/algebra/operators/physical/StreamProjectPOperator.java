@@ -37,7 +37,8 @@ public class StreamProjectPOperator extends AbstractPropagatePropertiesForUsedVa
     }
 
     @Override
-    public PhysicalRequirements getRequiredPropertiesForChildren(ILogicalOperator op, IPhysicalPropertiesVector reqdByParent) {
+    public PhysicalRequirements getRequiredPropertiesForChildren(ILogicalOperator op,
+            IPhysicalPropertiesVector reqdByParent) {
         return emptyUnaryRequirements();
     }
 

@@ -45,7 +45,8 @@ public interface IPhysicalOperator {
      */
     public IPhysicalPropertiesVector getDeliveredProperties();
 
-    public void computeDeliveredProperties(ILogicalOperator op, IOptimizationContext context) throws AlgebricksException;
+    public void computeDeliveredProperties(ILogicalOperator op, IOptimizationContext context)
+            throws AlgebricksException;
 
     public void contributeRuntimeOperator(IHyracksJobBuilder builder, JobGenContext context, ILogicalOperator op,
             IOperatorSchema propagatedSchema, IOperatorSchema[] inputSchemas, IOperatorSchema outerPlanSchema)

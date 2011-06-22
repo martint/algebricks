@@ -23,9 +23,11 @@ import edu.uci.ics.algebricks.compiler.algebra.expressions.UnnestingFunctionCall
 
 public abstract class AbstractConstVarFunVisitor<R, T> implements ILogicalExpressionVisitor<R, T> {
 
-    public abstract R visitFunctionCallExpression(AbstractFunctionCallExpression expr, T arg) throws AlgebricksException;
+    public abstract R visitFunctionCallExpression(AbstractFunctionCallExpression expr, T arg)
+            throws AlgebricksException;
 
-    public R visitAggregateFunctionCallExpression(AggregateFunctionCallExpression expr, T arg) throws AlgebricksException {
+    public R visitAggregateFunctionCallExpression(AggregateFunctionCallExpression expr, T arg)
+            throws AlgebricksException {
         return visitFunctionCallExpression(expr, arg);
     }
 
@@ -37,7 +39,8 @@ public abstract class AbstractConstVarFunVisitor<R, T> implements ILogicalExpres
         return visitFunctionCallExpression(expr, arg);
     }
 
-    public R visitUnnestingFunctionCallExpression(UnnestingFunctionCallExpression expr, T arg) throws AlgebricksException {
+    public R visitUnnestingFunctionCallExpression(UnnestingFunctionCallExpression expr, T arg)
+            throws AlgebricksException {
         return visitFunctionCallExpression(expr, arg);
     }
 }

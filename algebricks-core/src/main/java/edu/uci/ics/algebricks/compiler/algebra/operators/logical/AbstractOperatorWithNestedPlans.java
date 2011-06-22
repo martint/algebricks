@@ -52,17 +52,18 @@ public abstract class AbstractOperatorWithNestedPlans extends AbstractLogicalOpe
         }
         return allRoots;
     }
-//
-//    @Override
-//    public void computeConstraintsAndEquivClasses() {
-//        for (ILogicalPlan p : nestedPlans) {
-//            for (LogicalOperatorReference r : p.getRoots()) {
-//                AbstractLogicalOperator op = (AbstractLogicalOperator) r.getOperator();
-//                equivalenceClasses.putAll(op.getEquivalenceClasses());
-//                functionalDependencies.addAll(op.getFDs());
-//            }
-//        }
-//    }
+
+    //
+    // @Override
+    // public void computeConstraintsAndEquivClasses() {
+    // for (ILogicalPlan p : nestedPlans) {
+    // for (LogicalOperatorReference r : p.getRoots()) {
+    // AbstractLogicalOperator op = (AbstractLogicalOperator) r.getOperator();
+    // equivalenceClasses.putAll(op.getEquivalenceClasses());
+    // functionalDependencies.addAll(op.getFDs());
+    // }
+    // }
+    // }
 
     @Override
     public void recomputeSchema() {

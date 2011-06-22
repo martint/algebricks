@@ -130,8 +130,8 @@ public class NLJoinPOperator extends AbstractJoinPOperator {
 
         IEvaluatorFactory cond = exprJobGen.createEvaluatorFactory(join.getCondition().getExpression(), inputSchemas,
                 context);
-        ITuplePairComparatorFactory comparatorFactory = new TuplePairEvaluatorFactory(cond, context
-                .getBinaryBooleanInspector());
+        ITuplePairComparatorFactory comparatorFactory = new TuplePairEvaluatorFactory(cond,
+                context.getBinaryBooleanInspector());
         RecordDescriptor recDescriptor = JobGenHelper.mkRecordDescriptor(propagatedSchema, context);
         JobSpecification spec = builder.getJobSpec();
         IOperatorDescriptor opDesc = null;

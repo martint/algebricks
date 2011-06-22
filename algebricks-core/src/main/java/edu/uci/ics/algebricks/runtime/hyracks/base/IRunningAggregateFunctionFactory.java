@@ -20,5 +20,6 @@ import edu.uci.ics.algebricks.api.exceptions.AlgebricksException;
 import edu.uci.ics.hyracks.dataflow.common.data.accessors.IDataOutputProvider;
 
 public interface IRunningAggregateFunctionFactory extends Serializable {
-    public IRunningAggregateFunction createRunningAggregateFunction(IDataOutputProvider provider) throws AlgebricksException;
+    public IRunningAggregateFunction createRunningAggregateFunction(IDataOutputProvider provider)
+            throws AlgebricksException;
 }

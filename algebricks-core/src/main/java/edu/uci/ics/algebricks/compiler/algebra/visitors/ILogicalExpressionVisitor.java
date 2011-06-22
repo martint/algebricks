@@ -27,11 +27,13 @@ public interface ILogicalExpressionVisitor<R, T> {
 
     public R visitVariableReferenceExpression(VariableReferenceExpression expr, T arg) throws AlgebricksException;
 
-    public R visitAggregateFunctionCallExpression(AggregateFunctionCallExpression expr, T arg) throws AlgebricksException;
+    public R visitAggregateFunctionCallExpression(AggregateFunctionCallExpression expr, T arg)
+            throws AlgebricksException;
 
     public R visitScalarFunctionCallExpression(ScalarFunctionCallExpression expr, T arg) throws AlgebricksException;
 
     public R visitStatefulFunctionCallExpression(StatefulFunctionCallExpression expr, T arg) throws AlgebricksException;
 
-    public R visitUnnestingFunctionCallExpression(UnnestingFunctionCallExpression expr, T arg) throws AlgebricksException;
+    public R visitUnnestingFunctionCallExpression(UnnestingFunctionCallExpression expr, T arg)
+            throws AlgebricksException;
 }

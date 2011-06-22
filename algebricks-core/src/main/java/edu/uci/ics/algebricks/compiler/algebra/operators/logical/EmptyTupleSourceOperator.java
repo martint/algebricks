@@ -51,10 +51,11 @@ public class EmptyTupleSourceOperator extends AbstractLogicalOperator {
     public <R, T> R accept(ILogicalOperatorVisitor<R, T> visitor, T arg) throws AlgebricksException {
         return visitor.visitEmptyTupleSourceOperator(this, arg);
     }
-//
-//    @Override
-//    public void computeConstraintsAndEquivClasses() {
-//    }
+
+    //
+    // @Override
+    // public void computeConstraintsAndEquivClasses() {
+    // }
 
     @Override
     public void recomputeSchema() {

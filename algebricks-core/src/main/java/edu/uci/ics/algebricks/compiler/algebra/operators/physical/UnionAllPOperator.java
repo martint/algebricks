@@ -85,7 +85,8 @@ public class UnionAllPOperator extends AbstractPhysicalOperator {
         JobSpecification spec = builder.getJobSpec();
         RecordDescriptor recordDescriptor = JobGenHelper.mkRecordDescriptor(opSchema, context);
 
-        // at algebricks level, union all only accepts two inputs, although at hyracks
+        // at algebricks level, union all only accepts two inputs, although at
+        // hyracks
         // level, there is no restrictions
         UnionAllOperatorDescriptor opDesc = new UnionAllOperatorDescriptor(spec, 2, recordDescriptor);
         contributeOpDesc(builder, (AbstractLogicalOperator) op, opDesc);
@@ -99,8 +100,8 @@ public class UnionAllPOperator extends AbstractPhysicalOperator {
             JobGenContext context) throws AlgebricksException {
         int n = varMap.size();
         for (int i = 0; i < n; i++) {
-            context.setVarType(varMap.get(i).third, context
-                    .getType(new VariableReferenceExpression(varMap.get(i).first)));
+            context.setVarType(varMap.get(i).third,
+                    context.getType(new VariableReferenceExpression(varMap.get(i).first)));
         }
     }
 

@@ -40,5 +40,5 @@ public class InnerJoinOperator extends AbstractBinaryJoin {
     public <R, T> R accept(ILogicalOperatorVisitor<R, T> visitor, T arg) throws AlgebricksException {
         return visitor.visitInnerJoinOperator(this, arg);
     }
-    
+
 }

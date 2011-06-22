@@ -21,7 +21,8 @@ import edu.uci.ics.algebricks.compiler.algebra.properties.PhysicalRequirements;
 public abstract class AbstractScanPOperator extends AbstractPhysicalOperator {
 
     @Override
-    public PhysicalRequirements getRequiredPropertiesForChildren(ILogicalOperator op, IPhysicalPropertiesVector reqdByParent) {
+    public PhysicalRequirements getRequiredPropertiesForChildren(ILogicalOperator op,
+            IPhysicalPropertiesVector reqdByParent) {
         return emptyUnaryRequirements();
     }
 

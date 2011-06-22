@@ -74,8 +74,7 @@ public interface ILogicalOperator {
      * @return for each child, one vector of required physical properties
      */
 
-    public PhysicalRequirements getRequiredPhysicalPropertiesForChildren(
-            IPhysicalPropertiesVector requiredProperties);
+    public PhysicalRequirements getRequiredPhysicalPropertiesForChildren(IPhysicalPropertiesVector requiredProperties);
 
     /**
      * 

@@ -96,12 +96,13 @@ public class LimitOperator extends AbstractLogicalOperator {
         return VariablePropagationPolicy.ALL;
     }
 
-//    @Override
-//    public void computeConstraintsAndEquivClasses() {
-//        AbstractLogicalOperator inp1 = (AbstractLogicalOperator) inputs.get(0).getOperator();
-//        equivalenceClasses = inp1.getEquivalenceClasses();
-//        functionalDependencies = inp1.getFDs();
-//    }
+    // @Override
+    // public void computeConstraintsAndEquivClasses() {
+    // AbstractLogicalOperator inp1 = (AbstractLogicalOperator)
+    // inputs.get(0).getOperator();
+    // equivalenceClasses = inp1.getEquivalenceClasses();
+    // functionalDependencies = inp1.getFDs();
+    // }
 
     @Override
     public boolean isMap() {

@@ -284,8 +284,9 @@ public class FDsAndEquivClassesVisitor implements ILogicalOperatorVisitor<Void, 
             }
         }
         if (changed) {
-            AlgebricksConfig.ALGEBRICKS_LOGGER.fine(">>>> Group-by list changed from " + GroupByOperator.veListToString(gByList)
-                    + " to " + GroupByOperator.veListToString(newGbyList) + ".\n");
+            AlgebricksConfig.ALGEBRICKS_LOGGER.fine(">>>> Group-by list changed from "
+                    + GroupByOperator.veListToString(gByList) + " to " + GroupByOperator.veListToString(newGbyList)
+                    + ".\n");
         }
         gByList.clear();
         gByList.addAll(newGbyList);
@@ -310,7 +311,8 @@ public class FDsAndEquivClassesVisitor implements ILogicalOperatorVisitor<Void, 
     }
 
     @Override
-    public Void visitLeftOuterJoinOperator(LeftOuterJoinOperator op, IOptimizationContext ctx) throws AlgebricksException {
+    public Void visitLeftOuterJoinOperator(LeftOuterJoinOperator op, IOptimizationContext ctx)
+            throws AlgebricksException {
         Map<LogicalVariable, EquivalenceClass> equivalenceClasses = new HashMap<LogicalVariable, EquivalenceClass>();
         List<FunctionalDependency> functionalDependencies = new ArrayList<FunctionalDependency>();
         ctx.putEquivalenceClassMap(op, equivalenceClasses);

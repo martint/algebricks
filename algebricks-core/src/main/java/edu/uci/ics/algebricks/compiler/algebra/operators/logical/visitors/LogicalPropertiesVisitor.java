@@ -122,7 +122,8 @@ public class LogicalPropertiesVisitor implements ILogicalOperatorVisitor<Void, I
     }
 
     @Override
-    public Void visitLeftOuterJoinOperator(LeftOuterJoinOperator op, IOptimizationContext arg) throws AlgebricksException {
+    public Void visitLeftOuterJoinOperator(LeftOuterJoinOperator op, IOptimizationContext arg)
+            throws AlgebricksException {
         // TODO Auto-generated method stub
         return null;
     }

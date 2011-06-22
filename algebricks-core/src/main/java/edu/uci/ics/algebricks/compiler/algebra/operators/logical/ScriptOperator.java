@@ -69,7 +69,8 @@ public class ScriptOperator extends AbstractLogicalOperator {
         return new VariablePropagationPolicy() {
 
             @Override
-            public void propagateVariables(IOperatorSchema target, IOperatorSchema... sources) throws AlgebricksException {
+            public void propagateVariables(IOperatorSchema target, IOperatorSchema... sources)
+                    throws AlgebricksException {
                 for (LogicalVariable v : outputVariables) {
                     target.addVariable(v);
                 }

@@ -23,5 +23,6 @@ public interface IBinaryComparatorFactoryProvider {
      * only ASC and DESC are currently supported for orderKind (FUNCTIONCALL can
      * be ignored)
      */
-    public IBinaryComparatorFactory getBinaryComparatorFactory(Object type, OrderKind orderKind) throws AlgebricksException;
+    public IBinaryComparatorFactory getBinaryComparatorFactory(Object type, OrderKind orderKind)
+            throws AlgebricksException;
 }

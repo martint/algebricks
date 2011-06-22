@@ -63,7 +63,8 @@ public abstract class AbstractRuleController {
         return rewriteOperatorRef(opRef, rule, true, false);
     }
 
-    private void printRuleApplication(IAlgebraicRewriteRule rule, LogicalOperatorReference opRef) throws AlgebricksException {
+    private void printRuleApplication(IAlgebraicRewriteRule rule, LogicalOperatorReference opRef)
+            throws AlgebricksException {
         AlgebricksConfig.ALGEBRICKS_LOGGER.fine(">>>> Rule " + rule.getClass() + " fired.\n");
         StringBuilder sb = new StringBuilder();
         PlanPrettyPrinter.printOperator((AbstractLogicalOperator) opRef.getOperator(), sb, pvisitor, 0);

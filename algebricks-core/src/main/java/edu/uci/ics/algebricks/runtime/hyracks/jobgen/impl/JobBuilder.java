@@ -242,7 +242,7 @@ public class JobBuilder implements IHyracksJobBuilder {
 
     private AlgebricksMetaOperatorDescriptor buildMetaAsterixOpDesc(
             List<Pair<IPushRuntimeFactory, RecordDescriptor>> opContents) {
-        //        RecordDescriptor outputRecordDesc = null;
+        // RecordDescriptor outputRecordDesc = null;
         int n = opContents.size();
         IPushRuntimeFactory[] runtimeFactories = new IPushRuntimeFactory[n];
         RecordDescriptor[] internalRecordDescriptors = new RecordDescriptor[n];
@@ -250,9 +250,9 @@ public class JobBuilder implements IHyracksJobBuilder {
         for (Pair<IPushRuntimeFactory, RecordDescriptor> p : opContents) {
             runtimeFactories[i] = p.first;
             internalRecordDescriptors[i] = p.second;
-            //            if (i == n - 1) {
-            //                outputRecordDesc = p.second;
-            //            }
+            // if (i == n - 1) {
+            // outputRecordDesc = p.second;
+            // }
             i++;
         }
         ILogicalOperator lastLogicalOp = revMicroOpMap.get(runtimeFactories[n - 1]);
@@ -262,7 +262,8 @@ public class JobBuilder implements IHyracksJobBuilder {
         ArrayList<ILogicalOperator> inOps = inEdges.get(firstLogicalOp);
         int inArity = (inOps == null) ? 0 : inOps.size();
         // boolean isLeafOp = inEdges.get(firstLogicalOp) == null;
-        return new AlgebricksMetaOperatorDescriptor(jobSpec, inArity, outArity, runtimeFactories, internalRecordDescriptors);
+        return new AlgebricksMetaOperatorDescriptor(jobSpec, inArity, outArity, runtimeFactories,
+                internalRecordDescriptors);
     }
 
     private void addMicroOpToMetaRuntimeOp(ILogicalOperator aop) {

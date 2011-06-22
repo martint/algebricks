@@ -113,17 +113,19 @@ public class JoinUtils {
         // 1024 * 512));
     }
 
-    private static void hybridToInMemHashJoin(AbstractBinaryJoin op, IOptimizationContext context) throws AlgebricksException {
+    private static void hybridToInMemHashJoin(AbstractBinaryJoin op, IOptimizationContext context)
+            throws AlgebricksException {
         ILogicalOperator opBuild = op.getInputs().get(1).getOperator();
         LogicalPropertiesVisitor.computeLogicalPropertiesDFS(opBuild, context);
         ILogicalPropertiesVector v = context.getLogicalPropertiesVector(opBuild);
-        AlgebricksConfig.ALGEBRICKS_LOGGER.fine("// HybridHashJoin inner branch -- Logical properties for " + opBuild + ": " + v
-                + "\n");
+        AlgebricksConfig.ALGEBRICKS_LOGGER.fine("// HybridHashJoin inner branch -- Logical properties for " + opBuild
+                + ": " + v + "\n");
         if (v != null) {
             int size2 = v.getMaxOutputFrames();
             HybridHashJoinPOperator hhj = (HybridHashJoinPOperator) op.getPhysicalOperator();
             if (size2 > 0 && size2 * hhj.getFudgeFactor() <= hhj.getMemSizeInFrames()) {
-                AlgebricksConfig.ALGEBRICKS_LOGGER.fine("// HybridHashJoin inner branch " + opBuild + " fits in memory\n");
+                AlgebricksConfig.ALGEBRICKS_LOGGER.fine("// HybridHashJoin inner branch " + opBuild
+                        + " fits in memory\n");
                 // maintains the local properties on the probe side
                 op.setPhysicalOperator(new InMemoryHashJoinPOperator(hhj.getKind(), hhj.getPartitioningType(), hhj
                         .getKeysLeftBranch(), hhj.getKeysRightBranch(), hhj.getMemSizeInFrames()));

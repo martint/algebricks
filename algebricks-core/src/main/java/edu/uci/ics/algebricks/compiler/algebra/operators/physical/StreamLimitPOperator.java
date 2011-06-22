@@ -77,8 +77,8 @@ public class StreamLimitPOperator extends AbstractPhysicalOperator {
         IEvaluatorFactory offsetFact = (offsetExpr == null) ? null : exprJobGen.createEvaluatorFactory(offsetExpr,
                 inputSchemas, context);
         RecordDescriptor recDesc = JobGenHelper.mkRecordDescriptor(propagatedSchema, context);
-        StreamLimitRuntimeFactory runtime = new StreamLimitRuntimeFactory(maxObjectsFact, offsetFact, null, context
-                .getBinaryIntegerInspector());
+        StreamLimitRuntimeFactory runtime = new StreamLimitRuntimeFactory(maxObjectsFact, offsetFact, null,
+                context.getBinaryIntegerInspector());
         builder.contributeMicroOperator(limit, runtime, recDesc);
         // and contribute one edge from its child
         ILogicalOperator src = limit.getInputs().get(0).getOperator();

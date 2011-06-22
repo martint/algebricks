@@ -16,8 +16,7 @@ package edu.uci.ics.algebricks.api.constraints;
 
 public abstract class AlgebricksPartitionConstraint {
     public enum PartitionConstraintType {
-        ABSOLUTE,
-        COUNT
+        ABSOLUTE, COUNT
     }
 
     public abstract PartitionConstraintType getPartitionConstraintType();

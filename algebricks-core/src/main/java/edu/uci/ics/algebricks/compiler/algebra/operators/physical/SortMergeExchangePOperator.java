@@ -72,7 +72,8 @@ public class SortMergeExchangePOperator extends AbstractExchangePOperator {
     }
 
     @Override
-    public void computeDeliveredProperties(ILogicalOperator op, IOptimizationContext context) throws AlgebricksException {
+    public void computeDeliveredProperties(ILogicalOperator op, IOptimizationContext context)
+            throws AlgebricksException {
         AbstractLogicalOperator inp1 = (AbstractLogicalOperator) op.getInputs().get(0).getOperator();
         IPhysicalPropertiesVector pv1 = inp1.getDeliveredPhysicalProperties();
         if (pv1 == null) {

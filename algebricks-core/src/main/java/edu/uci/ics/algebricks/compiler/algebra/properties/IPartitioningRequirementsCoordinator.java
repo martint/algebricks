@@ -76,8 +76,8 @@ public interface IPartitioningRequirementsCoordinator {
                                     + " to agree with partitioning property " + firstDeliveredPartitioning
                                     + " delivered by previous input operator.");
                         }
-                        UnorderedPartitionedProperty upp2 = new UnorderedPartitionedProperty(modifuppreq, rqdpp
-                                .getNodeDomain());
+                        UnorderedPartitionedProperty upp2 = new UnorderedPartitionedProperty(modifuppreq,
+                                rqdpp.getNodeDomain());
                         return new Pair<Boolean, IPartitioningProperty>(false, upp2);
                     }
                     case ORDERED_PARTITIONED: {

@@ -51,7 +51,8 @@ public class UnnestMapOperator extends AbstractUnnestOperator {
         return new VariablePropagationPolicy() {
 
             @Override
-            public void propagateVariables(IOperatorSchema target, IOperatorSchema... sources) throws AlgebricksException {
+            public void propagateVariables(IOperatorSchema target, IOperatorSchema... sources)
+                    throws AlgebricksException {
                 for (LogicalVariable v : variables) {
                     target.addVariable(v);
                 }

@@ -31,16 +31,19 @@ public interface IMetadataProvider<S, I> {
     public IDataSource<S> findDataSource(S id) throws AlgebricksException;
 
     /**
-     * Obs: A scanner may choose to contribute a null AlgebricksPartitionConstraint
-     * and implement contributeSchedulingConstraints instead.
+     * Obs: A scanner may choose to contribute a null
+     * AlgebricksPartitionConstraint and implement
+     * contributeSchedulingConstraints instead.
      */
     public Pair<IOperatorDescriptor, AlgebricksPartitionConstraint> getScannerRuntime(IDataSource<S> dataSource,
-            List<LogicalVariable> scanVariables, JobGenContext context, JobSpecification jobSpec) throws AlgebricksException;
+            List<LogicalVariable> scanVariables, JobGenContext context, JobSpecification jobSpec)
+            throws AlgebricksException;
 
     public boolean scannerOperatorIsLeaf(IDataSource<S> dataSource);
 
-    public Pair<IPushRuntimeFactory, AlgebricksPartitionConstraint> getWriterRuntime(IDataSink sink, int[] printColumns,
-            IPrinterFactory[] printerFactories, RecordDescriptor inputDesc) throws AlgebricksException;
+    public Pair<IPushRuntimeFactory, AlgebricksPartitionConstraint> getWriterRuntime(IDataSink sink,
+            int[] printColumns, IPrinterFactory[] printerFactories, RecordDescriptor inputDesc)
+            throws AlgebricksException;
 
     public IDataSourceIndex<I, S> findDataSourceIndex(I indexId, S dataSourceId) throws AlgebricksException;
 }

@@ -78,8 +78,9 @@ public abstract class AbstractPhysicalOperator implements IPhysicalOperator {
         builder.contributeHyracksOperator(op, opDesc);
     }
 
-    protected AlgebricksPipeline[] compileSubplans(IOperatorSchema outerPlanSchema, AbstractOperatorWithNestedPlans npOp,
-            IOperatorSchema opSchema, JobGenContext context) throws AlgebricksException {
+    protected AlgebricksPipeline[] compileSubplans(IOperatorSchema outerPlanSchema,
+            AbstractOperatorWithNestedPlans npOp, IOperatorSchema opSchema, JobGenContext context)
+            throws AlgebricksException {
         AlgebricksPipeline[] subplans = new AlgebricksPipeline[npOp.getNestedPlans().size()];
         PlanCompiler pc = new PlanCompiler(context);
         int i = 0;
@@ -111,8 +112,9 @@ public abstract class AbstractPhysicalOperator implements IPhysicalOperator {
         for (OperatorDescriptorId oid : opMap.keySet()) {
             IOperatorDescriptor opd = opMap.get(oid);
             if (!(opd instanceof AlgebricksMetaOperatorDescriptor)) {
-                throw new AlgebricksException("Can only generate Hyracks jobs for pipelinable Asterix nested plans, not for "
-                        + opd.getClass().getName());
+                throw new AlgebricksException(
+                        "Can only generate Hyracks jobs for pipelinable Asterix nested plans, not for "
+                                + opd.getClass().getName());
             }
             AlgebricksMetaOperatorDescriptor amod = (AlgebricksMetaOperatorDescriptor) opd;
 

@@ -15,7 +15,5 @@
 package edu.uci.ics.algebricks.compiler.algebra.base;
 
 public enum LogicalExpressionTag {
-    FUNCTION_CALL,
-    VARIABLE,
-    CONSTANT
+    FUNCTION_CALL, VARIABLE, CONSTANT
 }

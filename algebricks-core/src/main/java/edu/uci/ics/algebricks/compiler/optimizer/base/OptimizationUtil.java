@@ -45,7 +45,8 @@ public class OptimizationUtil {
     }
 
     // Obs: doesn't return expected result for op. with nested plans.
-    private static void getFreeVariablesInOp(ILogicalOperator op, Set<LogicalVariable> freeVars) throws AlgebricksException {
+    private static void getFreeVariablesInOp(ILogicalOperator op, Set<LogicalVariable> freeVars)
+            throws AlgebricksException {
         VariableUtilities.getUsedVariables(op, freeVars);
         HashSet<LogicalVariable> produced = new HashSet<LogicalVariable>();
         VariableUtilities.getProducedVariables(op, produced);

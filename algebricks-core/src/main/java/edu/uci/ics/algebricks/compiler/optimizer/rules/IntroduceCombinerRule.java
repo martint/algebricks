@@ -1,17 +1,3 @@
-/*
- * Copyright 2009-2010 by The Regents of the University of California
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * you may obtain a copy of the License from
- * 
- *     http://www.apache.org/licenses/LICENSE-2.0
- * 
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
 package edu.uci.ics.algebricks.compiler.optimizer.rules;
 
 import java.util.ArrayList;
@@ -104,6 +90,11 @@ public class IntroduceCombinerRule implements IAlgebraicRewriteRule {
         Object v = gbyOp.getAnnotations().get(OperatorAnnotations.USE_HASH_GROUP_BY);
         newGbyOp.getAnnotations().put(OperatorAnnotations.USE_HASH_GROUP_BY, v);
 
+        Object v2 = gbyOp.getAnnotations().get(OperatorAnnotations.USE_EXTERNAL_GROUP_BY);
+        newGbyOp.getAnnotations().put(OperatorAnnotations.USE_EXTERNAL_GROUP_BY, v2);
+        gbyOp.getAnnotations().put(OperatorAnnotations.LOCAL_GBY, false);
+        newGbyOp.getAnnotations().put(OperatorAnnotations.LOCAL_GBY, true);
+
         List<LogicalVariable> propagatedVars = new LinkedList<LogicalVariable>();
         VariableUtilities.getProducedVariables(newGbyOp, propagatedVars);
 
@@ -191,6 +182,7 @@ public class IntroduceCombinerRule implements IAlgebraicRewriteRule {
             return null;
         } else {
             AggregateOperator pushedAgg = new AggregateOperator(pushedVars, pushedExprs);
+            pushedAgg.setMergeExpressions(initAgg.getMergeExpressions());
             pushedAgg.setExecutionMode(ExecutionMode.LOCAL);
             NestedTupleSourceOperator nts = new NestedTupleSourceOperator(newGbyOp.getInputs().get(0));
             nts.setExecutionMode(ExecutionMode.LOCAL);
