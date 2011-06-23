@@ -55,6 +55,8 @@ import edu.uci.ics.hyracks.dataflow.std.util.ReferencedPriorityQueue;
  */
 public class ExternalGroupOperatorDescriptor extends AbstractOperatorDescriptor {
 
+    private static final long serialVersionUID = 1L;
+
     private static final String AGGREGATOR = "aggregator";
     /**
      * The input frame identifier (in the job environment)
@@ -72,7 +74,7 @@ public class ExternalGroupOperatorDescriptor extends AbstractOperatorDescriptor 
     private final int[] keyFields;
 
     /**
-     * The comparator for checking the grouping conditions, corresponding to the
+     * The comparator for checking the grouping keys, corresponding to the
      * {@link #keyFields}.
      */
     private final IBinaryComparatorFactory[] comparatorFactories;
@@ -93,7 +95,7 @@ public class ExternalGroupOperatorDescriptor extends AbstractOperatorDescriptor 
         if (framesLimit <= 1) {
             // Minimum of 2 frames: 1 for input records, and 1 for output
             // aggregation results.
-            throw new IllegalStateException();
+            throw new IllegalStateException("frame limit should at least be 2, but it is " + framesLimit + "!");
         }
 
         this.aggregatorFactory = aggregatorFactory;
@@ -107,8 +109,6 @@ public class ExternalGroupOperatorDescriptor extends AbstractOperatorDescriptor 
         // only the first record descriptor is used here.
         recordDescriptors[0] = recordDescriptor;
     }
-
-    private static final long serialVersionUID = 1L;
 
     /*
      * (non-Javadoc)
@@ -209,7 +209,7 @@ public class ExternalGroupOperatorDescriptor extends AbstractOperatorDescriptor 
                     FileReference runFile;
                     try {
                         runFile = ctx.getJobletContext().createWorkspaceFile(
-                                ExternalHashGroupOperatorDescriptor.class.getSimpleName());
+                                ExternalGroupOperatorDescriptor.class.getSimpleName());
                     } catch (IOException e) {
                         throw new HyracksDataException(e);
                     }
@@ -267,7 +267,7 @@ public class ExternalGroupOperatorDescriptor extends AbstractOperatorDescriptor 
                 /**
                  * Output frame.
                  */
-                private ByteBuffer outFrame, writerFrame;
+                private ByteBuffer outFrame;
 
                 /**
                  * List of the run files to be merged
@@ -281,9 +281,6 @@ public class ExternalGroupOperatorDescriptor extends AbstractOperatorDescriptor 
 
                 private final FrameTupleAccessor outFrameAccessor = new FrameTupleAccessor(ctx.getFrameSize(),
                         recordDescriptors[0]);
-
-                private ArrayTupleBuilder finalTupleBuilder;
-                private FrameTupleAppender writerFrameAppender;
 
                 @SuppressWarnings("unchecked")
                 public void initialize() throws HyracksDataException {
@@ -303,9 +300,7 @@ public class ExternalGroupOperatorDescriptor extends AbstractOperatorDescriptor 
                             outFrame = ctx.allocateFrame();
                             outFrameAppender.reset(outFrame, true);
                             outFrameAccessor.reset(outFrame);
-                            for (int i = 0; i < framesLimit - 1; ++i) {
-                                inFrames.add(ctx.allocateFrame());
-                            }
+
                             while (runs.size() > 0) {
                                 try {
                                     doPass(runs);
@@ -329,11 +324,13 @@ public class ExternalGroupOperatorDescriptor extends AbstractOperatorDescriptor 
                         // All in-frames can be fit into memory, so no run file
                         // will be produced and this will be the final pass.
                         finalPass = true;
-                        // Remove the unnecessary frames.
-                        while (inFrames.size() > runs.size()) {
-                            inFrames.remove(inFrames.size() - 1);
-                        }
+                        // add unnecessary frames.
+                        while (inFrames.size() < runs.size())
+                            inFrames.add(ctx.allocateFrame());
                     } else {
+                        // use all frames
+                        while (inFrames.size() + 2 < framesLimit)
+                            inFrames.add(ctx.allocateFrame());
                         // Files need to be merged.
                         newRun = ctx.getJobletContext().createWorkspaceFile(
                                 ExternalGroupOperatorDescriptor.class.getSimpleName());
