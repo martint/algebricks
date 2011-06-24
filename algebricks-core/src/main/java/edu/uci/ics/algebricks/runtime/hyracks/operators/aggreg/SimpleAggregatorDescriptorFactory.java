@@ -17,15 +17,12 @@ import edu.uci.ics.hyracks.dataflow.common.data.marshalling.IntegerSerializerDes
 import edu.uci.ics.hyracks.dataflow.std.aggregators.IAggregatorDescriptor;
 import edu.uci.ics.hyracks.dataflow.std.aggregators.IAggregatorDescriptorFactory;
 
-public class SimpleAlgebricksAggregatorDescriptorFactory implements IAggregatorDescriptorFactory {
+public class SimpleAggregatorDescriptorFactory implements IAggregatorDescriptorFactory {
     private static final long serialVersionUID = 1L;
     private IAggregateFunctionFactory[] aggFactories;
-    private IAggregateFunctionFactory[] mergeFactories;
 
-    public SimpleAlgebricksAggregatorDescriptorFactory(IAggregateFunctionFactory[] aggFactories,
-            IAggregateFunctionFactory[] mergeFactories) {
+    public SimpleAggregatorDescriptorFactory(IAggregateFunctionFactory[] aggFactories) {
         this.aggFactories = aggFactories;
-        this.mergeFactories = mergeFactories;
     }
 
     @Override
@@ -41,10 +38,8 @@ public class SimpleAlgebricksAggregatorDescriptorFactory implements IAggregatorD
             private FrameTupleReference ftr = new FrameTupleReference();
             private List<IAggregateFunction[]> aggFuncList = new ArrayList<IAggregateFunction[]>();
             private List<ArrayBackedValueStorage[]> aggBufList = new ArrayList<ArrayBackedValueStorage[]>();
-            private int offsetFieldIndex = keys.length;;
-            private IAggregateFunction[] mergeFuncs = new IAggregateFunction[mergeFactories.length];;
-            private ArrayBackedValueStorage[] mergeBuffer = new ArrayBackedValueStorage[mergeFactories.length];
-
+            private int offsetFieldIndex = keys.length;
+            
             @Override
             public void init(IFrameTupleAccessor accessor, int tIndex, ArrayTupleBuilder tb)
                     throws HyracksDataException {
@@ -72,23 +67,6 @@ public class SimpleAlgebricksAggregatorDescriptorFactory implements IAggregatorD
             }
 
             @Override
-            public void mergeInit(IFrameTupleAccessor accessor, int tIndex) throws HyracksDataException {
-                ftr.reset(accessor, tIndex);
-                for (int i = 0; i < mergeFuncs.length; i++) {
-                    try {
-                        if (mergeBuffer[i] == null)
-                            mergeBuffer[i] = new ArrayBackedValueStorage();
-                        mergeBuffer[i].reset();
-                        mergeFuncs[i] = mergeFactories[i].createAggregateFunction(mergeBuffer[i]);
-                        mergeFuncs[i].init();
-                        mergeFuncs[i].step(ftr);
-                    } catch (AlgebricksException e) {
-                        throw new HyracksDataException(e);
-                    }
-                }
-            }
-
-            @Override
             public int aggregate(IFrameTupleAccessor accessor, int tIndex, byte[] data, int offset, int length)
                     throws HyracksDataException {
                 if (length != 4)
@@ -107,20 +85,7 @@ public class SimpleAlgebricksAggregatorDescriptorFactory implements IAggregatorD
             }
 
             @Override
-            public int merge(IFrameTupleAccessor accessor, int tIndex) throws HyracksDataException {
-                ftr.reset(accessor, tIndex);
-                for (int i = 0; i < mergeFuncs.length; i++) {
-                    try {
-                        mergeFuncs[i].step(ftr);
-                    } catch (AlgebricksException e) {
-                        throw new HyracksDataException(e);
-                    }
-                }
-                return OFFSET_INT_LENGTH;
-            }
-
-            @Override
-            public void outputPartialAggregateResult(IFrameTupleAccessor accessor, int tIndex, ArrayTupleBuilder tb)
+            public void outputPartialResult(IFrameTupleAccessor accessor, int tIndex, ArrayTupleBuilder tb)
                     throws HyracksDataException {
                 byte[] data = accessor.getBuffer().array();
                 int startOffset = accessor.getTupleStartOffset(tIndex);
@@ -147,20 +112,7 @@ public class SimpleAlgebricksAggregatorDescriptorFactory implements IAggregatorD
             }
 
             @Override
-            public void outputPartialMergeResult(ArrayTupleBuilder tb) throws HyracksDataException {
-                try {
-                    for (int i = 0; i < mergeFuncs.length; i++) {
-                        mergeFuncs[i].finishPartial();
-                        tb.addField(mergeBuffer[i].getBytes(), mergeBuffer[i].getStartIndex(),
-                                mergeBuffer[i].getLength());
-                    }
-                } catch (AlgebricksException e) {
-                    throw new HyracksDataException(e);
-                }
-            }
-
-            @Override
-            public void outputAggregateResult(IFrameTupleAccessor accessor, int tIndex, ArrayTupleBuilder tb)
+            public void outputResult(IFrameTupleAccessor accessor, int tIndex, ArrayTupleBuilder tb)
                     throws HyracksDataException {
                 byte[] data = accessor.getBuffer().array();
                 int startOffset = accessor.getTupleStartOffset(tIndex);
@@ -187,19 +139,6 @@ public class SimpleAlgebricksAggregatorDescriptorFactory implements IAggregatorD
                     throw new HyracksDataException(e);
                 }
 
-            }
-
-            @Override
-            public void outputMergeResult(ArrayTupleBuilder tb) throws HyracksDataException {
-                try {
-                    for (int i = 0; i < mergeFuncs.length; i++) {
-                        mergeFuncs[i].finish();
-                        tb.addField(mergeBuffer[i].getBytes(), mergeBuffer[i].getStartIndex(),
-                                mergeBuffer[i].getLength());
-                    }
-                } catch (AlgebricksException e) {
-                    throw new HyracksDataException(e);
-                }
             }
 
             @Override

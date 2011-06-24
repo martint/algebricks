@@ -34,19 +34,6 @@ public interface IAggregatorDescriptor {
             throws HyracksDataException;
 
     /**
-     * Initialize the aggregator with an input tuple specified by the input
-     * frame and tuple index. This function will read first-order partial
-     * result, and write the second order initial partial result into the tuple
-     * builder.
-     * 
-     * @param accessor
-     * @param tIndex
-     * @param tupleBuilder
-     * @throws HyracksDataException
-     */
-    public void mergeInit(IFrameTupleAccessor accessor, int tIndex) throws HyracksDataException;
-
-    /**
      * Aggregate the input tuple with the partial result specified by the bytes.
      * The new value then is written back to the bytes field specified.
      * 
@@ -65,20 +52,6 @@ public interface IAggregatorDescriptor {
             throws HyracksDataException;
 
     /**
-     * Merge two partial aggregation results. The merged value then is written
-     * back to the bytes fields specified.
-     * 
-     * @param accessor
-     * @param tIndex
-     * @param data
-     * @param offset
-     * @param length
-     * @return
-     * @throws HyracksDataException
-     */
-    public int merge(IFrameTupleAccessor accessor, int tIndex) throws HyracksDataException;
-
-    /**
      * Output the partial aggregation result to an array tuple builder.
      * Necessary additional information for aggregation should be maintained.
      * 
@@ -91,7 +64,7 @@ public interface IAggregatorDescriptor {
      * @param tupleBuilder
      * @throws HyracksDataException
      */
-    public void outputPartialAggregateResult(IFrameTupleAccessor accessor, int tIndex, ArrayTupleBuilder tupleBuilder)
+    public void outputPartialResult(IFrameTupleAccessor accessor, int tIndex, ArrayTupleBuilder tupleBuilder)
             throws HyracksDataException;
 
     /**
@@ -103,34 +76,8 @@ public interface IAggregatorDescriptor {
      * @return
      * @throws HyracksDataException
      */
-    public void outputAggregateResult(IFrameTupleAccessor accessor, int tIndex, ArrayTupleBuilder tupleBuilder)
+    public void outputResult(IFrameTupleAccessor accessor, int tIndex, ArrayTupleBuilder tupleBuilder)
             throws HyracksDataException;
-
-    /**
-     * Output the partial aggregation result to an array tuple builder.
-     * Necessary additional information for aggregation should be maintained.
-     * 
-     * For example, for an aggregator calculating AVG, the count and also the
-     * current average should be maintained as the partial results.
-     * 
-     * 
-     * @param accessor
-     * @param tIndex
-     * @param tupleBuilder
-     * @throws HyracksDataException
-     */
-    public void outputPartialMergeResult(ArrayTupleBuilder tupleBuilder) throws HyracksDataException;
-
-    /**
-     * Output the final aggregation result to an array tuple builder.
-     * 
-     * @param accessor
-     * @param tIndex
-     * @param tupleBuilder
-     * @return
-     * @throws HyracksDataException
-     */
-    public void outputMergeResult(ArrayTupleBuilder tupleBuilder) throws HyracksDataException;
 
     /**
      * reset the internal states

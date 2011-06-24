@@ -24,7 +24,8 @@ import edu.uci.ics.algebricks.runtime.hyracks.base.IAggregateFunctionFactory;
 import edu.uci.ics.algebricks.runtime.hyracks.jobgen.base.IHyracksJobBuilder;
 import edu.uci.ics.algebricks.runtime.hyracks.jobgen.impl.JobGenContext;
 import edu.uci.ics.algebricks.runtime.hyracks.jobgen.impl.JobGenHelper;
-import edu.uci.ics.algebricks.runtime.hyracks.operators.aggreg.SimpleAlgebricksAggregatorDescriptorFactory;
+import edu.uci.ics.algebricks.runtime.hyracks.operators.aggreg.SimpleAggregatorDescriptorFactory;
+import edu.uci.ics.algebricks.runtime.hyracks.operators.aggreg.SimpleMergeDescriptorFactory;
 import edu.uci.ics.algebricks.utils.Pair;
 import edu.uci.ics.hyracks.api.dataflow.value.IBinaryComparatorFactory;
 import edu.uci.ics.hyracks.api.dataflow.value.IBinaryHashFunctionFactory;
@@ -140,12 +141,13 @@ public class ExternalGroupByPOperator extends HashGroupByPOperator {
                 merges[i] = exprJobGen.createAggregateFunctionFactory(aggFun, inputSchemas, context);
             }
         }
-        IAggregatorDescriptorFactory aggregatorFactory = new SimpleAlgebricksAggregatorDescriptorFactory(aff, merges);
+        IAggregatorDescriptorFactory aggregatorFactory = new SimpleAggregatorDescriptorFactory(aff);
+        IAggregatorDescriptorFactory mergeFactory = new SimpleMergeDescriptorFactory(merges);
 
         ITuplePartitionComputerFactory tpcf = new FieldHashPartitionComputerFactory(keys, hashFunctionFactories);
         ExternalGroupOperatorDescriptor gbyOpDesc = new ExternalGroupOperatorDescriptor(spec, keyAndDecFields,
                 PhysicalOptimizationsUtil.MAX_FRAMES_EXTERNAL_GROUP_BY, comparatorFactories, aggregatorFactory,
-                recordDescriptor, new HashSpillableGroupingTableFactory(tpcf, tableSize), false);
+                mergeFactory, recordDescriptor, new HashSpillableGroupingTableFactory(tpcf, tableSize), false);
 
         contributeOpDesc(builder, gby, gbyOpDesc);
         ILogicalOperator src = op.getInputs().get(0).getOperator();

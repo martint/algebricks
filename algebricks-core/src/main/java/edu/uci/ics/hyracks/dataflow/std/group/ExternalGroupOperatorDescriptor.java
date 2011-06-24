@@ -56,8 +56,6 @@ import edu.uci.ics.hyracks.dataflow.std.util.ReferencedPriorityQueue;
 public class ExternalGroupOperatorDescriptor extends AbstractOperatorDescriptor {
 
     private static final long serialVersionUID = 1L;
-
-    private static final String AGGREGATOR = "aggregator";
     /**
      * The input frame identifier (in the job environment)
      */
@@ -81,6 +79,8 @@ public class ExternalGroupOperatorDescriptor extends AbstractOperatorDescriptor 
 
     private IAggregatorDescriptorFactory aggregatorFactory;
 
+    private IAggregatorDescriptorFactory mergeFactory;
+
     private final int framesLimit;
 
     private final ISpillableTableFactory spillableTableFactory;
@@ -89,7 +89,8 @@ public class ExternalGroupOperatorDescriptor extends AbstractOperatorDescriptor 
 
     public ExternalGroupOperatorDescriptor(JobSpecification spec, int[] keyFields, int framesLimit,
             IBinaryComparatorFactory[] comparatorFactories, IAggregatorDescriptorFactory aggregatorFactory,
-            RecordDescriptor recordDescriptor, ISpillableTableFactory spillableTableFactory, boolean isOutputSorted) {
+            IAggregatorDescriptorFactory mergeFactory, RecordDescriptor recordDescriptor,
+            ISpillableTableFactory spillableTableFactory, boolean isOutputSorted) {
         super(spec, 1, 1);
         this.framesLimit = framesLimit;
         if (framesLimit <= 1) {
@@ -99,6 +100,7 @@ public class ExternalGroupOperatorDescriptor extends AbstractOperatorDescriptor 
         }
 
         this.aggregatorFactory = aggregatorFactory;
+        this.mergeFactory = mergeFactory;
         this.keyFields = keyFields;
         this.comparatorFactories = comparatorFactories;
         this.spillableTableFactory = spillableTableFactory;
@@ -144,13 +146,9 @@ public class ExternalGroupOperatorDescriptor extends AbstractOperatorDescriptor 
         public IOperatorNodePushable createPushRuntime(final IHyracksStageletContext ctx,
                 final IOperatorEnvironment env, IRecordDescriptorProvider recordDescProvider, int partition,
                 int nPartitions) throws HyracksDataException {
-            // the aggregator
-            final IAggregatorDescriptor currentWorkingAggregator = aggregatorFactory.createAggregator(ctx,
-                    recordDescriptors[0], recordDescriptors[0], keyFields);
-
             // Create the spillable table
             final ISpillableTable gTable = spillableTableFactory.buildSpillableTable(ctx, keyFields,
-                    comparatorFactories, currentWorkingAggregator,
+                    comparatorFactories, aggregatorFactory,
                     recordDescProvider.getInputRecordDescriptor(getOperatorId(), 0), recordDescriptors[0], nPartitions);
             // Create the tuple accessor
             final FrameTupleAccessor accessor = new FrameTupleAccessor(ctx.getFrameSize(),
@@ -202,7 +200,6 @@ public class ExternalGroupOperatorDescriptor extends AbstractOperatorDescriptor 
                         }
                     }
                     env.set(RUNS, runs);
-                    env.set(AGGREGATOR, currentWorkingAggregator);
                 }
 
                 private void flushFramesToRun() throws HyracksDataException {
@@ -253,16 +250,31 @@ public class ExternalGroupOperatorDescriptor extends AbstractOperatorDescriptor 
             for (int i = 0; i < keyFields.length; ++i) {
                 storedKeys[i] = i;
             }
-            // Tuple builder
-            final ArrayTupleBuilder tupleBuilder = new ArrayTupleBuilder(recordDescriptors[0].getFields().length);
 
-            final IAggregatorDescriptor currentWorkingAggregator = (IAggregatorDescriptor) env.get(AGGREGATOR);
+            final IAggregatorDescriptor currentWorkingAggregator = mergeFactory.createAggregator(ctx,
+                    recordDescriptors[0], recordDescriptors[0], storedKeys);
 
             IOperatorNodePushable op = new AbstractUnaryOutputSourceOperatorNodePushable() {
                 /**
                  * Input frames, one for each run file.
                  */
                 private List<ByteBuffer> inFrames;
+
+                /**
+                 * the frame for merge
+                 */
+                private ByteBuffer mergeFrame;
+
+                /**
+                 * Tuple appender for the output frame {@link #outFrame}.
+                 */
+                private final FrameTupleAppender mergeFrameAppender = new FrameTupleAppender(ctx.getFrameSize());
+
+                /**
+                 * frame tuple acccessor for output frame
+                 */
+                private final FrameTupleAccessor mergeFrameAccessor = new FrameTupleAccessor(ctx.getFrameSize(),
+                        recordDescriptors[0]);
 
                 /**
                  * Output frame.
@@ -279,8 +291,14 @@ public class ExternalGroupOperatorDescriptor extends AbstractOperatorDescriptor 
                  */
                 private final FrameTupleAppender outFrameAppender = new FrameTupleAppender(ctx.getFrameSize());
 
+                /**
+                 * frame tuple acccessor for output frame
+                 */
                 private final FrameTupleAccessor outFrameAccessor = new FrameTupleAccessor(ctx.getFrameSize(),
                         recordDescriptors[0]);
+
+                // Tuple builder
+                private ArrayTupleBuilder tupleBuilder = new ArrayTupleBuilder(recordDescriptors[0].getFields().length);
 
                 @SuppressWarnings("unchecked")
                 public void initialize() throws HyracksDataException {
@@ -300,6 +318,10 @@ public class ExternalGroupOperatorDescriptor extends AbstractOperatorDescriptor 
                             outFrame = ctx.allocateFrame();
                             outFrameAppender.reset(outFrame, true);
                             outFrameAccessor.reset(outFrame);
+
+                            mergeFrame = ctx.allocateFrame();
+                            mergeFrameAppender.reset(mergeFrame, true);
+                            mergeFrameAccessor.reset(mergeFrame);
 
                             while (runs.size() > 0) {
                                 try {
@@ -386,18 +408,27 @@ public class ExternalGroupOperatorDescriptor extends AbstractOperatorDescriptor 
                             int runIndex = topTuples.peek().getRunid();
                             fta = top.getAccessor();
                             if (latestFta == null) {
-                                currentWorkingAggregator.mergeInit(fta, tupleIndex);
+                                tupleBuilder.reset();
+                                for (int i = 0; i < keyFields.length; i++) {
+                                    tupleBuilder.addField(fta, tupleIndex, i);
+                                }
+                                currentWorkingAggregator.init(fta, tupleIndex, tupleBuilder);
                             } else if (compareFrameTuples(fta, tupleIndex, latestFta, latestTupleIndex) > 0) {
                                 // output a merged or partially merged group
                                 if (latestFta != null && latestTupleIndex >= 0) {
+                                    mergeFrameAppender.reset(mergeFrame, true);
+                                    mergeFrameAppender.append(tupleBuilder.getFieldEndOffsets(),
+                                            tupleBuilder.getByteArray(), 0, tupleBuilder.getSize());
+                                    mergeFrameAccessor.reset(mergeFrame);
                                     tupleBuilder.reset();
                                     for (int i = 0; i < keyFields.length; i++) {
                                         tupleBuilder.addField(latestFta, latestTupleIndex, i);
                                     }
                                     if (finalPass) {
-                                        currentWorkingAggregator.outputMergeResult(tupleBuilder);
+                                        currentWorkingAggregator.outputResult(mergeFrameAccessor, 0, tupleBuilder);
                                     } else {
-                                        currentWorkingAggregator.outputPartialMergeResult(tupleBuilder);
+                                        currentWorkingAggregator.outputPartialResult(mergeFrameAccessor, 0,
+                                                tupleBuilder);
                                     }
                                     if (!outFrameAppender.append(tupleBuilder.getFieldEndOffsets(),
                                             tupleBuilder.getByteArray(), 0, tupleBuilder.getSize())) {
@@ -408,11 +439,16 @@ public class ExternalGroupOperatorDescriptor extends AbstractOperatorDescriptor 
                                                     "Failed to append an aggregation result to the output frame.");
                                     }
                                 }
-                                currentWorkingAggregator.mergeInit(fta, tupleIndex);
+                                currentWorkingAggregator.init(fta, tupleIndex, tupleBuilder);
                             } else if (compareFrameTuples(fta, tupleIndex, latestFta, latestTupleIndex) < 0) {
-                                throw new IllegalStateException("illegal tuple order!");
+                                throw new IllegalStateException("illegal tuple order in merge phase!");
                             } else {
-                                currentWorkingAggregator.merge(fta, tupleIndex);
+                                int fieldStartOffset = 0;
+                                if (keyFields.length > 0)
+                                    fieldStartOffset = tupleBuilder.getFieldEndOffsets()[keyFields.length - 1];
+                                int length = tupleBuilder.getFieldEndOffsets()[keyFields.length] - fieldStartOffset;
+                                currentWorkingAggregator.aggregate(fta, tupleIndex, tupleBuilder.getByteArray(),
+                                        fieldStartOffset, length);
                             }
                             latestTupleIndex = tupleIndex;
                             latestFta = fta;
@@ -426,9 +462,9 @@ public class ExternalGroupOperatorDescriptor extends AbstractOperatorDescriptor 
                             tupleBuilder.addField(fta, tupleIndex, i);
                         }
                         if (finalPass) {
-                            currentWorkingAggregator.outputMergeResult(tupleBuilder);
+                            currentWorkingAggregator.outputResult(null, 0, tupleBuilder);
                         } else {
-                            currentWorkingAggregator.outputPartialMergeResult(tupleBuilder);
+                            currentWorkingAggregator.outputPartialResult(null, 0, tupleBuilder);
                         }
                         if (!outFrameAppender.append(tupleBuilder.getFieldEndOffsets(), tupleBuilder.getByteArray(), 0,
                                 tupleBuilder.getSize())) {

@@ -20,7 +20,7 @@ import edu.uci.ics.hyracks.api.context.IHyracksStageletContext;
 import edu.uci.ics.hyracks.api.dataflow.value.IBinaryComparatorFactory;
 import edu.uci.ics.hyracks.api.dataflow.value.RecordDescriptor;
 import edu.uci.ics.hyracks.api.exceptions.HyracksDataException;
-import edu.uci.ics.hyracks.dataflow.std.aggregators.IAggregatorDescriptor;
+import edu.uci.ics.hyracks.dataflow.std.aggregators.IAggregatorDescriptorFactory;
 
 /**
  * @author jarodwen
@@ -28,7 +28,7 @@ import edu.uci.ics.hyracks.dataflow.std.aggregators.IAggregatorDescriptor;
  */
 public interface ISpillableTableFactory extends Serializable {
     ISpillableTable buildSpillableTable(IHyracksStageletContext ctx, int[] keyFields,
-            IBinaryComparatorFactory[] comparatorFactories, IAggregatorDescriptor aggregatorFactory,
+            IBinaryComparatorFactory[] comparatorFactories, IAggregatorDescriptorFactory aggregatorFactory,
             RecordDescriptor inRecordDescriptor, RecordDescriptor outRecordDescriptor, int framesLimit)
             throws HyracksDataException;
 
