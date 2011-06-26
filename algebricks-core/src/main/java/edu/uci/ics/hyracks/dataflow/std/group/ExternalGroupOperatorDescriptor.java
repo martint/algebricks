@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.logging.Logger;
 
 import edu.uci.ics.hyracks.api.comm.IFrameTupleAccessor;
 import edu.uci.ics.hyracks.api.comm.IFrameWriter;
@@ -80,6 +81,11 @@ public class ExternalGroupOperatorDescriptor extends AbstractOperatorDescriptor 
     private IAggregatorDescriptorFactory aggregatorFactory;
 
     private IAggregatorDescriptorFactory mergeFactory;
+
+    /**
+     * XXX For debugging only. Remove this when deploying.
+     */
+    private static Logger LOGGER = Logger.getLogger(ExternalGroupOperatorDescriptor.class.getName());
 
     private final int framesLimit;
 
@@ -245,14 +251,15 @@ public class ExternalGroupOperatorDescriptor extends AbstractOperatorDescriptor 
             for (int i = 0; i < comparatorFactories.length; ++i) {
                 comparators[i] = comparatorFactories[i].createBinaryComparator();
             }
+            final IAggregatorDescriptor currentWorkingAggregator = mergeFactory.createAggregator(ctx,
+                    recordDescriptors[0], recordDescriptors[0], keyFields);
             final int[] storedKeys = new int[keyFields.length];
             // Get the list of the fields in the stored records.
             for (int i = 0; i < keyFields.length; ++i) {
                 storedKeys[i] = i;
             }
-
-            final IAggregatorDescriptor currentWorkingAggregator = mergeFactory.createAggregator(ctx,
-                    recordDescriptors[0], recordDescriptors[0], storedKeys);
+            // Tuple builder
+            final ArrayTupleBuilder tupleBuilder = new ArrayTupleBuilder(recordDescriptors[0].getFields().length);
 
             IOperatorNodePushable op = new AbstractUnaryOutputSourceOperatorNodePushable() {
                 /**
@@ -261,25 +268,9 @@ public class ExternalGroupOperatorDescriptor extends AbstractOperatorDescriptor 
                 private List<ByteBuffer> inFrames;
 
                 /**
-                 * the frame for merge
-                 */
-                private ByteBuffer mergeFrame;
-
-                /**
-                 * Tuple appender for the output frame {@link #outFrame}.
-                 */
-                private final FrameTupleAppender mergeFrameAppender = new FrameTupleAppender(ctx.getFrameSize());
-
-                /**
-                 * frame tuple acccessor for output frame
-                 */
-                private final FrameTupleAccessor mergeFrameAccessor = new FrameTupleAccessor(ctx.getFrameSize(),
-                        recordDescriptors[0]);
-
-                /**
                  * Output frame.
                  */
-                private ByteBuffer outFrame;
+                private ByteBuffer outFrame, writerFrame;
 
                 /**
                  * List of the run files to be merged
@@ -291,14 +282,11 @@ public class ExternalGroupOperatorDescriptor extends AbstractOperatorDescriptor 
                  */
                 private final FrameTupleAppender outFrameAppender = new FrameTupleAppender(ctx.getFrameSize());
 
-                /**
-                 * frame tuple acccessor for output frame
-                 */
                 private final FrameTupleAccessor outFrameAccessor = new FrameTupleAccessor(ctx.getFrameSize(),
                         recordDescriptors[0]);
 
-                // Tuple builder
-                private ArrayTupleBuilder tupleBuilder = new ArrayTupleBuilder(recordDescriptors[0].getFields().length);
+                private ArrayTupleBuilder finalTupleBuilder;
+                private FrameTupleAppender writerFrameAppender;
 
                 @SuppressWarnings("unchecked")
                 public void initialize() throws HyracksDataException {
@@ -318,11 +306,9 @@ public class ExternalGroupOperatorDescriptor extends AbstractOperatorDescriptor 
                             outFrame = ctx.allocateFrame();
                             outFrameAppender.reset(outFrame, true);
                             outFrameAccessor.reset(outFrame);
-
-                            mergeFrame = ctx.allocateFrame();
-                            mergeFrameAppender.reset(mergeFrame, true);
-                            mergeFrameAccessor.reset(mergeFrame);
-
+                            for (int i = 0; i < framesLimit - 1; ++i) {
+                                inFrames.add(ctx.allocateFrame());
+                            }
                             while (runs.size() > 0) {
                                 try {
                                     doPass(runs);
@@ -346,13 +332,11 @@ public class ExternalGroupOperatorDescriptor extends AbstractOperatorDescriptor 
                         // All in-frames can be fit into memory, so no run file
                         // will be produced and this will be the final pass.
                         finalPass = true;
-                        // add unnecessary frames.
-                        while (inFrames.size() < runs.size())
-                            inFrames.add(ctx.allocateFrame());
+                        // Remove the unnecessary frames.
+                        while (inFrames.size() > runs.size()) {
+                            inFrames.remove(inFrames.size() - 1);
+                        }
                     } else {
-                        // use all frames
-                        while (inFrames.size() + 2 < framesLimit)
-                            inFrames.add(ctx.allocateFrame());
                         // Files need to be merged.
                         newRun = ctx.getJobletContext().createWorkspaceFile(
                                 ExternalGroupOperatorDescriptor.class.getSimpleName());
@@ -396,83 +380,45 @@ public class ExternalGroupOperatorDescriptor extends AbstractOperatorDescriptor 
                             }
                         }
 
-                        int latestTupleIndex = -1;
-                        int tupleIndex = -1;
-                        FrameTupleAccessor fta = null;
-                        FrameTupleAccessor latestFta = null;
                         // Start merging
                         while (!topTuples.areRunsExhausted()) {
                             // Get the top record
                             ReferenceEntry top = topTuples.peek();
-                            tupleIndex = top.getTupleIndex();
+                            int tupleIndex = top.getTupleIndex();
                             int runIndex = topTuples.peek().getRunid();
-                            fta = top.getAccessor();
-                            if (latestFta == null) {
+                            FrameTupleAccessor fta = top.getAccessor();
+                            int currentTupleInOutFrame = outFrameAccessor.getTupleCount() - 1;
+                            if (currentTupleInOutFrame < 0
+                                    || compareFrameTuples(fta, tupleIndex, outFrameAccessor, currentTupleInOutFrame) != 0) {
+                                // Initialize the first output record
+                                // Reset the tuple builder
+                                flushOutFrame(writer, finalPass);
+
                                 tupleBuilder.reset();
                                 for (int i = 0; i < keyFields.length; i++) {
                                     tupleBuilder.addField(fta, tupleIndex, i);
                                 }
+
                                 currentWorkingAggregator.init(fta, tupleIndex, tupleBuilder);
-                            } else if (compareFrameTuples(fta, tupleIndex, latestFta, latestTupleIndex) > 0) {
-                                // output a merged or partially merged group
-                                if (latestFta != null && latestTupleIndex >= 0) {
-                                    mergeFrameAppender.reset(mergeFrame, true);
-                                    mergeFrameAppender.append(tupleBuilder.getFieldEndOffsets(),
-                                            tupleBuilder.getByteArray(), 0, tupleBuilder.getSize());
-                                    mergeFrameAccessor.reset(mergeFrame);
-                                    tupleBuilder.reset();
-                                    for (int i = 0; i < keyFields.length; i++) {
-                                        tupleBuilder.addField(latestFta, latestTupleIndex, i);
-                                    }
-                                    if (finalPass) {
-                                        currentWorkingAggregator.outputResult(mergeFrameAccessor, 0, tupleBuilder);
-                                    } else {
-                                        currentWorkingAggregator.outputPartialResult(mergeFrameAccessor, 0,
-                                                tupleBuilder);
-                                    }
-                                    if (!outFrameAppender.append(tupleBuilder.getFieldEndOffsets(),
-                                            tupleBuilder.getByteArray(), 0, tupleBuilder.getSize())) {
-                                        flushOutFrame(writer, finalPass);
-                                        if (!outFrameAppender.append(tupleBuilder.getFieldEndOffsets(),
-                                                tupleBuilder.getByteArray(), 0, tupleBuilder.getSize()))
-                                            throw new HyracksDataException(
-                                                    "Failed to append an aggregation result to the output frame.");
-                                    }
-                                }
-                                currentWorkingAggregator.init(fta, tupleIndex, tupleBuilder);
-                            } else if (compareFrameTuples(fta, tupleIndex, latestFta, latestTupleIndex) < 0) {
-                                throw new IllegalStateException("illegal tuple order in merge phase!");
+                                outFrameAppender.reset(outFrame, true);
+                                outFrameAppender.append(tupleBuilder.getFieldEndOffsets(), tupleBuilder.getByteArray(),
+                                        0, tupleBuilder.getSize());
                             } else {
-                                int fieldStartOffset = 0;
-                                if (keyFields.length > 0)
-                                    fieldStartOffset = tupleBuilder.getFieldEndOffsets()[keyFields.length - 1];
-                                int length = tupleBuilder.getFieldEndOffsets()[keyFields.length] - fieldStartOffset;
-                                currentWorkingAggregator.aggregate(fta, tupleIndex, tupleBuilder.getByteArray(),
-                                        fieldStartOffset, length);
+                                // if new tuple is in the same group of the
+                                // current aggregator
+                                // do merge and output to the outFrame
+                                int tupleOffset = outFrameAccessor.getTupleStartOffset(currentTupleInOutFrame);
+                                int fieldCount = outFrameAccessor.getFieldCount();
+                                int fieldOffset = outFrameAccessor.getFieldStartOffset(currentTupleInOutFrame,
+                                        keyFields.length);
+                                int fieldLength = outFrameAccessor.getFieldLength(currentTupleInOutFrame,
+                                        keyFields.length);
+                                currentWorkingAggregator.aggregate(fta, tupleIndex, outFrameAccessor.getBuffer()
+                                        .array(), tupleOffset + 2 * fieldCount + fieldOffset, fieldLength);
+
                             }
-                            latestTupleIndex = tupleIndex;
-                            latestFta = fta;
                             tupleIndices[runIndex]++;
                             setNextTopTuple(runIndex, tupleIndices, runFileReaders, tupleAccessors, topTuples);
-                        }
-
-                        // output the last group
-                        tupleBuilder.reset();
-                        for (int i = 0; i < keyFields.length; i++) {
-                            tupleBuilder.addField(fta, tupleIndex, i);
-                        }
-                        if (finalPass) {
-                            currentWorkingAggregator.outputResult(null, 0, tupleBuilder);
-                        } else {
-                            currentWorkingAggregator.outputPartialResult(null, 0, tupleBuilder);
-                        }
-                        if (!outFrameAppender.append(tupleBuilder.getFieldEndOffsets(), tupleBuilder.getByteArray(), 0,
-                                tupleBuilder.getSize())) {
-                            flushOutFrame(writer, finalPass);
-                            if (!outFrameAppender.append(tupleBuilder.getFieldEndOffsets(),
-                                    tupleBuilder.getByteArray(), 0, tupleBuilder.getSize()))
-                                throw new HyracksDataException(
-                                        "Failed to append an aggregation result to the output frame.");
                         }
                         // Flush the outFrame
                         if (outFrameAppender.getTupleCount() > 0) {
@@ -486,6 +432,9 @@ public class ExternalGroupOperatorDescriptor extends AbstractOperatorDescriptor 
                         // file list
                         if (!finalPass) {
                             runs.add(0, ((RunFileWriter) writer).createReader());
+                            // XXX Remove this when deploying
+                            LOGGER.warning("==== [MRG]\t" + newRun.getFile().getAbsolutePath() + "\t"
+                                    + newRun.getFile().length());
                         }
                     } finally {
                         if (!finalPass) {
@@ -495,7 +444,42 @@ public class ExternalGroupOperatorDescriptor extends AbstractOperatorDescriptor 
                 }
 
                 private void flushOutFrame(IFrameWriter writer, boolean isFinal) throws HyracksDataException {
-                    FrameUtils.flushFrame(outFrame, writer);
+                    // if (isFinal) {
+                    if (finalTupleBuilder == null) {
+                        finalTupleBuilder = new ArrayTupleBuilder(recordDescriptors[0].getFields().length);
+                    }
+                    if (writerFrame == null) {
+                        writerFrame = ctx.allocateFrame();
+                    }
+                    if (writerFrameAppender == null) {
+                        writerFrameAppender = new FrameTupleAppender(ctx.getFrameSize());
+                        writerFrameAppender.reset(writerFrame, true);
+                    }
+                    outFrameAccessor.reset(outFrame);
+                    for (int i = 0; i < outFrameAccessor.getTupleCount(); i++) {
+                        finalTupleBuilder.reset();
+                        for (int j = 0; j < keyFields.length; j++) {
+                            finalTupleBuilder.addField(outFrameAccessor, i, j);
+                        }
+                        currentWorkingAggregator.outputResult(outFrameAccessor, i, finalTupleBuilder);
+
+                        if (!writerFrameAppender.append(finalTupleBuilder.getFieldEndOffsets(),
+                                finalTupleBuilder.getByteArray(), 0, finalTupleBuilder.getSize())) {
+                            FrameUtils.flushFrame(writerFrame, writer);
+                            writerFrameAppender.reset(writerFrame, true);
+                            if (!writerFrameAppender.append(finalTupleBuilder.getFieldEndOffsets(),
+                                    finalTupleBuilder.getByteArray(), 0, finalTupleBuilder.getSize()))
+                                throw new HyracksDataException(
+                                        "Failed to write final aggregation result to a writer frame!");
+                        }
+                    }
+                    if (writerFrameAppender.getTupleCount() > 0) {
+                        FrameUtils.flushFrame(writerFrame, writer);
+                        writerFrameAppender.reset(writerFrame, true);
+                    }
+                    // } else {
+                    // FrameUtils.flushFrame(outFrame, writer);
+                    // }
                     outFrameAppender.reset(outFrame, true);
                 }
 
@@ -571,7 +555,9 @@ public class ExternalGroupOperatorDescriptor extends AbstractOperatorDescriptor 
                         int l1 = fta1.getFieldLength(j1, fIdx);
                         int s2 = fta2.getTupleStartOffset(j2) + fta2.getFieldSlotsLength()
                                 + fta2.getFieldStartOffset(j2, fIdx);
-                        int l2 = fta2.getFieldLength(j2, fIdx);
+                        int l2_start = fta2.getFieldStartOffset(j2, fIdx);
+                        int l2_end = fta2.getFieldEndOffset(j2, fIdx);
+                        int l2 = l2_end - l2_start;
                         int c = comparators[f].compare(b1, s1, l1, b2, s2, l2);
                         if (c != 0) {
                             return c;
