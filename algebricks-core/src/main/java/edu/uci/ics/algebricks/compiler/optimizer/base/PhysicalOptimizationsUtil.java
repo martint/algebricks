@@ -20,7 +20,7 @@ public class PhysicalOptimizationsUtil {
     // private final static int GB = 1024 * MB;
     private final static int DEFAULT_FRAME_SIZE = 32768;
     public final static int MAX_FRAMES_EXTERNAL_SORT = (int) (((long) 512 * MB) / DEFAULT_FRAME_SIZE);
-    public final static int MAX_FRAMES_EXTERNAL_GROUP_BY = (int) (((long) 4 * MB) / DEFAULT_FRAME_SIZE);;
+    public final static int MAX_FRAMES_EXTERNAL_GROUP_BY = (int) (((long) 128 * MB) / DEFAULT_FRAME_SIZE);;
 
     public static final int DEFAULT_HASH_GROUP_TABLE_SIZE = 10485767;
     public static final int DEFAULT_EXTERNAL_GROUP_TABLE_SIZE = 5485767;
