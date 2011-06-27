@@ -170,7 +170,7 @@ public class IntroduceGroupByForSubplanRule implements IAlgebraicRewriteRule {
         SelectOperator selectNonNull = new SelectOperator(new LogicalExpressionReference(nonNullTest));
         GroupByOperator g = new GroupByOperator();
         LogicalOperatorReference newSubplanRef = new LogicalOperatorReference(subplan);
-        NestedTupleSourceOperator nts = new NestedTupleSourceOperator(newSubplanRef);
+        NestedTupleSourceOperator nts = new NestedTupleSourceOperator(new LogicalOperatorReference(g));
         opRef.setOperator(g);
         selectNonNull.getInputs().add(new LogicalOperatorReference(nts));
 

@@ -22,10 +22,7 @@ import edu.uci.ics.algebricks.compiler.algebra.base.ILogicalPlan;
 import edu.uci.ics.algebricks.compiler.algebra.base.LogicalOperatorReference;
 import edu.uci.ics.algebricks.compiler.algebra.base.LogicalOperatorTag;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.AbstractLogicalOperator;
-import edu.uci.ics.algebricks.compiler.algebra.operators.logical.AbstractOperatorWithNestedPlans;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.GroupByOperator;
-import edu.uci.ics.algebricks.compiler.algebra.operators.logical.NestedTupleSourceOperator;
-import edu.uci.ics.algebricks.compiler.algebra.operators.logical.SubplanOperator;
 import edu.uci.ics.algebricks.compiler.optimizer.base.IAlgebraicRewriteRule;
 import edu.uci.ics.algebricks.compiler.optimizer.base.IOptimizationContext;
 import edu.uci.ics.algebricks.compiler.optimizer.base.OptimizationUtil;
@@ -101,26 +98,28 @@ public class SubplanOutOfGroupRule implements IAlgebraicRewriteRule {
         subplan.getInputs().clear();
         subplan.getInputs().add(new LogicalOperatorReference(opUnder));
         opUnderRef.setOperator(subplan);
-        fixNtsTo((SubplanOperator) subplan, opUnderRef);
+        // fixNtsTo((SubplanOperator) subplan, opUnderRef);
 
         return true;
     }
 
-    private void fixNtsTo(AbstractOperatorWithNestedPlans subplan, LogicalOperatorReference opUnderRef) {
-        for (ILogicalPlan plan : subplan.getNestedPlans()) {
-            for (LogicalOperatorReference r : plan.getRoots()) {
-                fixNtsRec((AbstractLogicalOperator) r.getOperator(), opUnderRef);
-            }
-        }
-    }
-
-    private void fixNtsRec(AbstractLogicalOperator op, LogicalOperatorReference opUnderRef) {
-        for (LogicalOperatorReference r : op.getInputs()) {
-            fixNtsRec((AbstractLogicalOperator) r.getOperator(), opUnderRef);
-        }
-        if (op.getOperatorTag() == LogicalOperatorTag.NESTEDTUPLESOURCE) {
-            NestedTupleSourceOperator nts = (NestedTupleSourceOperator) op;
-            nts.setDataSourceReference(opUnderRef);
-        }
-    }
+    // private void fixNtsTo(AbstractOperatorWithNestedPlans subplan,
+    // LogicalOperatorReference opUnderRef) {
+    // for (ILogicalPlan plan : subplan.getNestedPlans()) {
+    // for (LogicalOperatorReference r : plan.getRoots()) {
+    // fixNtsRec((AbstractLogicalOperator) r.getOperator(), opUnderRef);
+    // }
+    // }
+    // }
+    //
+    // private void fixNtsRec(AbstractLogicalOperator op,
+    // LogicalOperatorReference opUnderRef) {
+    // for (LogicalOperatorReference r : op.getInputs()) {
+    // fixNtsRec((AbstractLogicalOperator) r.getOperator(), opUnderRef);
+    // }
+    // if (op.getOperatorTag() == LogicalOperatorTag.NESTEDTUPLESOURCE) {
+    // NestedTupleSourceOperator nts = (NestedTupleSourceOperator) op;
+    // nts.setDataSourceReference(opUnderRef);
+    // }
+    // }
 }

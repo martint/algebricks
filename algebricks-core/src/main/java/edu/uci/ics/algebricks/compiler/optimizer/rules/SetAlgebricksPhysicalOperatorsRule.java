@@ -22,7 +22,6 @@ import edu.uci.ics.algebricks.compiler.algebra.operators.logical.GroupByOperator
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.InnerJoinOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.LeftOuterJoinOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.LimitOperator;
-import edu.uci.ics.algebricks.compiler.algebra.operators.logical.NestedTupleSourceOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.OrderOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.OrderOperator.IOrder;
 import edu.uci.ics.algebricks.compiler.algebra.operators.physical.AggregatePOperator;
@@ -186,9 +185,7 @@ public class SetAlgebricksPhysicalOperatorsRule implements IAlgebraicRewriteRule
                     break;
                 }
                 case NESTEDTUPLESOURCE: {
-                    LogicalOperatorReference nestedPlanCreator = ((NestedTupleSourceOperator) op)
-                            .getDataSourceReference();
-                    op.setPhysicalOperator(new NestedTupleSourcePOperator(nestedPlanCreator));
+                    op.setPhysicalOperator(new NestedTupleSourcePOperator());
                     break;
                 }
                 case ORDER: {

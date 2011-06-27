@@ -88,7 +88,8 @@ public class OperatorManipulationUtil {
             }
             case NESTEDTUPLESOURCE: {
                 NestedTupleSourceOperator nts = (NestedTupleSourceOperator) op;
-                AbstractLogicalOperator prevOp = (AbstractLogicalOperator) nts.getDataSourceReference().getOperator();
+                AbstractLogicalOperator prevOp = (AbstractLogicalOperator) nts.getDataSourceReference().getOperator()
+                        .getInputs().get(0).getOperator();
                 if (prevOp.getExecutionMode() != AbstractLogicalOperator.ExecutionMode.UNPARTITIONED) {
                     nts.setExecutionMode(AbstractLogicalOperator.ExecutionMode.LOCAL);
                     change = true;
@@ -142,7 +143,8 @@ public class OperatorManipulationUtil {
         if (op.getOperatorTag() == LogicalOperatorTag.NESTEDTUPLESOURCE) {
             NestedTupleSourceOperator nts = (NestedTupleSourceOperator) op;
             if (nts.getDataSourceReference() != null) {
-                AbstractLogicalOperator op2 = (AbstractLogicalOperator) nts.getDataSourceReference().getOperator();
+                AbstractLogicalOperator op2 = (AbstractLogicalOperator) nts.getDataSourceReference().getOperator()
+                        .getInputs().get(0).getOperator();
                 substituteVarRec(op2, v1, v2);
             }
         }

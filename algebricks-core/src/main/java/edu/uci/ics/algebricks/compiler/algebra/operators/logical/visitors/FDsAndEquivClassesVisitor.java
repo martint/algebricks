@@ -347,7 +347,7 @@ public class FDsAndEquivClassesVisitor implements ILogicalOperatorVisitor<Void, 
     @Override
     public Void visitNestedTupleSourceOperator(NestedTupleSourceOperator op, IOptimizationContext ctx)
             throws AlgebricksException {
-        ILogicalOperator inp1 = op.getDataSourceReference().getOperator();
+        ILogicalOperator inp1 = op.getDataSourceReference().getOperator().getInputs().get(0).getOperator();
         Map<LogicalVariable, EquivalenceClass> eqClasses = getOrComputeEqClasses(inp1, ctx);
         ctx.putEquivalenceClassMap(op, eqClasses);
         List<FunctionalDependency> fds = getOrComputeFDs(inp1, ctx);

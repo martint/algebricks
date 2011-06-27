@@ -117,7 +117,7 @@ public class SchemaVariableVisitor implements ILogicalOperatorVisitor<Void, Void
 
     @Override
     public Void visitNestedTupleSourceOperator(NestedTupleSourceOperator op, Void arg) throws AlgebricksException {
-        ILogicalOperator prev = op.getDataSourceReference().getOperator();
+        ILogicalOperator prev = op.getDataSourceReference().getOperator().getInputs().get(0).getOperator();
         VariableUtilities.getLiveVariables(prev, schemaVariables);
         return null;
     }

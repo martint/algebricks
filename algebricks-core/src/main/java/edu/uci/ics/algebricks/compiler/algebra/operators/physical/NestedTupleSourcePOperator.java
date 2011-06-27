@@ -20,6 +20,7 @@ import edu.uci.ics.algebricks.compiler.algebra.base.LogicalOperatorReference;
 import edu.uci.ics.algebricks.compiler.algebra.base.PhysicalOperatorTag;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.AbstractLogicalOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.IOperatorSchema;
+import edu.uci.ics.algebricks.compiler.algebra.operators.logical.NestedTupleSourceOperator;
 import edu.uci.ics.algebricks.compiler.algebra.properties.IPhysicalPropertiesVector;
 import edu.uci.ics.algebricks.compiler.algebra.properties.PhysicalRequirements;
 import edu.uci.ics.algebricks.compiler.algebra.properties.StructuralPropertiesVector;
@@ -32,10 +33,7 @@ import edu.uci.ics.hyracks.api.dataflow.value.RecordDescriptor;
 
 public class NestedTupleSourcePOperator extends AbstractPhysicalOperator {
 
-    private LogicalOperatorReference dataSource;
-
-    public NestedTupleSourcePOperator(LogicalOperatorReference dataSource) {
-        this.dataSource = dataSource;
+    public NestedTupleSourcePOperator() {
     }
 
     @Override
@@ -45,7 +43,9 @@ public class NestedTupleSourcePOperator extends AbstractPhysicalOperator {
 
     @Override
     public void computeDeliveredProperties(ILogicalOperator op, IOptimizationContext context) {
-        AbstractLogicalOperator op2 = (AbstractLogicalOperator) dataSource.getOperator();
+        LogicalOperatorReference dataSource = ((NestedTupleSourceOperator) op).getDataSourceReference();
+        AbstractLogicalOperator op2 = (AbstractLogicalOperator) dataSource.getOperator().getInputs().get(0)
+                .getOperator();
         IPhysicalPropertiesVector inheritedProps = op2.getDeliveredPhysicalProperties();
         deliveredProperties = (StructuralPropertiesVector) inheritedProps.clone();
     }

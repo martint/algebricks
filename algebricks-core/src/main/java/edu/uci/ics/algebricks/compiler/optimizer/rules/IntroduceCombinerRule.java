@@ -1,12 +1,13 @@
 package edu.uci.ics.algebricks.compiler.optimizer.rules;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Set;
+import java.util.Map.Entry;
 
 import edu.uci.ics.algebricks.api.exceptions.AlgebricksException;
 import edu.uci.ics.algebricks.compiler.algebra.base.ILogicalOperator;
@@ -20,10 +21,10 @@ import edu.uci.ics.algebricks.compiler.algebra.expressions.AggregateFunctionCall
 import edu.uci.ics.algebricks.compiler.algebra.expressions.VariableReferenceExpression;
 import edu.uci.ics.algebricks.compiler.algebra.functions.IFunctionInfo;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.AbstractLogicalOperator;
-import edu.uci.ics.algebricks.compiler.algebra.operators.logical.AbstractLogicalOperator.ExecutionMode;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.AggregateOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.GroupByOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.NestedTupleSourceOperator;
+import edu.uci.ics.algebricks.compiler.algebra.operators.logical.AbstractLogicalOperator.ExecutionMode;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.visitors.VariableUtilities;
 import edu.uci.ics.algebricks.compiler.algebra.plan.ALogicalPlanImpl;
 import edu.uci.ics.algebricks.compiler.optimizer.base.IAlgebraicRewriteRule;
@@ -52,35 +53,22 @@ public class IntroduceCombinerRule implements IAlgebraicRewriteRule {
             return false;
         }
 
-        ILogicalOperator toPush = opToPush(gbyOp, context);
-        if (toPush == null) {
+        Map<AggregateFunctionCallExpression, Pair<IFunctionInfo, LogicalExpressionReference>> toReplaceMap = new HashMap<AggregateFunctionCallExpression, Pair<IFunctionInfo, LogicalExpressionReference>>();
+
+        GroupByOperator newGbyOp = opToPush(gbyOp, toReplaceMap, context);
+        if (newGbyOp == null) {
             return false;
         }
-        LogicalOperatorReference opRef3 = gbyOp.getInputs().get(0);
-        opRef3.setOperator(toPush);
-        return true;
-    }
 
-    private GroupByOperator opToPush(GroupByOperator gbyOp, IOptimizationContext context) throws AlgebricksException {
-
-        LogicalOperatorReference opRef3 = gbyOp.getInputs().get(0);
-        ILogicalOperator op3 = opRef3.getOperator();
-        GroupByOperator newGbyOp = new GroupByOperator();
-        newGbyOp.getInputs().add(new LogicalOperatorReference(op3));
-        // copy annotations
-        Map<String, Object> annotations = newGbyOp.getAnnotations();
-        for (Entry<String, Object> a : gbyOp.getAnnotations().entrySet())
-            annotations.put(a.getKey(), a.getValue());
-
-        for (ILogicalPlan p : gbyOp.getNestedPlans()) {
-            ILogicalPlan pushedSubplan = tryToPushSubplan(p, newGbyOp, context);
-            if (pushedSubplan != null) {
-                newGbyOp.getNestedPlans().add(pushedSubplan);
-            } else {
-                // for now, if we cannot push everything, give up
-                return null;
-            }
+        for (Map.Entry<AggregateFunctionCallExpression, Pair<IFunctionInfo, LogicalExpressionReference>> entry : toReplaceMap
+                .entrySet()) {
+            AggregateFunctionCallExpression aggFun = entry.getKey();
+            Pair<IFunctionInfo, LogicalExpressionReference> p = entry.getValue();
+            aggFun.setFunctionInfo(p.first);
+            aggFun.getArguments().clear();
+            aggFun.getArguments().add(p.second);
         }
+
         for (Pair<LogicalVariable, LogicalExpressionReference> p : gbyOp.getGroupByList()) {
             LogicalVariable newGbyVar = context.newVar();
             newGbyOp.addGbyExpression(newGbyVar, p.second.getExpression());
@@ -120,13 +108,42 @@ public class IntroduceCombinerRule implements IAlgebraicRewriteRule {
             }
         }
 
+        LogicalOperatorReference opRef3 = gbyOp.getInputs().get(0);
+        opRef3.setOperator(newGbyOp);
+        return true;
+    }
+
+    private GroupByOperator opToPush(GroupByOperator gbyOp,
+            Map<AggregateFunctionCallExpression, Pair<IFunctionInfo, LogicalExpressionReference>> toReplaceMap,
+            IOptimizationContext context) throws AlgebricksException {
+
+        LogicalOperatorReference opRef3 = gbyOp.getInputs().get(0);
+        ILogicalOperator op3 = opRef3.getOperator();
+        GroupByOperator newGbyOp = new GroupByOperator();
+        newGbyOp.getInputs().add(new LogicalOperatorReference(op3));
+        // copy annotations
+        Map<String, Object> annotations = newGbyOp.getAnnotations();
+        for (Entry<String, Object> a : gbyOp.getAnnotations().entrySet())
+            annotations.put(a.getKey(), a.getValue());
+
+        for (ILogicalPlan p : gbyOp.getNestedPlans()) {
+            ILogicalPlan pushedSubplan = tryToPushSubplan(p, newGbyOp, toReplaceMap, context);
+            if (pushedSubplan != null) {
+                newGbyOp.getNestedPlans().add(pushedSubplan);
+            } else {
+                // for now, if we cannot push everything, give up
+                return null;
+            }
+        }
         return newGbyOp;
     }
 
-    private ILogicalPlan tryToPushSubplan(ILogicalPlan p, GroupByOperator newGbyOp, IOptimizationContext context) {
+    private ILogicalPlan tryToPushSubplan(ILogicalPlan p, GroupByOperator newGbyOp,
+            Map<AggregateFunctionCallExpression, Pair<IFunctionInfo, LogicalExpressionReference>> toReplaceMap,
+            IOptimizationContext context) {
         List<LogicalOperatorReference> pushedRoots = new ArrayList<LogicalOperatorReference>();
         for (LogicalOperatorReference r : p.getRoots()) {
-            LogicalOperatorReference pushedOpRef = tryToPushRoot(r, newGbyOp, context);
+            LogicalOperatorReference pushedOpRef = tryToPushRoot(r, newGbyOp, toReplaceMap, context);
             if (pushedOpRef != null) {
                 pushedRoots.add(pushedOpRef);
             } else {
@@ -142,6 +159,7 @@ public class IntroduceCombinerRule implements IAlgebraicRewriteRule {
     }
 
     private LogicalOperatorReference tryToPushRoot(LogicalOperatorReference r, GroupByOperator newGbyOp,
+            Map<AggregateFunctionCallExpression, Pair<IFunctionInfo, LogicalExpressionReference>> toReplaceMap,
             IOptimizationContext context) {
         AbstractLogicalOperator op1 = (AbstractLogicalOperator) r.getOperator();
         if (op1.getOperatorTag() != LogicalOperatorTag.AGGREGATE) {
@@ -179,9 +197,8 @@ public class IntroduceCombinerRule implements IAlgebraicRewriteRule {
             // global part
             IFunctionInfo fi2 = aggFun.getStepTwoAggregate();
 
-            aggFun.setFunctionInfo(fi2);
-            aggFun.getArguments().clear();
-            aggFun.getArguments().add(new LogicalExpressionReference(new VariableReferenceExpression(newAggVar)));
+            toReplaceMap.put(aggFun, new Pair<IFunctionInfo, LogicalExpressionReference>(fi2,
+                    new LogicalExpressionReference(new VariableReferenceExpression(newAggVar))));
         }
 
         if (pushedVars.isEmpty()) {

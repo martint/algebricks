@@ -77,7 +77,8 @@ public class IntroJoinInsideSubplanRule extends AbstractDecorrelationRule {
                         OptimizationUtil.getFreeVariablesInSelfOrDesc(op1, free1);
                         if (!free1.isEmpty()) {
                             OperatorManipulationUtil.ntsToEts(op2Ref);
-                            NestedTupleSourceOperator nts = new NestedTupleSourceOperator(subplan.getInputs().get(0));
+                            NestedTupleSourceOperator nts = new NestedTupleSourceOperator(new LogicalOperatorReference(
+                                    subplan));
                             LogicalOperatorReference ntsRef = new LogicalOperatorReference(nts);
                             LogicalOperatorReference innerRef = new LogicalOperatorReference(op2);
                             InnerJoinOperator join = new InnerJoinOperator(new LogicalExpressionReference(

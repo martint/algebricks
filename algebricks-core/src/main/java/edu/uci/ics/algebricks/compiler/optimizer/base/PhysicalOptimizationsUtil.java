@@ -51,7 +51,7 @@ public class PhysicalOptimizationsUtil {
         }
         if (op.getOperatorTag() == LogicalOperatorTag.NESTEDTUPLESOURCE) {
             NestedTupleSourceOperator nts = (NestedTupleSourceOperator) op;
-            ILogicalOperator source = nts.getDataSourceReference().getOperator();
+            ILogicalOperator source = nts.getDataSourceReference().getOperator().getInputs().get(0).getOperator();
             if (!visitSet.contains(source)) {
                 computeFDsAndEqClassesWithVisitorRec((AbstractLogicalOperator) source, ctx, visitor, visitSet);
             }
