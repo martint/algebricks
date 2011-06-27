@@ -306,9 +306,6 @@ public class ExternalGroupOperatorDescriptor extends AbstractOperatorDescriptor 
                             outFrame = ctx.allocateFrame();
                             outFrameAppender.reset(outFrame, true);
                             outFrameAccessor.reset(outFrame);
-                            for (int i = 0; i < framesLimit - 1; ++i) {
-                                inFrames.add(ctx.allocateFrame());
-                            }
                             while (runs.size() > 0) {
                                 try {
                                     doPass(runs);
@@ -333,10 +330,13 @@ public class ExternalGroupOperatorDescriptor extends AbstractOperatorDescriptor 
                         // will be produced and this will be the final pass.
                         finalPass = true;
                         // Remove the unnecessary frames.
-                        while (inFrames.size() > runs.size()) {
-                            inFrames.remove(inFrames.size() - 1);
+                        while (inFrames.size() < runs.size()) {
+                            inFrames.add(ctx.allocateFrame());
                         }
                     } else {
+                        while (inFrames.size() + 2 < framesLimit) {
+                            inFrames.add(ctx.allocateFrame());
+                        }
                         // Files need to be merged.
                         newRun = ctx.getJobletContext().createWorkspaceFile(
                                 ExternalGroupOperatorDescriptor.class.getSimpleName());

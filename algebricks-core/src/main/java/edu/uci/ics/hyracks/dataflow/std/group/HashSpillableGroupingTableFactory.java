@@ -159,7 +159,6 @@ public class HashSpillableGroupingTableFactory implements ISpillableTableFactory
                 groupSize = 0;
                 dataFrameCount = -1;
                 tPointers = null;
-                frames.clear();
                 // Reset the grouping hash table
                 for (int i = 0; i < table.length; i++) {
                     if (table[i] != null)

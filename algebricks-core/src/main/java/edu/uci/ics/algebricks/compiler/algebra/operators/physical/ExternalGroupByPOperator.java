@@ -12,18 +12,19 @@ import edu.uci.ics.algebricks.compiler.algebra.base.LogicalExpressionReference;
 import edu.uci.ics.algebricks.compiler.algebra.base.LogicalExpressionTag;
 import edu.uci.ics.algebricks.compiler.algebra.base.LogicalOperatorReference;
 import edu.uci.ics.algebricks.compiler.algebra.base.LogicalVariable;
+import edu.uci.ics.algebricks.compiler.algebra.base.OperatorAnnotations;
 import edu.uci.ics.algebricks.compiler.algebra.base.PhysicalOperatorTag;
 import edu.uci.ics.algebricks.compiler.algebra.expressions.AggregateFunctionCallExpression;
 import edu.uci.ics.algebricks.compiler.algebra.expressions.VariableReferenceExpression;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.AggregateOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.GroupByOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.IOperatorSchema;
-import edu.uci.ics.algebricks.compiler.algebra.operators.logical.visitors.VariableUtilities;
 import edu.uci.ics.algebricks.compiler.optimizer.base.PhysicalOptimizationsUtil;
 import edu.uci.ics.algebricks.runtime.hyracks.base.IAggregateFunctionFactory;
 import edu.uci.ics.algebricks.runtime.hyracks.jobgen.base.IHyracksJobBuilder;
 import edu.uci.ics.algebricks.runtime.hyracks.jobgen.impl.JobGenContext;
 import edu.uci.ics.algebricks.runtime.hyracks.jobgen.impl.JobGenHelper;
+import edu.uci.ics.algebricks.runtime.hyracks.jobgen.impl.OperatorSchemaImpl;
 import edu.uci.ics.algebricks.runtime.hyracks.operators.aggreg.SimpleAggregatorDescriptorFactory;
 import edu.uci.ics.algebricks.runtime.hyracks.operators.aggreg.SimpleMergeDescriptorFactory;
 import edu.uci.ics.algebricks.utils.Pair;
@@ -58,6 +59,9 @@ public class ExternalGroupByPOperator extends HashGroupByPOperator {
     public void contributeRuntimeOperator(IHyracksJobBuilder builder, JobGenContext context, ILogicalOperator op,
             IOperatorSchema opSchema, IOperatorSchema[] inputSchemas, IOperatorSchema outerPlanSchema)
             throws AlgebricksException {
+        if (!isLocal && op.getAnnotations().get(OperatorAnnotations.LOCAL_GBY) != null)
+            isLocal = (Boolean) op.getAnnotations().get(OperatorAnnotations.LOCAL_GBY);
+
         List<LogicalVariable> columnSet = getGbyColumns();
         int keys[] = JobGenHelper.variablesToFieldIndexes(columnSet, inputSchemas[0]);
         GroupByOperator gby = (GroupByOperator) op;
@@ -115,6 +119,12 @@ public class ExternalGroupByPOperator extends HashGroupByPOperator {
             keyAndDecFields[keys.length + i] = fdColumns[i];
         }
 
+        List<LogicalVariable> keyAndDecVariables = new ArrayList<LogicalVariable>();
+        for (Pair<LogicalVariable, LogicalExpressionReference> p : gby.getGroupByList())
+            keyAndDecVariables.add(p.first);
+        for (Pair<LogicalVariable, LogicalExpressionReference> p : gby.getDecorList())
+            keyAndDecVariables.add(p.first);
+
         compileSubplans(inputSchemas[0], gby, opSchema, context);
         JobSpecification spec = builder.getJobSpec();
         IBinaryComparatorFactory[] comparatorFactories = JobGenHelper.variablesToAscBinaryComparatorFactories(
@@ -124,22 +134,30 @@ public class ExternalGroupByPOperator extends HashGroupByPOperator {
                 columnSet, context);
 
         IAggregateFunctionFactory[] merges = new IAggregateFunctionFactory[n];
-        List<LogicalVariable> producedVars = new ArrayList<LogicalVariable>();
         List<LogicalVariable> usedVars = new ArrayList<LogicalVariable>();
-        VariableUtilities.getProducedVariables(aggOp, producedVars);
+        IOperatorSchema[] localInputSchemas = new IOperatorSchema[1];
+        localInputSchemas[0] = new OperatorSchemaImpl();
         for (i = 0; i < n; i++) {
             AggregateFunctionCallExpression aggFun = (AggregateFunctionCallExpression) aggOp.getMergeExpressions()
                     .get(i).getExpression();
-            if (isLocal) {
-                usedVars.clear();
-                aggFun.getUsedVariables(usedVars);
-                aggFun.substituteVar(usedVars.get(0), producedVars.get(i));
-                IOperatorSchema[] localInputSchema = new IOperatorSchema[1];
-                localInputSchema[0] = opSchema;
-                merges[i] = exprJobGen.createAggregateFunctionFactory(aggFun, localInputSchema, context);
-            } else {
-                merges[i] = exprJobGen.createAggregateFunctionFactory(aggFun, inputSchemas, context);
-            }
+            aggFun.getUsedVariables(usedVars);
+        }
+        for (LogicalVariable keyVar : keyAndDecVariables)
+            localInputSchemas[0].addVariable(keyVar);
+        for (LogicalVariable usedVar : usedVars)
+            localInputSchemas[0].addVariable(usedVar);
+        Object typeAnnotation = op.getAnnotations().get(OperatorAnnotations.EXTERNAL_GROUP_BY_INTERMEDIATE_INPUT_TYPES);
+        i = 0;
+        if (typeAnnotation instanceof List) {
+            List<?> types = (List<?>) typeAnnotation;
+            for (Object type : types)
+                context.setVarType(usedVars.get(i++), type);
+        }
+
+        for (i = 0; i < n; i++) {
+            AggregateFunctionCallExpression aggFun = (AggregateFunctionCallExpression) aggOp.getMergeExpressions()
+                    .get(i).getExpression();
+            merges[i] = exprJobGen.createAggregateFunctionFactory(aggFun, localInputSchemas, context);
         }
         IAggregatorDescriptorFactory aggregatorFactory = new SimpleAggregatorDescriptorFactory(aff);
         IAggregatorDescriptorFactory mergeFactory = new SimpleMergeDescriptorFactory(merges);

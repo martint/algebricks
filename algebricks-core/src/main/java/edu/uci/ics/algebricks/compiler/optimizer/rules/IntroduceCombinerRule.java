@@ -4,6 +4,8 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 
 import edu.uci.ics.algebricks.api.exceptions.AlgebricksException;
@@ -65,6 +67,10 @@ public class IntroduceCombinerRule implements IAlgebraicRewriteRule {
         ILogicalOperator op3 = opRef3.getOperator();
         GroupByOperator newGbyOp = new GroupByOperator();
         newGbyOp.getInputs().add(new LogicalOperatorReference(op3));
+        // copy annotations
+        Map<String, Object> annotations = newGbyOp.getAnnotations();
+        for (Entry<String, Object> a : gbyOp.getAnnotations().entrySet())
+            annotations.put(a.getKey(), a.getValue());
 
         for (ILogicalPlan p : gbyOp.getNestedPlans()) {
             ILogicalPlan pushedSubplan = tryToPushSubplan(p, newGbyOp, context);

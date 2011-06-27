@@ -23,7 +23,7 @@ import java.util.Map;
 import edu.uci.ics.algebricks.compiler.algebra.base.LogicalVariable;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.IOperatorSchema;
 
-class OperatorSchemaImpl implements IOperatorSchema {
+public class OperatorSchemaImpl implements IOperatorSchema {
     private final Map<LogicalVariable, Integer> varMap;
 
     private final List<LogicalVariable> varList;
