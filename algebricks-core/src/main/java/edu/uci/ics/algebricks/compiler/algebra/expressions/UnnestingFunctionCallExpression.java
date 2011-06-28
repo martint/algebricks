@@ -23,6 +23,8 @@ import edu.uci.ics.algebricks.compiler.algebra.visitors.ILogicalExpressionVisito
 
 public class UnnestingFunctionCallExpression extends AbstractFunctionCallExpression {
 
+    private boolean returnsUniqueValues;
+
     public UnnestingFunctionCallExpression(IFunctionInfo finfo) {
         super(FunctionKind.UNNEST, finfo);
     }
@@ -39,12 +41,22 @@ public class UnnestingFunctionCallExpression extends AbstractFunctionCallExpress
     public UnnestingFunctionCallExpression cloneExpression() {
         cloneAnnotations();
         List<LogicalExpressionReference> clonedArgs = cloneArguments();
-        return new UnnestingFunctionCallExpression(finfo, clonedArgs);
+        UnnestingFunctionCallExpression ufce = new UnnestingFunctionCallExpression(finfo, clonedArgs);
+        ufce.setReturnsUniqueValues(returnsUniqueValues);
+        return ufce;
     }
 
     @Override
     public <R, T> R accept(ILogicalExpressionVisitor<R, T> visitor, T arg) throws AlgebricksException {
         return visitor.visitUnnestingFunctionCallExpression(this, arg);
+    }
+
+    public void setReturnsUniqueValues(boolean returnsUniqueValues) {
+        this.returnsUniqueValues = returnsUniqueValues;
+    }
+
+    public boolean returnsUniqueValues() {
+        return returnsUniqueValues;
     }
 
 }

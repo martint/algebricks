@@ -33,7 +33,10 @@ import edu.uci.ics.algebricks.compiler.algebra.base.LogicalExpressionReference;
 import edu.uci.ics.algebricks.compiler.algebra.base.LogicalExpressionTag;
 import edu.uci.ics.algebricks.compiler.algebra.base.LogicalOperatorReference;
 import edu.uci.ics.algebricks.compiler.algebra.base.LogicalVariable;
+import edu.uci.ics.algebricks.compiler.algebra.expressions.AbstractFunctionCallExpression;
+import edu.uci.ics.algebricks.compiler.algebra.expressions.UnnestingFunctionCallExpression;
 import edu.uci.ics.algebricks.compiler.algebra.expressions.VariableReferenceExpression;
+import edu.uci.ics.algebricks.compiler.algebra.expressions.AbstractFunctionCallExpression.FunctionKind;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.AbstractUnnestOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.AggregateOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.AssignOperator;
@@ -535,18 +538,19 @@ public class FDsAndEquivClassesVisitor implements ILogicalOperatorVisitor<Void, 
         ctx.putEquivalenceClassMap(op, eqClasses);
         List<FunctionalDependency> fds = getOrComputeFDs(inp1, ctx);
         ctx.putFDList(op, fds);
-        List<LogicalVariable> vars = new ArrayList<LogicalVariable>();
-        VariableUtilities.getLiveVariables(op, vars);
-        ArrayList<LogicalVariable> h = new ArrayList<LogicalVariable>(1);
-        h.addAll(op.getVariables());
-        ArrayList<LogicalVariable> t = new ArrayList<LogicalVariable>();
-        for (LogicalVariable v : vars) {
-            if (!op.getVariables().contains(v)) {
-                t.add(v);
+
+        ILogicalExpression expr = op.getExpressionRef().getExpression();
+        if (expr.getExpressionTag() == LogicalExpressionTag.FUNCTION_CALL) {
+            AbstractFunctionCallExpression afe = (AbstractFunctionCallExpression) expr;
+            if (afe.getKind() == FunctionKind.UNNEST && ((UnnestingFunctionCallExpression) afe).returnsUniqueValues()) {
+                List<LogicalVariable> vars = new ArrayList<LogicalVariable>();
+                VariableUtilities.getLiveVariables(op, vars);
+                ArrayList<LogicalVariable> h = new ArrayList<LogicalVariable>();
+                h.addAll(op.getVariables());
+                FunctionalDependency fd = new FunctionalDependency(h, vars);
+                fds.add(fd);
             }
         }
-        FunctionalDependency fd = new FunctionalDependency(h, t);
-        fds.add(fd);
     }
 
     public static void setEmptyFDsEqClasses(ILogicalOperator op, IOptimizationContext ctx) {
