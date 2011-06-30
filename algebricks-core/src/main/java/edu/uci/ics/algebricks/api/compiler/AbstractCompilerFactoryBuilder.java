@@ -32,6 +32,7 @@ import edu.uci.ics.algebricks.api.expr.IMergeAggregationExpressionFactory;
 import edu.uci.ics.algebricks.api.expr.IPartialAggregationTypeComputer;
 import edu.uci.ics.algebricks.compiler.optimizer.base.AbstractRuleController;
 import edu.uci.ics.algebricks.compiler.optimizer.base.IAlgebraicRewriteRule;
+import edu.uci.ics.algebricks.compiler.optimizer.base.PhysicalOptimizationConfig;
 import edu.uci.ics.algebricks.utils.Pair;
 import edu.uci.ics.hyracks.api.dataflow.value.INullWriterFactory;
 
@@ -53,6 +54,7 @@ public abstract class AbstractCompilerFactoryBuilder {
     protected INormalizedKeyComputerFactoryProvider normalizedKeyComputerFactoryProvider;
     protected IPartialAggregationTypeComputer partialAggregationTypeComputer;
     protected IMergeAggregationExpressionFactory mergeAggregationExpressionFactory;
+    protected PhysicalOptimizationConfig physicalOptimizationConfig = new PhysicalOptimizationConfig();
     protected AlgebricksPartitionConstraint clusterLocations;
     protected int frameSize = -1;
 
@@ -194,6 +196,14 @@ public abstract class AbstractCompilerFactoryBuilder {
     public void setIMergeAggregationExpressionFactory(
             IMergeAggregationExpressionFactory mergeAggregationExpressionFactory) {
         this.mergeAggregationExpressionFactory = mergeAggregationExpressionFactory;
+    }
+
+    public PhysicalOptimizationConfig getPhysicalOptimizationConfig() {
+        return physicalOptimizationConfig;
+    }
+
+    public void setPhysicalOptimizationConfig(PhysicalOptimizationConfig physicalOptimizationConfig) {
+        this.physicalOptimizationConfig = physicalOptimizationConfig;
     }
 
 }

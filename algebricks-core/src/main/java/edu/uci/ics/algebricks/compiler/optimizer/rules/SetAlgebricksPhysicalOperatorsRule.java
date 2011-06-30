@@ -50,7 +50,7 @@ import edu.uci.ics.algebricks.compiler.algebra.operators.physical.UnnestPOperato
 import edu.uci.ics.algebricks.compiler.optimizer.base.IAlgebraicRewriteRule;
 import edu.uci.ics.algebricks.compiler.optimizer.base.IOptimizationContext;
 import edu.uci.ics.algebricks.compiler.optimizer.base.JoinUtils;
-import edu.uci.ics.algebricks.compiler.optimizer.base.PhysicalOptimizationsUtil;
+import edu.uci.ics.algebricks.compiler.optimizer.base.PhysicalOptimizationConfig;
 import edu.uci.ics.algebricks.utils.Pair;
 
 public class SetAlgebricksPhysicalOperatorsRule implements IAlgebraicRewriteRule {
@@ -85,6 +85,7 @@ public class SetAlgebricksPhysicalOperatorsRule implements IAlgebraicRewriteRule
     @SuppressWarnings("unchecked")
     private static void computeDefaultPhysicalOp(AbstractLogicalOperator op, boolean topLevelOp,
             IOptimizationContext context) throws AlgebricksException {
+        PhysicalOptimizationConfig physicalOptimizationConfig = context.getPhysicalOptimizationConfig();
         if (op.getPhysicalOperator() == null) {
             switch (op.getOperatorTag()) {
                 case AGGREGATE: {
@@ -116,14 +117,15 @@ public class SetAlgebricksPhysicalOperatorsRule implements IAlgebraicRewriteRule
                             if (gby.getAnnotations().get(OperatorAnnotations.USE_HASH_GROUP_BY) == Boolean.TRUE) {
                                 HashGroupByPOperator hashGby = new HashGroupByPOperator(
                                         ((GroupByOperator) op).getGroupByList(),
-                                        PhysicalOptimizationsUtil.DEFAULT_HASH_GROUP_TABLE_SIZE);
+                                        physicalOptimizationConfig.getHashGroupByTableSize());
                                 op.setPhysicalOperator(hashGby);
                                 break;
                             }
                             if (gby.getAnnotations().get(OperatorAnnotations.USE_EXTERNAL_GROUP_BY) == Boolean.TRUE) {
                                 ExternalGroupByPOperator externalGby = new ExternalGroupByPOperator(
                                         ((GroupByOperator) op).getGroupByList(),
-                                        PhysicalOptimizationsUtil.DEFAULT_EXTERNAL_GROUP_TABLE_SIZE);
+                                        physicalOptimizationConfig.getMaxFramesExternalGroupBy(),
+                                        physicalOptimizationConfig.getExternalGroupByTableSize());
                                 op.setPhysicalOperator(externalGby);
                                 generateMergeAggregationExpressions(gby, context);
                                 break;
@@ -169,8 +171,8 @@ public class SetAlgebricksPhysicalOperatorsRule implements IAlgebraicRewriteRule
                         }
                     }
                     if (topLevelOp) {
-                        op.setPhysicalOperator(new StableSortPOperator(
-                                PhysicalOptimizationsUtil.MAX_FRAMES_EXTERNAL_SORT));
+                        op.setPhysicalOperator(new StableSortPOperator(physicalOptimizationConfig
+                                .getMaxFramesExternalSort()));
                     } else {
                         op.setPhysicalOperator(new InMemoryStableSortPOperator());
                     }

@@ -19,7 +19,6 @@ import edu.uci.ics.algebricks.compiler.algebra.expressions.VariableReferenceExpr
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.AggregateOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.GroupByOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.IOperatorSchema;
-import edu.uci.ics.algebricks.compiler.optimizer.base.PhysicalOptimizationsUtil;
 import edu.uci.ics.algebricks.runtime.hyracks.base.IAggregateFunctionFactory;
 import edu.uci.ics.algebricks.runtime.hyracks.jobgen.base.IHyracksJobBuilder;
 import edu.uci.ics.algebricks.runtime.hyracks.jobgen.impl.JobGenContext;
@@ -41,10 +40,13 @@ import edu.uci.ics.hyracks.dataflow.std.group.HashSpillableGroupingTableFactory;
 public class ExternalGroupByPOperator extends HashGroupByPOperator {
 
     private int tableSize = 0;
+    private int frameLimit = 0;
 
-    public ExternalGroupByPOperator(List<Pair<LogicalVariable, LogicalExpressionReference>> gbyList, int tableSize) {
+    public ExternalGroupByPOperator(List<Pair<LogicalVariable, LogicalExpressionReference>> gbyList, int frameLimit,
+            int tableSize) {
         super(gbyList, tableSize);
         this.tableSize = tableSize;
+        this.frameLimit = frameLimit;
     }
 
     @Override
@@ -156,8 +158,8 @@ public class ExternalGroupByPOperator extends HashGroupByPOperator {
 
         ITuplePartitionComputerFactory tpcf = new FieldHashPartitionComputerFactory(keys, hashFunctionFactories);
         ExternalGroupOperatorDescriptor gbyOpDesc = new ExternalGroupOperatorDescriptor(spec, keyAndDecFields,
-                PhysicalOptimizationsUtil.MAX_FRAMES_EXTERNAL_GROUP_BY, comparatorFactories, aggregatorFactory,
-                mergeFactory, recordDescriptor, new HashSpillableGroupingTableFactory(tpcf, tableSize), false);
+                frameLimit, comparatorFactories, aggregatorFactory, mergeFactory, recordDescriptor,
+                new HashSpillableGroupingTableFactory(tpcf, tableSize), false);
 
         contributeOpDesc(builder, gby, gbyOpDesc);
         ILogicalOperator src = op.getInputs().get(0).getOperator();

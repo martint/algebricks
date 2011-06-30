@@ -20,5 +20,6 @@ import edu.uci.ics.algebricks.api.expr.IMergeAggregationExpressionFactory;
 public interface IOptimizationContextFactory {
     public IOptimizationContext createOptimizationContext(int varCounter, int frameSize,
             IExpressionEvalSizeComputer expressionEvalSizeComputer,
-            IMergeAggregationExpressionFactory mergeAggregationExpressionFactory);
+            IMergeAggregationExpressionFactory mergeAggregationExpressionFactory,
+            PhysicalOptimizationConfig physicalOptimizationConfig);
 }

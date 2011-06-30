@@ -34,6 +34,7 @@ public class AlgebricksOptimizationContext implements IOptimizationContext {
     private int varCounter;
     private final IExpressionEvalSizeComputer expressionEvalSizeComputer;
     private final IMergeAggregationExpressionFactory mergeAggregationExpressionFactory;
+    private final PhysicalOptimizationConfig physicalOptimizationConfig;
     private final IVariableEvalSizeEnvironment varEvalSizeEnv = new IVariableEvalSizeEnvironment() {
 
         Map<LogicalVariable, Integer> varSizeMap = new HashMap<LogicalVariable, Integer>();
@@ -65,11 +66,13 @@ public class AlgebricksOptimizationContext implements IOptimizationContext {
 
     public AlgebricksOptimizationContext(int varCounter, int frameSize,
             IExpressionEvalSizeComputer expressionEvalSizeComputer,
-            IMergeAggregationExpressionFactory mergeAggregationExpressionFactory) {
+            IMergeAggregationExpressionFactory mergeAggregationExpressionFactory,
+            PhysicalOptimizationConfig physicalOptimizationConfig) {
         this.varCounter = varCounter;
         this.frameSize = frameSize;
         this.expressionEvalSizeComputer = expressionEvalSizeComputer;
         this.mergeAggregationExpressionFactory = mergeAggregationExpressionFactory;
+        this.physicalOptimizationConfig = physicalOptimizationConfig;
         alreadyCompared = new HashMap<ILogicalOperator, HashSet<ILogicalOperator>>();
         dontApply = new HashMap<IAlgebraicRewriteRule, HashSet<ILogicalOperator>>();
         recordToPrimaryKey = new HashMap<LogicalVariable, FunctionalDependency>();
@@ -208,5 +211,9 @@ public class AlgebricksOptimizationContext implements IOptimizationContext {
 
     public IMergeAggregationExpressionFactory getMergeAggregationExpressionFactory() {
         return mergeAggregationExpressionFactory;
+    }
+
+    public PhysicalOptimizationConfig getPhysicalOptimizationConfig() {
+        return physicalOptimizationConfig;
     }
 }

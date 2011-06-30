@@ -23,6 +23,7 @@ import edu.uci.ics.algebricks.compiler.optimizer.base.AlgebricksOptimizationCont
 import edu.uci.ics.algebricks.compiler.optimizer.base.HeuristicOptimizer;
 import edu.uci.ics.algebricks.compiler.optimizer.base.IOptimizationContext;
 import edu.uci.ics.algebricks.compiler.optimizer.base.IOptimizationContextFactory;
+import edu.uci.ics.algebricks.compiler.optimizer.base.PhysicalOptimizationConfig;
 import edu.uci.ics.algebricks.config.AlgebricksConfig;
 import edu.uci.ics.algebricks.runtime.hyracks.jobgen.impl.JobGenContext;
 import edu.uci.ics.algebricks.runtime.hyracks.jobgen.impl.PlanCompiler;
@@ -40,9 +41,10 @@ public class HeuristicCompilerFactoryBuilder extends AbstractCompilerFactoryBuil
         @Override
         public IOptimizationContext createOptimizationContext(int varCounter, int frameSize,
                 IExpressionEvalSizeComputer expressionEvalSizeComputer,
-                IMergeAggregationExpressionFactory mergeAggregationExpressionFactory) {
+                IMergeAggregationExpressionFactory mergeAggregationExpressionFactory,
+                PhysicalOptimizationConfig physicalOptimizationConfig) {
             return new AlgebricksOptimizationContext(varCounter, frameSize, expressionEvalSizeComputer,
-                    mergeAggregationExpressionFactory);
+                    mergeAggregationExpressionFactory, physicalOptimizationConfig);
         }
     }
 
@@ -63,7 +65,7 @@ public class HeuristicCompilerFactoryBuilder extends AbstractCompilerFactoryBuil
             public ICompiler createCompiler(final ILogicalPlan plan, final IMetadataProvider<?, ?> metadata,
                     int varCounter) {
                 IOptimizationContext oc = optCtxFactory.createOptimizationContext(varCounter, frameSize,
-                        expressionEvalSizeComputer, mergeAggregationExpressionFactory);
+                        expressionEvalSizeComputer, mergeAggregationExpressionFactory, physicalOptimizationConfig);
                 oc.setMetadataDeclarations(metadata);
                 final HeuristicOptimizer opt = new HeuristicOptimizer(plan, logicalRewrites, physicalRewrites, oc);
                 return new ICompiler() {

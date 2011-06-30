@@ -16,18 +16,6 @@ import edu.uci.ics.algebricks.config.AlgebricksConfig;
 
 public class PhysicalOptimizationsUtil {
 
-    private final static int MB = 1048576;
-    // private final static int GB = 1024 * MB;
-    private final static int DEFAULT_FRAME_SIZE = 32768;
-    public final static int MAX_FRAMES_EXTERNAL_SORT = (int) (((long) 512 * MB) / DEFAULT_FRAME_SIZE);
-    public final static int MAX_FRAMES_EXTERNAL_GROUP_BY = (int) (((long) 128 * MB) / DEFAULT_FRAME_SIZE);;
-
-    public static final int DEFAULT_HASH_GROUP_TABLE_SIZE = 10485767;
-    public static final int DEFAULT_EXTERNAL_GROUP_TABLE_SIZE = 5485767;
-    public static final int DEFAULT_IN_MEM_HASH_JOIN_TABLE_SIZE = 10485767;
-
-    // use http://www.rsok.com/~jrm/printprimes.html to find prime numbers
-
     public static void computeFDsAndEquivalenceClasses(AbstractLogicalOperator op, IOptimizationContext ctx)
             throws AlgebricksException {
         FDsAndEquivClassesVisitor visitor = new FDsAndEquivClassesVisitor();

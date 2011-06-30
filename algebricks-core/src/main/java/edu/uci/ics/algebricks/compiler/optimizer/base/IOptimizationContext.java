@@ -76,4 +76,6 @@ public interface IOptimizationContext {
     public abstract IVariableEvalSizeEnvironment getVariableEvalSizeEnvironment();
 
     public abstract IMergeAggregationExpressionFactory getMergeAggregationExpressionFactory();
+
+    public abstract PhysicalOptimizationConfig getPhysicalOptimizationConfig();
 }
