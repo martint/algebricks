@@ -16,6 +16,7 @@ package edu.uci.ics.algebricks.api.compiler;
 
 import edu.uci.ics.algebricks.api.exceptions.AlgebricksException;
 import edu.uci.ics.algebricks.api.expr.IExpressionEvalSizeComputer;
+import edu.uci.ics.algebricks.api.expr.IMergeAggregationExpressionFactory;
 import edu.uci.ics.algebricks.compiler.algebra.base.ILogicalPlan;
 import edu.uci.ics.algebricks.compiler.algebra.metadata.IMetadataProvider;
 import edu.uci.ics.algebricks.compiler.optimizer.base.AlgebricksOptimizationContext;
@@ -38,8 +39,10 @@ public class HeuristicCompilerFactoryBuilder extends AbstractCompilerFactoryBuil
 
         @Override
         public IOptimizationContext createOptimizationContext(int varCounter, int frameSize,
-                IExpressionEvalSizeComputer expressionEvalSizeComputer) {
-            return new AlgebricksOptimizationContext(varCounter, frameSize, expressionEvalSizeComputer);
+                IExpressionEvalSizeComputer expressionEvalSizeComputer,
+                IMergeAggregationExpressionFactory mergeAggregationExpressionFactory) {
+            return new AlgebricksOptimizationContext(varCounter, frameSize, expressionEvalSizeComputer,
+                    mergeAggregationExpressionFactory);
         }
     }
 
@@ -60,7 +63,7 @@ public class HeuristicCompilerFactoryBuilder extends AbstractCompilerFactoryBuil
             public ICompiler createCompiler(final ILogicalPlan plan, final IMetadataProvider<?, ?> metadata,
                     int varCounter) {
                 IOptimizationContext oc = optCtxFactory.createOptimizationContext(varCounter, frameSize,
-                        expressionEvalSizeComputer);
+                        expressionEvalSizeComputer, mergeAggregationExpressionFactory);
                 oc.setMetadataDeclarations(metadata);
                 final HeuristicOptimizer opt = new HeuristicOptimizer(plan, logicalRewrites, physicalRewrites, oc);
                 return new ICompiler() {
@@ -77,7 +80,8 @@ public class HeuristicCompilerFactoryBuilder extends AbstractCompilerFactoryBuil
                                 serializerDeserializerProvider, hashFunctionFactoryProvider, comparatorFactoryProvider,
                                 typeTraitProvider, binaryBooleanInspector, binaryIntegerInspector, printerProvider,
                                 nullWriterFactory, normalizedKeyComputerFactoryProvider, exprJobGen,
-                                expressionTypeComputer, expressionEvalSizeComputer, frameSize, clusterLocations);
+                                expressionTypeComputer, expressionEvalSizeComputer, partialAggregationTypeComputer,
+                                frameSize, clusterLocations);
                         PlanCompiler pc = new PlanCompiler(context);
                         return pc.compilePlan(plan, null);
                     }

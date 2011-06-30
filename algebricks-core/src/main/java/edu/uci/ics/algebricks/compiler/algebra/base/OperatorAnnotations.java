@@ -4,8 +4,6 @@ public interface OperatorAnnotations {
     // hints
     public static final String USE_HASH_GROUP_BY = "USE_HASH_GROUP_BY"; // -->
     public static final String USE_EXTERNAL_GROUP_BY = "USE_EXTERNAL_GROUP_BY"; // -->
-    public static final String LOCAL_GBY = "LOGAL_GROUP_BY"; // -->
-    public static final String EXTERNAL_GROUP_BY_INTERMEDIATE_INPUT_TYPES = "EXTERNAL_GROUP_BY_INTERMEDIATE_TYPES"; // -->
     // Boolean
     public static final String CARDINALITY = "CARDINALITY"; // -->
     // Integer

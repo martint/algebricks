@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.Map;
 
 import edu.uci.ics.algebricks.api.expr.IExpressionEvalSizeComputer;
+import edu.uci.ics.algebricks.api.expr.IMergeAggregationExpressionFactory;
 import edu.uci.ics.algebricks.api.expr.IVariableEvalSizeEnvironment;
 import edu.uci.ics.algebricks.compiler.algebra.base.EquivalenceClass;
 import edu.uci.ics.algebricks.compiler.algebra.base.ILogicalOperator;
@@ -32,6 +33,7 @@ public class AlgebricksOptimizationContext implements IOptimizationContext {
 
     private int varCounter;
     private final IExpressionEvalSizeComputer expressionEvalSizeComputer;
+    private final IMergeAggregationExpressionFactory mergeAggregationExpressionFactory;
     private final IVariableEvalSizeEnvironment varEvalSizeEnv = new IVariableEvalSizeEnvironment() {
 
         Map<LogicalVariable, Integer> varSizeMap = new HashMap<LogicalVariable, Integer>();
@@ -62,10 +64,12 @@ public class AlgebricksOptimizationContext implements IOptimizationContext {
     private final int frameSize;
 
     public AlgebricksOptimizationContext(int varCounter, int frameSize,
-            IExpressionEvalSizeComputer expressionEvalSizeComputer) {
+            IExpressionEvalSizeComputer expressionEvalSizeComputer,
+            IMergeAggregationExpressionFactory mergeAggregationExpressionFactory) {
         this.varCounter = varCounter;
         this.frameSize = frameSize;
         this.expressionEvalSizeComputer = expressionEvalSizeComputer;
+        this.mergeAggregationExpressionFactory = mergeAggregationExpressionFactory;
         alreadyCompared = new HashMap<ILogicalOperator, HashSet<ILogicalOperator>>();
         dontApply = new HashMap<IAlgebraicRewriteRule, HashSet<ILogicalOperator>>();
         recordToPrimaryKey = new HashMap<LogicalVariable, FunctionalDependency>();
@@ -200,5 +204,9 @@ public class AlgebricksOptimizationContext implements IOptimizationContext {
     @Override
     public int getFrameSize() {
         return frameSize;
+    }
+
+    public IMergeAggregationExpressionFactory getMergeAggregationExpressionFactory() {
+        return mergeAggregationExpressionFactory;
     }
 }

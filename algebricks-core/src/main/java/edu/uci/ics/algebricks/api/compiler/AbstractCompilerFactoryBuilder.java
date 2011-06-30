@@ -28,6 +28,8 @@ import edu.uci.ics.algebricks.api.data.ITypeTraitProvider;
 import edu.uci.ics.algebricks.api.expr.IExpressionEvalSizeComputer;
 import edu.uci.ics.algebricks.api.expr.IExpressionTypeComputer;
 import edu.uci.ics.algebricks.api.expr.ILogicalExpressionJobGen;
+import edu.uci.ics.algebricks.api.expr.IMergeAggregationExpressionFactory;
+import edu.uci.ics.algebricks.api.expr.IPartialAggregationTypeComputer;
 import edu.uci.ics.algebricks.compiler.optimizer.base.AbstractRuleController;
 import edu.uci.ics.algebricks.compiler.optimizer.base.IAlgebraicRewriteRule;
 import edu.uci.ics.algebricks.utils.Pair;
@@ -49,6 +51,8 @@ public abstract class AbstractCompilerFactoryBuilder {
     protected IExpressionEvalSizeComputer expressionEvalSizeComputer;
     protected INullWriterFactory nullWriterFactory;
     protected INormalizedKeyComputerFactoryProvider normalizedKeyComputerFactoryProvider;
+    protected IPartialAggregationTypeComputer partialAggregationTypeComputer;
+    protected IMergeAggregationExpressionFactory mergeAggregationExpressionFactory;
     protected AlgebricksPartitionConstraint clusterLocations;
     protected int frameSize = -1;
 
@@ -173,6 +177,23 @@ public abstract class AbstractCompilerFactoryBuilder {
 
     public int getFrameSize() {
         return frameSize;
+    }
+
+    public IPartialAggregationTypeComputer getPartialAggregationTypeComputer() {
+        return partialAggregationTypeComputer;
+    }
+
+    public void setPartialAggregationTypeComputer(IPartialAggregationTypeComputer partialAggregationTypeComputer) {
+        this.partialAggregationTypeComputer = partialAggregationTypeComputer;
+    }
+
+    public IMergeAggregationExpressionFactory getIMergeAggregationExpressionFactory() {
+        return mergeAggregationExpressionFactory;
+    }
+
+    public void setIMergeAggregationExpressionFactory(
+            IMergeAggregationExpressionFactory mergeAggregationExpressionFactory) {
+        this.mergeAggregationExpressionFactory = mergeAggregationExpressionFactory;
     }
 
 }

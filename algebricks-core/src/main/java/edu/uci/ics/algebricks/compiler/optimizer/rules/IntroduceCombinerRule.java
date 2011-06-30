@@ -86,8 +86,6 @@ public class IntroduceCombinerRule implements IAlgebraicRewriteRule {
 
         Object v2 = gbyOp.getAnnotations().get(OperatorAnnotations.USE_EXTERNAL_GROUP_BY);
         newGbyOp.getAnnotations().put(OperatorAnnotations.USE_EXTERNAL_GROUP_BY, v2);
-        gbyOp.getAnnotations().put(OperatorAnnotations.LOCAL_GBY, false);
-        newGbyOp.getAnnotations().put(OperatorAnnotations.LOCAL_GBY, true);
 
         List<LogicalVariable> propagatedVars = new LinkedList<LogicalVariable>();
         VariableUtilities.getProducedVariables(newGbyOp, propagatedVars);
@@ -205,7 +203,6 @@ public class IntroduceCombinerRule implements IAlgebraicRewriteRule {
             return null;
         } else {
             AggregateOperator pushedAgg = new AggregateOperator(pushedVars, pushedExprs);
-            pushedAgg.setMergeExpressions(initAgg.getMergeExpressions());
             pushedAgg.setExecutionMode(ExecutionMode.LOCAL);
             NestedTupleSourceOperator nts = new NestedTupleSourceOperator(newGbyOp.getInputs().get(0));
             nts.setExecutionMode(ExecutionMode.LOCAL);

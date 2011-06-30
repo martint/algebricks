@@ -5,6 +5,7 @@ import java.util.List;
 
 import edu.uci.ics.algebricks.api.exceptions.AlgebricksException;
 import edu.uci.ics.algebricks.api.expr.ILogicalExpressionJobGen;
+import edu.uci.ics.algebricks.api.expr.IPartialAggregationTypeComputer;
 import edu.uci.ics.algebricks.compiler.algebra.base.ILogicalExpression;
 import edu.uci.ics.algebricks.compiler.algebra.base.ILogicalOperator;
 import edu.uci.ics.algebricks.compiler.algebra.base.ILogicalPlan;
@@ -12,7 +13,6 @@ import edu.uci.ics.algebricks.compiler.algebra.base.LogicalExpressionReference;
 import edu.uci.ics.algebricks.compiler.algebra.base.LogicalExpressionTag;
 import edu.uci.ics.algebricks.compiler.algebra.base.LogicalOperatorReference;
 import edu.uci.ics.algebricks.compiler.algebra.base.LogicalVariable;
-import edu.uci.ics.algebricks.compiler.algebra.base.OperatorAnnotations;
 import edu.uci.ics.algebricks.compiler.algebra.base.PhysicalOperatorTag;
 import edu.uci.ics.algebricks.compiler.algebra.expressions.AggregateFunctionCallExpression;
 import edu.uci.ics.algebricks.compiler.algebra.expressions.VariableReferenceExpression;
@@ -41,13 +41,10 @@ import edu.uci.ics.hyracks.dataflow.std.group.HashSpillableGroupingTableFactory;
 public class ExternalGroupByPOperator extends HashGroupByPOperator {
 
     private int tableSize = 0;
-    private boolean isLocal = true;
 
-    public ExternalGroupByPOperator(List<Pair<LogicalVariable, LogicalExpressionReference>> gbyList, int tableSize,
-            boolean isLocal) {
+    public ExternalGroupByPOperator(List<Pair<LogicalVariable, LogicalExpressionReference>> gbyList, int tableSize) {
         super(gbyList, tableSize);
         this.tableSize = tableSize;
-        this.isLocal = isLocal;
     }
 
     @Override
@@ -59,9 +56,6 @@ public class ExternalGroupByPOperator extends HashGroupByPOperator {
     public void contributeRuntimeOperator(IHyracksJobBuilder builder, JobGenContext context, ILogicalOperator op,
             IOperatorSchema opSchema, IOperatorSchema[] inputSchemas, IOperatorSchema outerPlanSchema)
             throws AlgebricksException {
-        if (!isLocal && op.getAnnotations().get(OperatorAnnotations.LOCAL_GBY) != null)
-            isLocal = (Boolean) op.getAnnotations().get(OperatorAnnotations.LOCAL_GBY);
-
         List<LogicalVariable> columnSet = getGbyColumns();
         int keys[] = JobGenHelper.variablesToFieldIndexes(columnSet, inputSchemas[0]);
         GroupByOperator gby = (GroupByOperator) op;
@@ -102,6 +96,8 @@ public class ExternalGroupByPOperator extends HashGroupByPOperator {
         LogicalOperatorReference r0 = p0.getRoots().get(0);
         AggregateOperator aggOp = (AggregateOperator) r0.getOperator();
 
+        IPartialAggregationTypeComputer partialAggregationTypeComputer = context.getPartialAggregationTypeComputer();
+        List<Object> intermediateTypes = new ArrayList<Object>();
         int n = aggOp.getExpressions().size();
         IAggregateFunctionFactory[] aff = new IAggregateFunctionFactory[n];
         int i = 0;
@@ -109,6 +105,7 @@ public class ExternalGroupByPOperator extends HashGroupByPOperator {
         for (LogicalExpressionReference exprRef : aggOp.getExpressions()) {
             AggregateFunctionCallExpression aggFun = (AggregateFunctionCallExpression) exprRef.getExpression();
             aff[i++] = exprJobGen.createAggregateFunctionFactory(aggFun, inputSchemas, context);
+            intermediateTypes.add(partialAggregationTypeComputer.getType(aggFun, context));
         }
 
         int[] keyAndDecFields = new int[keys.length + fdColumns.length];
@@ -142,22 +139,17 @@ public class ExternalGroupByPOperator extends HashGroupByPOperator {
                     .get(i).getExpression();
             aggFun.getUsedVariables(usedVars);
         }
+        i = 0;
+        for (Object type : intermediateTypes)
+            context.setVarType(usedVars.get(i++), type);
         for (LogicalVariable keyVar : keyAndDecVariables)
             localInputSchemas[0].addVariable(keyVar);
         for (LogicalVariable usedVar : usedVars)
             localInputSchemas[0].addVariable(usedVar);
-        Object typeAnnotation = op.getAnnotations().get(OperatorAnnotations.EXTERNAL_GROUP_BY_INTERMEDIATE_INPUT_TYPES);
-        i = 0;
-        if (typeAnnotation instanceof List) {
-            List<?> types = (List<?>) typeAnnotation;
-            for (Object type : types)
-                context.setVarType(usedVars.get(i++), type);
-        }
-
         for (i = 0; i < n; i++) {
-            AggregateFunctionCallExpression aggFun = (AggregateFunctionCallExpression) aggOp.getMergeExpressions()
+            AggregateFunctionCallExpression mergeFun = (AggregateFunctionCallExpression) aggOp.getMergeExpressions()
                     .get(i).getExpression();
-            merges[i] = exprJobGen.createAggregateFunctionFactory(aggFun, localInputSchemas, context);
+            merges[i] = exprJobGen.createAggregateFunctionFactory(mergeFun, localInputSchemas, context);
         }
         IAggregatorDescriptorFactory aggregatorFactory = new SimpleAggregatorDescriptorFactory(aff);
         IAggregatorDescriptorFactory mergeFactory = new SimpleMergeDescriptorFactory(merges);

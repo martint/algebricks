@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import edu.uci.ics.algebricks.api.exceptions.AlgebricksException;
+import edu.uci.ics.algebricks.api.expr.IMergeAggregationExpressionFactory;
 import edu.uci.ics.algebricks.compiler.algebra.base.ILogicalExpression;
 import edu.uci.ics.algebricks.compiler.algebra.base.ILogicalPlan;
 import edu.uci.ics.algebricks.compiler.algebra.base.LogicalExpressionReference;
@@ -16,6 +17,7 @@ import edu.uci.ics.algebricks.compiler.algebra.metadata.IDataSource;
 import edu.uci.ics.algebricks.compiler.algebra.metadata.IMetadataProvider;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.AbstractLogicalOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.AbstractOperatorWithNestedPlans;
+import edu.uci.ics.algebricks.compiler.algebra.operators.logical.AggregateOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.DataSourceScanOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.DistinctOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.GroupByOperator;
@@ -112,49 +114,19 @@ public class SetAlgebricksPhysicalOperatorsRule implements IAlgebraicRewriteRule
                         ILogicalPlan p0 = gby.getNestedPlans().get(0);
                         if (p0.getRoots().size() == 1) {
                             if (gby.getAnnotations().get(OperatorAnnotations.USE_HASH_GROUP_BY) == Boolean.TRUE) {
-                                // LogicalOperatorReference r0 =
-                                // p0.getRoots().get(0);
-                                // AbstractLogicalOperator op1 =
-                                // (AbstractLogicalOperator) r0.getOperator();
-                                // if (op1.getOperatorTag() ==
-                                // LogicalOperatorTag.AGGREGATE) {
-                                // AbstractLogicalOperator op2 =
-                                // (AbstractLogicalOperator)
-                                // op1.getInputs().get(0)
-                                // .getOperator();
-                                // if (op2.getOperatorTag() ==
-                                // LogicalOperatorTag.NESTEDTUPLESOURCE) {
                                 HashGroupByPOperator hashGby = new HashGroupByPOperator(
                                         ((GroupByOperator) op).getGroupByList(),
                                         PhysicalOptimizationsUtil.DEFAULT_HASH_GROUP_TABLE_SIZE);
                                 op.setPhysicalOperator(hashGby);
                                 break;
-                                // }
-                                // }
                             }
                             if (gby.getAnnotations().get(OperatorAnnotations.USE_EXTERNAL_GROUP_BY) == Boolean.TRUE) {
-                                // LogicalOperatorReference r0 =
-                                // p0.getRoots().get(0);
-                                // AbstractLogicalOperator op1 =
-                                // (AbstractLogicalOperator) r0.getOperator();
-                                // if (op1.getOperatorTag() ==
-                                // LogicalOperatorTag.AGGREGATE) {
-                                // AbstractLogicalOperator op2 =
-                                // (AbstractLogicalOperator)
-                                // op1.getInputs().get(0)
-                                // .getOperator();
-                                // if (op2.getOperatorTag() ==
-                                // LogicalOperatorTag.NESTEDTUPLESOURCE) {
-                                Boolean localGby = (Boolean) gby.getAnnotations().get(OperatorAnnotations.LOCAL_GBY);
-                                if (localGby == null)
-                                    localGby = false;
-                                HashGroupByPOperator externalGby = new ExternalGroupByPOperator(
+                                ExternalGroupByPOperator externalGby = new ExternalGroupByPOperator(
                                         ((GroupByOperator) op).getGroupByList(),
-                                        PhysicalOptimizationsUtil.DEFAULT_EXTERNAL_GROUP_TABLE_SIZE, localGby);
+                                        PhysicalOptimizationsUtil.DEFAULT_EXTERNAL_GROUP_TABLE_SIZE);
                                 op.setPhysicalOperator(externalGby);
+                                generateMergeAggregationExpressions(gby, context);
                                 break;
-                                // }
-                                // }
                             }
                         }
                     }
@@ -270,4 +242,31 @@ public class SetAlgebricksPhysicalOperatorsRule implements IAlgebraicRewriteRule
         }
     }
 
+    private static void generateMergeAggregationExpressions(GroupByOperator gby, IOptimizationContext context)
+            throws AlgebricksException {
+        if (gby.getNestedPlans().size() != 1) {
+            throw new AlgebricksException(
+                    "External group-by currently works only for one nested plan with one root containing"
+                            + "an aggregate and a nested-tuple-source.");
+        }
+        ILogicalPlan p0 = gby.getNestedPlans().get(0);
+        if (p0.getRoots().size() != 1) {
+            throw new AlgebricksException(
+                    "External group-by currently works only for one nested plan with one root containing"
+                            + "an aggregate and a nested-tuple-source.");
+        }
+        IMergeAggregationExpressionFactory mergeAggregationExpressionFactory = context
+                .getMergeAggregationExpressionFactory();
+        LogicalOperatorReference r0 = p0.getRoots().get(0);
+        AggregateOperator aggOp = (AggregateOperator) r0.getOperator();
+        List<LogicalExpressionReference> aggFuncRefs = aggOp.getExpressions();
+        int n = aggOp.getExpressions().size();
+        List<LogicalExpressionReference> mergeExpressionRefs = new ArrayList<LogicalExpressionReference>();
+        for (int i = 0; i < n; i++) {
+            ILogicalExpression mergeExpr = mergeAggregationExpressionFactory.createMergeAggregation(aggFuncRefs.get(i)
+                    .getExpression(), context);
+            mergeExpressionRefs.add(new LogicalExpressionReference(mergeExpr));
+        }
+        aggOp.setMergeExpressions(mergeExpressionRefs);
+    }
 }

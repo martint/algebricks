@@ -15,8 +15,10 @@
 package edu.uci.ics.algebricks.compiler.optimizer.base;
 
 import edu.uci.ics.algebricks.api.expr.IExpressionEvalSizeComputer;
+import edu.uci.ics.algebricks.api.expr.IMergeAggregationExpressionFactory;
 
 public interface IOptimizationContextFactory {
     public IOptimizationContext createOptimizationContext(int varCounter, int frameSize,
-            IExpressionEvalSizeComputer expressionEvalSizeComputer);
+            IExpressionEvalSizeComputer expressionEvalSizeComputer,
+            IMergeAggregationExpressionFactory mergeAggregationExpressionFactory);
 }

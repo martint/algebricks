@@ -30,6 +30,7 @@ import edu.uci.ics.algebricks.api.exceptions.AlgebricksException;
 import edu.uci.ics.algebricks.api.expr.IExpressionEvalSizeComputer;
 import edu.uci.ics.algebricks.api.expr.IExpressionTypeComputer;
 import edu.uci.ics.algebricks.api.expr.ILogicalExpressionJobGen;
+import edu.uci.ics.algebricks.api.expr.IPartialAggregationTypeComputer;
 import edu.uci.ics.algebricks.api.expr.IVariableTypeEnvironment;
 import edu.uci.ics.algebricks.compiler.algebra.base.ILogicalExpression;
 import edu.uci.ics.algebricks.compiler.algebra.base.ILogicalOperator;
@@ -56,6 +57,7 @@ public class JobGenContext implements IVariableTypeEnvironment {
     private final ILogicalExpressionJobGen exprJobGen;
     private final IExpressionTypeComputer expressionTypeComputer;
     private final IExpressionEvalSizeComputer expressionEvalSizeComputer;
+    private final IPartialAggregationTypeComputer partialAggregationTypeComputer;
     private final int frameSize;
     private AlgebricksPartitionConstraint clusterLocations;
     private int varCounter;
@@ -68,7 +70,8 @@ public class JobGenContext implements IVariableTypeEnvironment {
             IPrinterFactoryProvider printerFactoryProvider, INullWriterFactory nullWriterFactory,
             INormalizedKeyComputerFactoryProvider normalizedKeyComputerFactoryProvider,
             ILogicalExpressionJobGen exprJobGen, IExpressionTypeComputer expressionTypeComputer,
-            IExpressionEvalSizeComputer expressionEvalSizeComputer, int frameSize,
+            IExpressionEvalSizeComputer expressionEvalSizeComputer,
+            IPartialAggregationTypeComputer partialAggregationTypeComputer, int frameSize,
             AlgebricksPartitionConstraint clusterLocations) {
         this.outerFlowSchema = outerFlowSchema;
         this.metadataProvider = metadataProvider;
@@ -86,6 +89,7 @@ public class JobGenContext implements IVariableTypeEnvironment {
         this.exprJobGen = exprJobGen;
         this.expressionTypeComputer = expressionTypeComputer;
         this.expressionEvalSizeComputer = expressionEvalSizeComputer;
+        this.partialAggregationTypeComputer = partialAggregationTypeComputer;
         this.frameSize = frameSize;
         this.varCounter = 0;
     }
@@ -182,6 +186,10 @@ public class JobGenContext implements IVariableTypeEnvironment {
 
     public int getFrameSize() {
         return frameSize;
+    }
+
+    public IPartialAggregationTypeComputer getPartialAggregationTypeComputer() {
+        return partialAggregationTypeComputer;
     }
 
 }

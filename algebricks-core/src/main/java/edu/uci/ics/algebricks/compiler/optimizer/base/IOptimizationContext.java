@@ -18,6 +18,7 @@ import java.util.List;
 import java.util.Map;
 
 import edu.uci.ics.algebricks.api.expr.IExpressionEvalSizeComputer;
+import edu.uci.ics.algebricks.api.expr.IMergeAggregationExpressionFactory;
 import edu.uci.ics.algebricks.api.expr.IVariableEvalSizeEnvironment;
 import edu.uci.ics.algebricks.compiler.algebra.base.EquivalenceClass;
 import edu.uci.ics.algebricks.compiler.algebra.base.ILogicalOperator;
@@ -73,4 +74,6 @@ public interface IOptimizationContext {
     public abstract IExpressionEvalSizeComputer getExpressionEvalSizeComputer();
 
     public abstract IVariableEvalSizeEnvironment getVariableEvalSizeEnvironment();
+
+    public abstract IMergeAggregationExpressionFactory getMergeAggregationExpressionFactory();
 }
