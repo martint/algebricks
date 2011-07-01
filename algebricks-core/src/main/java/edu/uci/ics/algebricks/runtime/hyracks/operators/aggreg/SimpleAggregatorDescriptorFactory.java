@@ -1,7 +1,6 @@
 package edu.uci.ics.algebricks.runtime.hyracks.operators.aggreg;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Arrays;
 
 import edu.uci.ics.algebricks.api.exceptions.AlgebricksException;
 import edu.uci.ics.algebricks.runtime.hyracks.base.IAggregateFunction;
@@ -35,11 +34,13 @@ public class SimpleAggregatorDescriptorFactory implements IAggregatorDescriptorF
          * one IAggregatorDescriptor instance per Gby operator
          */
         return new IAggregatorDescriptor() {
+            private final static int AGGFUNCS_INIT_SIZE = 8;
+            private int numOfAggs = 0;
             private FrameTupleReference ftr = new FrameTupleReference();
-            private List<IAggregateFunction[]> aggFuncList = new ArrayList<IAggregateFunction[]>();
-            private List<ArrayBackedValueStorage[]> aggBufList = new ArrayList<ArrayBackedValueStorage[]>();
+            private IAggregateFunction[][] aggFuncList = new IAggregateFunction[AGGFUNCS_INIT_SIZE][];
+            private ArrayBackedValueStorage[][] aggBufList = new ArrayBackedValueStorage[AGGFUNCS_INIT_SIZE][];
             private int offsetFieldIndex = keys.length;
-            
+
             @Override
             public void init(IFrameTupleAccessor accessor, int tIndex, ArrayTupleBuilder tb)
                     throws HyracksDataException {
@@ -48,12 +49,17 @@ public class SimpleAggregatorDescriptorFactory implements IAggregatorDescriptorF
                  * put the aggregate function to the end of the list the
                  * internal state is the index in aggList
                  */
-                int offset = aggFuncList.size();
+                int offset = numOfAggs;
                 tb.addField(IntegerSerializerDeserializer.INSTANCE, offset);
                 IAggregateFunction[] agg = new IAggregateFunction[aggFactories.length];
                 ArrayBackedValueStorage[] aggBuf = new ArrayBackedValueStorage[aggFactories.length];
-                aggFuncList.add(agg);
-                aggBufList.add(aggBuf);
+                if (numOfAggs >= aggFuncList.length) {
+                    aggFuncList = Arrays.copyOf(aggFuncList, aggFuncList.length * 2);
+                    aggBufList = Arrays.copyOf(aggBufList, aggBufList.length * 2);
+                }
+                aggFuncList[numOfAggs] = agg;
+                aggBufList[numOfAggs] = aggBuf;
+                numOfAggs++;
                 for (int i = 0; i < agg.length; i++) {
                     try {
                         aggBuf[i] = new ArrayBackedValueStorage();
@@ -69,11 +75,9 @@ public class SimpleAggregatorDescriptorFactory implements IAggregatorDescriptorF
             @Override
             public int aggregate(IFrameTupleAccessor accessor, int tIndex, byte[] data, int offset, int length)
                     throws HyracksDataException {
-                if (length != 4)
-                    throw new IllegalStateException("integer length is wrong");
                 int refIndex = IntegerSerializerDeserializer.getInt(data, offset);
                 ftr.reset(accessor, tIndex);
-                IAggregateFunction[] aggs = aggFuncList.get(refIndex);
+                IAggregateFunction[] aggs = aggFuncList[refIndex];
                 for (int i = 0; i < aggs.length; i++) {
                     try {
                         aggs[i].step(ftr);
@@ -93,22 +97,18 @@ public class SimpleAggregatorDescriptorFactory implements IAggregatorDescriptorF
                 int refOffset = startOffset + accessor.getFieldSlotsLength() + aggFieldOffset;
                 int refIndex = IntegerSerializerDeserializer.getInt(data, refOffset);
 
-                if (refIndex < 0) {
-                    throw new IllegalStateException("ref index less than 0");
-                } else {
-                    IAggregateFunction[] aggs = aggFuncList.get(refIndex);
-                    ArrayBackedValueStorage[] aggBuffer = aggBufList.get(refIndex);
-                    try {
-                        for (int i = 0; i < aggs.length; i++) {
-                            aggs[i].finishPartial();
-                            tb.addField(aggBuffer[i].getBytes(), aggBuffer[i].getStartIndex(), aggBuffer[i].getLength());
-                        }
-                    } catch (AlgebricksException e) {
-                        throw new HyracksDataException(e);
+                IAggregateFunction[] aggs = aggFuncList[refIndex];
+                ArrayBackedValueStorage[] aggBuffer = aggBufList[refIndex];
+                try {
+                    for (int i = 0; i < aggs.length; i++) {
+                        aggs[i].finishPartial();
+                        tb.addField(aggBuffer[i].getBytes(), aggBuffer[i].getStartIndex(), aggBuffer[i].getLength());
                     }
-                    aggFuncList.set(refIndex, null);
-                    aggBufList.set(refIndex, null);
+                } catch (AlgebricksException e) {
+                    throw new HyracksDataException(e);
                 }
+                aggFuncList[refIndex] = null;
+                aggBufList[refIndex] = null;
             }
 
             @Override
@@ -121,20 +121,14 @@ public class SimpleAggregatorDescriptorFactory implements IAggregatorDescriptorF
                 int refIndex = IntegerSerializerDeserializer.getInt(data, refOffset);
 
                 try {
-                    if (refIndex < 0) {
-                        throw new IllegalStateException("ref index less than 0");
-                    } else {
-                        IAggregateFunction[] aggs = aggFuncList.get(refIndex);
-                        ArrayBackedValueStorage[] aggBuffer = aggBufList.get(refIndex);
-                        if (aggs == null)
-                            throw new IllegalStateException("duplicate groups!");
-                        for (int i = 0; i < aggs.length; i++) {
-                            aggs[i].finish();
-                            tb.addField(aggBuffer[i].getBytes(), aggBuffer[i].getStartIndex(), aggBuffer[i].getLength());
-                        }
-                        aggFuncList.set(refIndex, null);
-                        aggBufList.set(refIndex, null);
+                    IAggregateFunction[] aggs = aggFuncList[refIndex];
+                    ArrayBackedValueStorage[] aggBuffer = aggBufList[refIndex];
+                    for (int i = 0; i < aggs.length; i++) {
+                        aggs[i].finish();
+                        tb.addField(aggBuffer[i].getBytes(), aggBuffer[i].getStartIndex(), aggBuffer[i].getLength());
                     }
+                    aggFuncList[refIndex] = null;
+                    aggBufList[refIndex] = null;
                 } catch (AlgebricksException e) {
                     throw new HyracksDataException(e);
                 }
@@ -143,14 +137,14 @@ public class SimpleAggregatorDescriptorFactory implements IAggregatorDescriptorF
 
             @Override
             public void reset() {
-                aggFuncList.clear();
-                aggBufList.clear();
+                for (int i = 0; i < aggFuncList.length; i++)
+                    aggFuncList[i] = null;
+                for (int i = 0; i < aggBufList.length; i++)
+                    aggBufList[i] = null;
             }
 
             @Override
             public void close() {
-                aggFuncList.clear();
-                aggBufList.clear();
                 reset();
             }
 
