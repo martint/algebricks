@@ -42,6 +42,11 @@ public class NestedTupleSourcePOperator extends AbstractPhysicalOperator {
     }
 
     @Override
+    public boolean isMicroOperator() {
+        return true;
+    }
+
+    @Override
     public void computeDeliveredProperties(ILogicalOperator op, IOptimizationContext context) {
         LogicalOperatorReference dataSource = ((NestedTupleSourceOperator) op).getDataSourceReference();
         AbstractLogicalOperator op2 = (AbstractLogicalOperator) dataSource.getOperator().getInputs().get(0)

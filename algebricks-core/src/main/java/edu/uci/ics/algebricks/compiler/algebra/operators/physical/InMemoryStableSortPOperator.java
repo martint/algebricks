@@ -43,6 +43,11 @@ public class InMemoryStableSortPOperator extends AbstractStableSortPOperator {
     }
 
     @Override
+    public boolean isMicroOperator() {
+        return true;
+    }
+
+    @Override
     public void contributeRuntimeOperator(IHyracksJobBuilder builder, JobGenContext context, ILogicalOperator op,
             IOperatorSchema opSchema, IOperatorSchema[] inputSchemas, IOperatorSchema outerPlanSchema)
             throws AlgebricksException {

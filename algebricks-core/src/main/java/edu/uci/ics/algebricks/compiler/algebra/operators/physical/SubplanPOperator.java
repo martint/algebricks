@@ -47,6 +47,11 @@ public class SubplanPOperator extends AbstractPhysicalOperator {
     }
 
     @Override
+    public boolean isMicroOperator() {
+        return true;
+    }
+
+    @Override
     public void computeDeliveredProperties(ILogicalOperator op, IOptimizationContext context) {
         AbstractLogicalOperator op2 = (AbstractLogicalOperator) op.getInputs().get(0).getOperator();
         IPhysicalPropertiesVector childsProperties = op2.getPhysicalOperator().getDeliveredProperties();

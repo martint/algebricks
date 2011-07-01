@@ -14,15 +14,20 @@
  */
 package edu.uci.ics.algebricks.compiler.optimizer.rules;
 
+import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
 
 import edu.uci.ics.algebricks.api.exceptions.AlgebricksException;
 import edu.uci.ics.algebricks.compiler.algebra.base.ILogicalOperator;
 import edu.uci.ics.algebricks.compiler.algebra.base.ILogicalPlan;
 import edu.uci.ics.algebricks.compiler.algebra.base.LogicalOperatorReference;
 import edu.uci.ics.algebricks.compiler.algebra.base.LogicalOperatorTag;
+import edu.uci.ics.algebricks.compiler.algebra.base.LogicalVariable;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.AbstractLogicalOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.GroupByOperator;
+import edu.uci.ics.algebricks.compiler.algebra.operators.logical.SubplanOperator;
+import edu.uci.ics.algebricks.compiler.algebra.operators.logical.visitors.VariableUtilities;
 import edu.uci.ics.algebricks.compiler.optimizer.base.IAlgebraicRewriteRule;
 import edu.uci.ics.algebricks.compiler.optimizer.base.IOptimizationContext;
 import edu.uci.ics.algebricks.compiler.optimizer.base.OptimizationUtil;
@@ -75,12 +80,30 @@ public class SubplanOutOfGroupRule implements IAlgebraicRewriteRule {
         LogicalOperatorReference op1Ref = p.getRoots().get(0);
         AbstractLogicalOperator op1 = (AbstractLogicalOperator) op1Ref.getOperator();
         boolean found = false;
-        while (op1.getInputs().size() > 0) {
+        while (op1.getInputs().size() == 1) {
             if (op1.getOperatorTag() == LogicalOperatorTag.SUBPLAN) {
-                AbstractLogicalOperator op2 = (AbstractLogicalOperator) op1.getInputs().get(0).getOperator();
+                SubplanOperator subplan = (SubplanOperator) op1;
+                AbstractLogicalOperator op2 = (AbstractLogicalOperator) subplan.getInputs().get(0).getOperator();
                 if (OptimizationUtil.isNullTest(op2)) {
-                    found = true;
-                    break;
+                    if (subplan.getNestedPlans().size() == 1) {
+                        ILogicalPlan p1 = subplan.getNestedPlans().get(0);
+                        if (p1.getRoots().size() == 1) {
+                            AbstractLogicalOperator r1 = (AbstractLogicalOperator) p1.getRoots().get(0).getOperator();
+                            if (r1.getOperatorTag() == LogicalOperatorTag.INNERJOIN
+                                    || r1.getOperatorTag() == LogicalOperatorTag.LEFTOUTERJOIN) {
+                                // now, check that it propagates all variables,
+                                // so it can be pushed
+                                List<LogicalVariable> op2Vars = new ArrayList<LogicalVariable>();
+                                VariableUtilities.getLiveVariables(op2, op2Vars);
+                                List<LogicalVariable> op1Vars = new ArrayList<LogicalVariable>();
+                                VariableUtilities.getLiveVariables(subplan, op1Vars);
+                                if (op1Vars.containsAll(op2Vars)) {
+                                    found = true;
+                                    break;
+                                }
+                            }
+                        }
+                    }
                 }
             }
             op1Ref = op1.getInputs().get(0);
@@ -98,28 +121,7 @@ public class SubplanOutOfGroupRule implements IAlgebraicRewriteRule {
         subplan.getInputs().clear();
         subplan.getInputs().add(new LogicalOperatorReference(opUnder));
         opUnderRef.setOperator(subplan);
-        // fixNtsTo((SubplanOperator) subplan, opUnderRef);
 
         return true;
     }
-
-    // private void fixNtsTo(AbstractOperatorWithNestedPlans subplan,
-    // LogicalOperatorReference opUnderRef) {
-    // for (ILogicalPlan plan : subplan.getNestedPlans()) {
-    // for (LogicalOperatorReference r : plan.getRoots()) {
-    // fixNtsRec((AbstractLogicalOperator) r.getOperator(), opUnderRef);
-    // }
-    // }
-    // }
-    //
-    // private void fixNtsRec(AbstractLogicalOperator op,
-    // LogicalOperatorReference opUnderRef) {
-    // for (LogicalOperatorReference r : op.getInputs()) {
-    // fixNtsRec((AbstractLogicalOperator) r.getOperator(), opUnderRef);
-    // }
-    // if (op.getOperatorTag() == LogicalOperatorTag.NESTEDTUPLESOURCE) {
-    // NestedTupleSourceOperator nts = (NestedTupleSourceOperator) op;
-    // nts.setDataSourceReference(opUnderRef);
-    // }
-    // }
 }

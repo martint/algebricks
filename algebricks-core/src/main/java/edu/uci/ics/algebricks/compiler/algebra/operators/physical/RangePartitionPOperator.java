@@ -31,10 +31,13 @@ import edu.uci.ics.algebricks.compiler.algebra.properties.OrderedPartitionedProp
 import edu.uci.ics.algebricks.compiler.algebra.properties.PhysicalRequirements;
 import edu.uci.ics.algebricks.compiler.algebra.properties.StructuralPropertiesVector;
 import edu.uci.ics.algebricks.compiler.optimizer.base.IOptimizationContext;
-import edu.uci.ics.algebricks.runtime.hyracks.jobgen.base.IHyracksJobBuilder;
+import edu.uci.ics.algebricks.runtime.hyracks.jobgen.base.IHyracksJobBuilder.TargetConstraint;
 import edu.uci.ics.algebricks.runtime.hyracks.jobgen.impl.JobGenContext;
+import edu.uci.ics.algebricks.utils.Pair;
+import edu.uci.ics.hyracks.api.dataflow.IConnectorDescriptor;
+import edu.uci.ics.hyracks.api.job.JobSpecification;
 
-public class RangePartitionPOperator extends AbstractPhysicalOperator {
+public class RangePartitionPOperator extends AbstractExchangePOperator {
 
     private ArrayList<OrderColumn> partitioningFields;
     private INodeDomain domain;
@@ -62,14 +65,8 @@ public class RangePartitionPOperator extends AbstractPhysicalOperator {
     }
 
     @Override
-    public String toString() {
-        return getOperatorTag().toString() + " " + partitioningFields;
-    }
-
-    @Override
-    public void contributeRuntimeOperator(IHyracksJobBuilder builder, JobGenContext context, ILogicalOperator op,
-            IOperatorSchema propagatedSchema, IOperatorSchema[] inputSchemas, IOperatorSchema outerPlanSchema)
-            throws AlgebricksException {
+    public Pair<IConnectorDescriptor, TargetConstraint> createConnectorDescriptor(JobSpecification spec,
+            IOperatorSchema opSchema, JobGenContext context) throws AlgebricksException {
         throw new NotImplementedException();
     }
 

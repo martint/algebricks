@@ -40,6 +40,11 @@ public class EmptyTupleSourcePOperator extends AbstractPhysicalOperator {
     }
 
     @Override
+    public boolean isMicroOperator() {
+        return true;
+    }
+
+    @Override
     public void computeDeliveredProperties(ILogicalOperator op, IOptimizationContext context) {
         deliveredProperties = new StructuralPropertiesVector(IPartitioningProperty.UNPARTITIONED,
                 new LinkedList<ILocalStructuralProperty>());

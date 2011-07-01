@@ -23,9 +23,9 @@ import edu.uci.ics.algebricks.api.exceptions.NotImplementedException;
 import edu.uci.ics.algebricks.compiler.algebra.base.ILogicalOperator;
 import edu.uci.ics.algebricks.compiler.algebra.base.LogicalVariable;
 import edu.uci.ics.algebricks.compiler.algebra.base.PhysicalOperatorTag;
-import edu.uci.ics.algebricks.compiler.algebra.operators.logical.AbstractBinaryJoin.JoinKind;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.AbstractLogicalOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.IOperatorSchema;
+import edu.uci.ics.algebricks.compiler.algebra.operators.logical.AbstractBinaryJoin.JoinKind;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.OrderOperator.IOrder.OrderKind;
 import edu.uci.ics.algebricks.compiler.algebra.properties.ILocalStructuralProperty;
 import edu.uci.ics.algebricks.compiler.optimizer.base.IOptimizationContext;
@@ -61,6 +61,11 @@ public class HybridHashJoinPOperator extends AbstractHashJoinPOperator {
     @Override
     public PhysicalOperatorTag getOperatorTag() {
         return PhysicalOperatorTag.HYBRID_HASH_JOIN;
+    }
+
+    @Override
+    public boolean isMicroOperator() {
+        return false;
     }
 
     public double getFudgeFactor() {

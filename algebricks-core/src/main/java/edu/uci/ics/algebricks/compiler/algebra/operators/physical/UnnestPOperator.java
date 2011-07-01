@@ -21,8 +21,8 @@ import edu.uci.ics.algebricks.compiler.algebra.base.ILogicalOperator;
 import edu.uci.ics.algebricks.compiler.algebra.base.LogicalExpressionTag;
 import edu.uci.ics.algebricks.compiler.algebra.base.PhysicalOperatorTag;
 import edu.uci.ics.algebricks.compiler.algebra.expressions.AbstractFunctionCallExpression;
-import edu.uci.ics.algebricks.compiler.algebra.expressions.AbstractFunctionCallExpression.FunctionKind;
 import edu.uci.ics.algebricks.compiler.algebra.expressions.UnnestingFunctionCallExpression;
+import edu.uci.ics.algebricks.compiler.algebra.expressions.AbstractFunctionCallExpression.FunctionKind;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.AbstractLogicalOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.IOperatorSchema;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.UnnestOperator;
@@ -39,6 +39,11 @@ public class UnnestPOperator extends AbstractScanPOperator {
     @Override
     public PhysicalOperatorTag getOperatorTag() {
         return PhysicalOperatorTag.UNNEST;
+    }
+
+    @Override
+    public boolean isMicroOperator() {
+        return true;
     }
 
     @Override

@@ -23,8 +23,8 @@ import edu.uci.ics.algebricks.compiler.algebra.operators.logical.ScriptOperator;
 import edu.uci.ics.algebricks.compiler.algebra.properties.IPhysicalPropertiesVector;
 import edu.uci.ics.algebricks.compiler.algebra.properties.PhysicalRequirements;
 import edu.uci.ics.algebricks.compiler.algebra.scripting.IScriptDescription;
-import edu.uci.ics.algebricks.compiler.algebra.scripting.IScriptDescription.ScriptKind;
 import edu.uci.ics.algebricks.compiler.algebra.scripting.StringStreamingScriptDescription;
+import edu.uci.ics.algebricks.compiler.algebra.scripting.IScriptDescription.ScriptKind;
 import edu.uci.ics.algebricks.compiler.optimizer.base.IOptimizationContext;
 import edu.uci.ics.algebricks.runtime.hyracks.jobgen.base.IHyracksJobBuilder;
 import edu.uci.ics.algebricks.runtime.hyracks.jobgen.impl.JobGenContext;
@@ -38,6 +38,11 @@ public class StringStreamingScriptPOperator extends AbstractPropagatePropertiesF
     @Override
     public PhysicalOperatorTag getOperatorTag() {
         return PhysicalOperatorTag.STRING_STREAM_SCRIPT;
+    }
+
+    @Override
+    public boolean isMicroOperator() {
+        return true;
     }
 
     @Override
@@ -59,8 +64,8 @@ public class StringStreamingScriptPOperator extends AbstractPropagatePropertiesF
         for (Pair<LogicalVariable, Object> p : scriptDesc.getVarTypePairs()) {
             context.setVarType(p.first, p.second);
         }
-        StringStreamingRuntimeFactory runtime = new StringStreamingRuntimeFactory(sssd.getCommand(),
-                sssd.getPrinterFactories(), sssd.getFieldDelimiter(), sssd.getParserFactory());
+        StringStreamingRuntimeFactory runtime = new StringStreamingRuntimeFactory(sssd.getCommand(), sssd
+                .getPrinterFactories(), sssd.getFieldDelimiter(), sssd.getParserFactory());
         RecordDescriptor recDesc = JobGenHelper.mkRecordDescriptor(propagatedSchema, context);
         builder.contributeMicroOperator(scriptOp, runtime, recDesc);
         // and contribute one edge from its child

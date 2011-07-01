@@ -15,7 +15,7 @@ public enum PhysicalOperatorTag {
     HYBRID_HASH_JOIN,
     HDFS_READER,
     IN_MEMORY_STABLE_SORT,
-    WRITE_RESULT,
+    MICRO_PRE_CLUSTERED_GROUP_BY,
     NESTED_LOOP,
     NESTED_TUPLE_SOURCE,
     ONE_TO_ONE_EXCHANGE,
@@ -35,5 +35,6 @@ public enum PhysicalOperatorTag {
     STRING_STREAM_SCRIPT,
     SUBPLAN,
     UNION_ALL,
-    UNNEST
+    UNNEST,
+    WRITE_RESULT
 }

@@ -24,9 +24,9 @@ import edu.uci.ics.algebricks.api.expr.ILogicalExpressionJobGen;
 import edu.uci.ics.algebricks.compiler.algebra.base.ILogicalOperator;
 import edu.uci.ics.algebricks.compiler.algebra.base.PhysicalOperatorTag;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.AbstractBinaryJoin;
-import edu.uci.ics.algebricks.compiler.algebra.operators.logical.AbstractBinaryJoin.JoinKind;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.AbstractLogicalOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.IOperatorSchema;
+import edu.uci.ics.algebricks.compiler.algebra.operators.logical.AbstractBinaryJoin.JoinKind;
 import edu.uci.ics.algebricks.compiler.algebra.properties.BroadcastPartitioningProperty;
 import edu.uci.ics.algebricks.compiler.algebra.properties.ILocalStructuralProperty;
 import edu.uci.ics.algebricks.compiler.algebra.properties.IPartitioningProperty;
@@ -73,6 +73,13 @@ public class NLJoinPOperator extends AbstractJoinPOperator {
         return PhysicalOperatorTag.NESTED_LOOP;
     }
 
+
+    @Override
+    public boolean isMicroOperator() {
+        return false;
+    }
+
+    
     @Override
     public void computeDeliveredProperties(ILogicalOperator iop, IOptimizationContext context) {
         if (partitioningType != JoinPartitioningType.BROADCAST) {

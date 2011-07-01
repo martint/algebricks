@@ -50,6 +50,11 @@ public class SinkWritePOperator extends AbstractPhysicalOperator {
     }
 
     @Override
+    public boolean isMicroOperator() {
+        return true;
+    }
+
+    @Override
     public void computeDeliveredProperties(ILogicalOperator op, IOptimizationContext context) {
         ILogicalOperator op2 = op.getInputs().get(0).getOperator();
         deliveredProperties = op2.getDeliveredPhysicalProperties().clone();

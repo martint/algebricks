@@ -98,10 +98,17 @@ public class IntroduceGroupByForSubplanRule implements IAlgebraicRewriteRule {
         }
         AggregateOperator aggregate = (AggregateOperator) op2;
 
+        Set<LogicalVariable> free = new HashSet<LogicalVariable>();
+        VariableUtilities.getUsedVariables(aggregate, free);
+
         LogicalOperatorReference op3Ref = aggregate.getInputs().get(0);
         AbstractLogicalOperator op3 = (AbstractLogicalOperator) op3Ref.getOperator();
 
         while (op3.getInputs().size() == 1) {
+            Set<LogicalVariable> prod = new HashSet<LogicalVariable>();
+            VariableUtilities.getProducedVariables(op3, prod);
+            free.removeAll(prod);
+            VariableUtilities.getUsedVariables(op3, free);
             botRef = op3Ref;
             op3Ref = op3.getInputs().get(0);
             op3 = (AbstractLogicalOperator) op3Ref.getOperator();
@@ -115,6 +122,7 @@ public class IntroduceGroupByForSubplanRule implements IAlgebraicRewriteRule {
         if (join.getCondition().getExpression() == ConstantExpression.TRUE) {
             return false;
         }
+        VariableUtilities.getUsedVariables(join, free);
 
         AbstractLogicalOperator b0 = (AbstractLogicalOperator) join.getInputs().get(0).getOperator();
         // see if there's an NTS at the end of the pipeline
@@ -127,12 +135,12 @@ public class IntroduceGroupByForSubplanRule implements IAlgebraicRewriteRule {
             }
         }
 
-        Set<LogicalVariable> pkVars = computeGbyVarsUsingPksOnly(outerNts, context);
+        Set<LogicalVariable> pkVars = computeGbyVars(outerNts, free, context);
         if (pkVars == null || pkVars.size() < 1) {
             // could not group only by primary keys
             return false;
         }
-        AlgebricksConfig.ALGEBRICKS_LOGGER.fine("Found primary key for introducing group-by: " + pkVars);
+        AlgebricksConfig.ALGEBRICKS_LOGGER.fine("Found FD for introducing group-by: " + pkVars);
 
         LogicalOperatorReference rightRef = join.getInputs().get(1);
         LogicalVariable testForNull = null;
@@ -205,8 +213,8 @@ public class IntroduceGroupByForSubplanRule implements IAlgebraicRewriteRule {
         } while (true);
     }
 
-    protected Set<LogicalVariable> computeGbyVarsUsingPksOnly(AbstractLogicalOperator op, IOptimizationContext context)
-            throws AlgebricksException {
+    protected Set<LogicalVariable> computeGbyVars(AbstractLogicalOperator op, Set<LogicalVariable> freeVars,
+            IOptimizationContext context) throws AlgebricksException {
         PhysicalOptimizationsUtil.computeFDsAndEquivalenceClasses(op, context);
         List<FunctionalDependency> fdList = context.getFDList(op);
         if (fdList == null) {
@@ -215,6 +223,7 @@ public class IntroduceGroupByForSubplanRule implements IAlgebraicRewriteRule {
         // check if any of the FDs is a key
         List<LogicalVariable> all = new ArrayList<LogicalVariable>();
         VariableUtilities.getLiveVariables(op, all);
+        all.retainAll(freeVars);
         for (FunctionalDependency fd : fdList) {
             if (fd.getTail().containsAll(all)) {
                 return new HashSet<LogicalVariable>(fd.getHead());
@@ -237,8 +246,6 @@ public class IntroduceGroupByForSubplanRule implements IAlgebraicRewriteRule {
             }
             AbstractLogicalOperator opUnder = (AbstractLogicalOperator) g.getInputs().get(0).getOperator();
             OperatorManipulationUtil.substituteVarRec(opUnder, ov, newVar);
-            // g.substituteVarInNestedPlans(ov, newVar);
-            // OperatorManipulationUtil.substituteVarRec(lojoin, ov, newVar);
         }
     }
 

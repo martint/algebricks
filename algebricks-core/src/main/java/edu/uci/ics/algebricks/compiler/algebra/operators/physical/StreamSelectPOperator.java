@@ -38,6 +38,11 @@ public class StreamSelectPOperator extends AbstractPhysicalOperator {
     }
 
     @Override
+    public boolean isMicroOperator() {
+        return true;
+    }
+
+    @Override
     public void computeDeliveredProperties(ILogicalOperator op, IOptimizationContext context) {
         ILogicalOperator op2 = op.getInputs().get(0).getOperator();
         deliveredProperties = op2.getDeliveredPhysicalProperties().clone();
@@ -57,8 +62,8 @@ public class StreamSelectPOperator extends AbstractPhysicalOperator {
         ILogicalExpressionJobGen exprJobGen = context.getExpressionJobGen();
         IEvaluatorFactory cond = exprJobGen.createEvaluatorFactory(select.getCondition().getExpression(), inputSchemas,
                 context);
-        StreamSelectRuntimeFactory runtime = new StreamSelectRuntimeFactory(cond, null,
-                context.getBinaryBooleanInspector());
+        StreamSelectRuntimeFactory runtime = new StreamSelectRuntimeFactory(cond, null, context
+                .getBinaryBooleanInspector());
         // contribute one Asterix framewriter
         RecordDescriptor recDesc = JobGenHelper.mkRecordDescriptor(opSchema, context);
         builder.contributeMicroOperator(select, runtime, recDesc);

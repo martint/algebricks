@@ -35,6 +35,11 @@ public abstract class AbstractExchangePOperator extends AbstractPhysicalOperator
         builder.contributeGraphEdge(src, 0, op, 0);
     }
 
+    @Override
+    public boolean isMicroOperator() {
+        return false;
+    }
+
     public abstract Pair<IConnectorDescriptor, TargetConstraint> createConnectorDescriptor(JobSpecification spec,
             IOperatorSchema opSchema, JobGenContext context) throws AlgebricksException;
 }

@@ -48,6 +48,11 @@ public class UnionAllPOperator extends AbstractPhysicalOperator {
     }
 
     @Override
+    public boolean isMicroOperator() {
+        return false;
+    }
+
+    @Override
     public void computeDeliveredProperties(ILogicalOperator op, IOptimizationContext context) {
         AbstractLogicalOperator op2 = (AbstractLogicalOperator) op.getInputs().get(0).getOperator();
         IPartitioningProperty pp = op2.getDeliveredPhysicalProperties().getPartitioningProperty();
@@ -100,8 +105,8 @@ public class UnionAllPOperator extends AbstractPhysicalOperator {
             JobGenContext context) throws AlgebricksException {
         int n = varMap.size();
         for (int i = 0; i < n; i++) {
-            context.setVarType(varMap.get(i).third,
-                    context.getType(new VariableReferenceExpression(varMap.get(i).first)));
+            context.setVarType(varMap.get(i).third, context
+                    .getType(new VariableReferenceExpression(varMap.get(i).first)));
         }
     }
 

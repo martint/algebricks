@@ -26,6 +26,7 @@ import edu.uci.ics.algebricks.compiler.algebra.operators.logical.LeftOuterJoinOp
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.SubplanOperator;
 import edu.uci.ics.algebricks.compiler.optimizer.base.IAlgebraicRewriteRule;
 import edu.uci.ics.algebricks.compiler.optimizer.base.IOptimizationContext;
+import edu.uci.ics.algebricks.compiler.optimizer.base.OptimizationUtil;
 
 public class InsertOuterJoinRule implements IAlgebraicRewriteRule {
 
@@ -56,6 +57,10 @@ public class InsertOuterJoinRule implements IAlgebraicRewriteRule {
         LogicalOperatorReference subplanRoot = p.getRoots().get(0);
         AbstractLogicalOperator op1 = (AbstractLogicalOperator) subplanRoot.getOperator();
         LogicalOperatorReference opUnder = subplan.getInputs().get(0);
+
+        if (OptimizationUtil.isNullTest((AbstractLogicalOperator) opUnder.getOperator())) {
+            return false;
+        }
 
         switch (op1.getOperatorTag()) {
             case INNERJOIN: {

@@ -46,6 +46,11 @@ public class DataSourceScanPOperator extends AbstractScanPOperator {
     }
 
     @Override
+    public boolean isMicroOperator() {
+        return false;
+    }
+
+    @Override
     public void computeDeliveredProperties(ILogicalOperator op, IOptimizationContext context) {
         // partitioning properties
         DataSourceScanOperator dssOp = (DataSourceScanOperator) op;

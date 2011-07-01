@@ -94,6 +94,11 @@ public class AggregatePOperator extends AbstractPhysicalOperator {
         builder.contributeGraphEdge(src, 0, aggOp, 0);
     }
 
+    @Override
+    public boolean isMicroOperator() {
+        return true;
+    }
+
     private void setVarTypes(List<LogicalVariable> vars, List<LogicalExpressionReference> exprs, JobGenContext context)
             throws AlgebricksException {
         int n = vars.size();
@@ -103,4 +108,5 @@ public class AggregatePOperator extends AbstractPhysicalOperator {
             context.setVarType(vars.get(i), t);
         }
     }
+
 }

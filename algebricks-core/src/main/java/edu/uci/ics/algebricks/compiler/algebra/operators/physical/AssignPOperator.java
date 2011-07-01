@@ -86,6 +86,11 @@ public class AssignPOperator extends AbstractPhysicalOperator {
 
     }
 
+    @Override
+    public boolean isMicroOperator() {
+        return true;
+    }
+
     private void setVarTypes(List<LogicalVariable> vars, List<LogicalExpressionReference> exprs, JobGenContext context)
             throws AlgebricksException {
         int n = vars.size();
@@ -93,4 +98,5 @@ public class AssignPOperator extends AbstractPhysicalOperator {
             context.setVarType(vars.get(i), context.getType(exprs.get(i).getExpression()));
         }
     }
+
 }

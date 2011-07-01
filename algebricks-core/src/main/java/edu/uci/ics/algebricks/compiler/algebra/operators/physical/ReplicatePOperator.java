@@ -39,6 +39,11 @@ public class ReplicatePOperator extends AbstractPhysicalOperator {
     }
 
     @Override
+    public boolean isMicroOperator() {
+        return false;
+    }
+
+    @Override
     public PhysicalRequirements getRequiredPropertiesForChildren(ILogicalOperator op,
             IPhysicalPropertiesVector reqdByParent) {
         return emptyUnaryRequirements();

@@ -28,6 +28,7 @@ import edu.uci.ics.algebricks.runtime.hyracks.jobgen.data.UTF8StringPrinterFacto
 import edu.uci.ics.algebricks.runtime.hyracks.operators.aggreg.AggregateRuntimeFactory;
 import edu.uci.ics.algebricks.runtime.hyracks.operators.aggreg.NestedPlansAccumulatingAggregatorFactory;
 import edu.uci.ics.algebricks.runtime.hyracks.operators.aggreg.SimpleAlgebricksAccumulatingAggregatorFactory;
+import edu.uci.ics.algebricks.runtime.hyracks.operators.group.MicroPreClusteredGroupRuntimeFactory;
 import edu.uci.ics.algebricks.runtime.hyracks.operators.meta.AlgebricksMetaOperatorDescriptor;
 import edu.uci.ics.algebricks.runtime.hyracks.operators.meta.SubplanRuntimeFactory;
 import edu.uci.ics.algebricks.runtime.hyracks.operators.sort.InMemorySortRuntimeFactory;
@@ -119,8 +120,9 @@ public class PushRuntimeTest {
         PrinterRuntimeFactory printer = new PrinterRuntimeFactory(new int[] { 0, 1 }, new IPrinterFactory[] {
                 IntegerPrinterFactory.INSTANCE, IntegerPrinterFactory.INSTANCE }, assignDesc);
 
-        AlgebricksMetaOperatorDescriptor algebricksOp = new AlgebricksMetaOperatorDescriptor(spec, 0, 0, new IPushRuntimeFactory[] { ets,
-                assign, printer }, new RecordDescriptor[] { etsDesc, assignDesc, null });
+        AlgebricksMetaOperatorDescriptor algebricksOp = new AlgebricksMetaOperatorDescriptor(spec, 0, 0,
+                new IPushRuntimeFactory[] { ets, assign, printer },
+                new RecordDescriptor[] { etsDesc, assignDesc, null });
         PartitionConstraintHelper.addAbsoluteLocationConstraint(spec, algebricksOp, DEFAULT_NODES);
         spec.addRoot(algebricksOp);
         AlgebricksHyracksIntegrationUtil.runJob(spec);
@@ -144,8 +146,8 @@ public class PushRuntimeTest {
         SinkWriterRuntimeFactory writer = new SinkWriterRuntimeFactory(new int[] { 0, 1 }, new IPrinterFactory[] {
                 IntegerPrinterFactory.INSTANCE, IntegerPrinterFactory.INSTANCE }, outFile, assignDesc);
 
-        AlgebricksMetaOperatorDescriptor algebricksOp = new AlgebricksMetaOperatorDescriptor(spec, 0, 0, new IPushRuntimeFactory[] { ets,
-                assign, writer }, new RecordDescriptor[] { etsDesc, assignDesc, null });
+        AlgebricksMetaOperatorDescriptor algebricksOp = new AlgebricksMetaOperatorDescriptor(spec, 0, 0,
+                new IPushRuntimeFactory[] { ets, assign, writer }, new RecordDescriptor[] { etsDesc, assignDesc, null });
         PartitionConstraintHelper.addAbsoluteLocationConstraint(spec, algebricksOp, DEFAULT_NODES);
         spec.addRoot(algebricksOp);
         AlgebricksHyracksIntegrationUtil.runJob(spec);
@@ -184,8 +186,8 @@ public class PushRuntimeTest {
         SinkWriterRuntimeFactory writer = new SinkWriterRuntimeFactory(new int[] { 0 },
                 new IPrinterFactory[] { IntegerPrinterFactory.INSTANCE }, outFile, selectDesc);
 
-        AlgebricksMetaOperatorDescriptor algebricksOp = new AlgebricksMetaOperatorDescriptor(spec, 1, 0, new IPushRuntimeFactory[] {
-                select, writer }, new RecordDescriptor[] { selectDesc, null });
+        AlgebricksMetaOperatorDescriptor algebricksOp = new AlgebricksMetaOperatorDescriptor(spec, 1, 0,
+                new IPushRuntimeFactory[] { select, writer }, new RecordDescriptor[] { selectDesc, null });
 
         PartitionConstraintHelper.addPartitionCountConstraint(spec, algebricksOp, 1);
 
@@ -222,8 +224,9 @@ public class PushRuntimeTest {
         SinkWriterRuntimeFactory writer = new SinkWriterRuntimeFactory(new int[] { 0 },
                 new IPrinterFactory[] { IntegerPrinterFactory.INSTANCE }, outFile, projectDesc);
 
-        AlgebricksMetaOperatorDescriptor algebricksOp = new AlgebricksMetaOperatorDescriptor(spec, 0, 0, new IPushRuntimeFactory[] { ets,
-                assign, project, writer }, new RecordDescriptor[] { etsDesc, assignDesc, projectDesc, null });
+        AlgebricksMetaOperatorDescriptor algebricksOp = new AlgebricksMetaOperatorDescriptor(spec, 0, 0,
+                new IPushRuntimeFactory[] { ets, assign, project, writer }, new RecordDescriptor[] { etsDesc,
+                        assignDesc, projectDesc, null });
 
         PartitionConstraintHelper.addAbsoluteLocationConstraint(spec, algebricksOp, DEFAULT_NODES);
 
@@ -270,8 +273,8 @@ public class PushRuntimeTest {
         SinkWriterRuntimeFactory writer = new SinkWriterRuntimeFactory(new int[] { 0 },
                 new IPrinterFactory[] { IntegerPrinterFactory.INSTANCE }, outFile, limitDesc);
 
-        AlgebricksMetaOperatorDescriptor algebricksOp = new AlgebricksMetaOperatorDescriptor(spec, 1, 0, new IPushRuntimeFactory[] {
-                limit, writer }, new RecordDescriptor[] { limitDesc, null });
+        AlgebricksMetaOperatorDescriptor algebricksOp = new AlgebricksMetaOperatorDescriptor(spec, 1, 0,
+                new IPushRuntimeFactory[] { limit, writer }, new RecordDescriptor[] { limitDesc, null });
         PartitionConstraintHelper.addAbsoluteLocationConstraint(spec, algebricksOp,
                 new String[] { AlgebricksHyracksIntegrationUtil.NC1_ID });
 
@@ -302,8 +305,8 @@ public class PushRuntimeTest {
         SinkWriterRuntimeFactory writer = new SinkWriterRuntimeFactory(new int[] { 0 },
                 new IPrinterFactory[] { IntegerPrinterFactory.INSTANCE }, outFile, unnestDesc);
 
-        AlgebricksMetaOperatorDescriptor algebricksOp = new AlgebricksMetaOperatorDescriptor(spec, 0, 0, new IPushRuntimeFactory[] { ets,
-                unnest, writer }, new RecordDescriptor[] { etsDesc, unnestDesc, null });
+        AlgebricksMetaOperatorDescriptor algebricksOp = new AlgebricksMetaOperatorDescriptor(spec, 0, 0,
+                new IPushRuntimeFactory[] { ets, unnest, writer }, new RecordDescriptor[] { etsDesc, unnestDesc, null });
         PartitionConstraintHelper.addAbsoluteLocationConstraint(spec, algebricksOp,
                 new String[] { AlgebricksHyracksIntegrationUtil.NC1_ID });
         spec.addRoot(algebricksOp);
@@ -350,8 +353,8 @@ public class PushRuntimeTest {
         SinkWriterRuntimeFactory writer = new SinkWriterRuntimeFactory(new int[] { 0 },
                 new IPrinterFactory[] { IntegerPrinterFactory.INSTANCE }, outFile, aggDesc);
 
-        AlgebricksMetaOperatorDescriptor algebricksOp = new AlgebricksMetaOperatorDescriptor(spec, 1, 0, new IPushRuntimeFactory[] { agg,
-                writer }, new RecordDescriptor[] { aggDesc, null });
+        AlgebricksMetaOperatorDescriptor algebricksOp = new AlgebricksMetaOperatorDescriptor(spec, 1, 0,
+                new IPushRuntimeFactory[] { agg, writer }, new RecordDescriptor[] { aggDesc, null });
 
         PartitionConstraintHelper.addPartitionCountConstraint(spec, algebricksOp, 1);
 
@@ -405,8 +408,8 @@ public class PushRuntimeTest {
                 new IAggregateFunctionFactory[] { new TupleCountAggregateFunctionFactory() });
         RecordDescriptor aggDesc = new RecordDescriptor(
                 new ISerializerDeserializer[] { IntegerSerializerDeserializer.INSTANCE });
-        AlgebricksPipeline pipeline = new AlgebricksPipeline(new IPushRuntimeFactory[] { nts, agg }, new RecordDescriptor[] {
-                ntsDesc, aggDesc });
+        AlgebricksPipeline pipeline = new AlgebricksPipeline(new IPushRuntimeFactory[] { nts, agg },
+                new RecordDescriptor[] { ntsDesc, aggDesc });
         NestedPlansAccumulatingAggregatorFactory npaaf = new NestedPlansAccumulatingAggregatorFactory(
                 new AlgebricksPipeline[] { pipeline }, new int[] { 3 }, new int[] {});
         RecordDescriptor gbyDesc = new RecordDescriptor(new ISerializerDeserializer[] {
@@ -430,8 +433,8 @@ public class PushRuntimeTest {
         SinkWriterRuntimeFactory writer = new SinkWriterRuntimeFactory(new int[] { 0 },
                 new IPrinterFactory[] { IntegerPrinterFactory.INSTANCE }, outFile, selectDesc);
 
-        AlgebricksMetaOperatorDescriptor algebricksOp = new AlgebricksMetaOperatorDescriptor(spec, 1, 0, new IPushRuntimeFactory[] {
-                select, writer }, new RecordDescriptor[] { selectDesc, null });
+        AlgebricksMetaOperatorDescriptor algebricksOp = new AlgebricksMetaOperatorDescriptor(spec, 1, 0,
+                new IPushRuntimeFactory[] { select, writer }, new RecordDescriptor[] { selectDesc, null });
 
         PartitionConstraintHelper.addAbsoluteLocationConstraint(spec, algebricksOp,
                 new String[] { AlgebricksHyracksIntegrationUtil.NC1_ID });
@@ -498,8 +501,8 @@ public class PushRuntimeTest {
         SinkWriterRuntimeFactory writer = new SinkWriterRuntimeFactory(new int[] { 0 },
                 new IPrinterFactory[] { IntegerPrinterFactory.INSTANCE }, outFile, selectDesc);
 
-        AlgebricksMetaOperatorDescriptor algebricksOp = new AlgebricksMetaOperatorDescriptor(spec, 1, 0, new IPushRuntimeFactory[] {
-                select, writer }, new RecordDescriptor[] { selectDesc, null });
+        AlgebricksMetaOperatorDescriptor algebricksOp = new AlgebricksMetaOperatorDescriptor(spec, 1, 0,
+                new IPushRuntimeFactory[] { select, writer }, new RecordDescriptor[] { selectDesc, null });
 
         PartitionConstraintHelper.addAbsoluteLocationConstraint(spec, algebricksOp,
                 new String[] { AlgebricksHyracksIntegrationUtil.NC1_ID });
@@ -537,8 +540,9 @@ public class PushRuntimeTest {
         SinkWriterRuntimeFactory writer = new SinkWriterRuntimeFactory(new int[] { 1 },
                 new IPrinterFactory[] { IntegerPrinterFactory.INSTANCE }, outFile, raggDesc);
 
-        AlgebricksMetaOperatorDescriptor algebricksOp = new AlgebricksMetaOperatorDescriptor(spec, 0, 0, new IPushRuntimeFactory[] { ets,
-                unnest, ragg, writer }, new RecordDescriptor[] { etsDesc, unnestDesc, raggDesc, null });
+        AlgebricksMetaOperatorDescriptor algebricksOp = new AlgebricksMetaOperatorDescriptor(spec, 0, 0,
+                new IPushRuntimeFactory[] { ets, unnest, ragg, writer }, new RecordDescriptor[] { etsDesc, unnestDesc,
+                        raggDesc, null });
 
         PartitionConstraintHelper.addAbsoluteLocationConstraint(spec, algebricksOp,
                 new String[] { AlgebricksHyracksIntegrationUtil.NC1_ID });
@@ -589,8 +593,9 @@ public class PushRuntimeTest {
         SinkWriterRuntimeFactory writer = new SinkWriterRuntimeFactory(new int[] { 0, 1 }, new IPrinterFactory[] {
                 IntegerPrinterFactory.INSTANCE, IntegerPrinterFactory.INSTANCE }, outFile, scriptDesc);
 
-        AlgebricksMetaOperatorDescriptor algebricksOp = new AlgebricksMetaOperatorDescriptor(spec, 0, 0, new IPushRuntimeFactory[] { ets,
-                assign, script, writer }, new RecordDescriptor[] { etsDesc, assignDesc, scriptDesc, null });
+        AlgebricksMetaOperatorDescriptor algebricksOp = new AlgebricksMetaOperatorDescriptor(spec, 0, 0,
+                new IPushRuntimeFactory[] { ets, assign, script, writer }, new RecordDescriptor[] { etsDesc,
+                        assignDesc, scriptDesc, null });
 
         PartitionConstraintHelper.addAbsoluteLocationConstraint(spec, algebricksOp,
                 new String[] { AlgebricksHyracksIntegrationUtil.NC1_ID });
@@ -617,8 +622,8 @@ public class PushRuntimeTest {
             outputFile[i] = File.createTempFile("splitop", null);
         }
 
-        FileSplit[] inputSplits = new FileSplit[] { new FileSplit(AlgebricksHyracksIntegrationUtil.NC1_ID, new FileReference(
-                inputFile)) };
+        FileSplit[] inputSplits = new FileSplit[] { new FileSplit(AlgebricksHyracksIntegrationUtil.NC1_ID,
+                new FileReference(inputFile)) };
 
         DelimitedDataTupleParserFactory stringParser = new DelimitedDataTupleParserFactory(
                 new IValueParserFactory[] { UTF8StringParserFactory.INSTANCE }, '\u0000');
@@ -692,8 +697,8 @@ public class PushRuntimeTest {
                 IntegerPrinterFactory.INSTANCE, UTF8StringPrinterFactory.INSTANCE, IntegerPrinterFactory.INSTANCE,
                 UTF8StringPrinterFactory.INSTANCE }, outFile, sortDesc);
 
-        AlgebricksMetaOperatorDescriptor algebricksOp = new AlgebricksMetaOperatorDescriptor(spec, 1, 0, new IPushRuntimeFactory[] {
-                sort, writer }, new RecordDescriptor[] { sortDesc, null });
+        AlgebricksMetaOperatorDescriptor algebricksOp = new AlgebricksMetaOperatorDescriptor(spec, 1, 0,
+                new IPushRuntimeFactory[] { sort, writer }, new RecordDescriptor[] { sortDesc, null });
 
         PartitionConstraintHelper.addPartitionCountConstraint(spec, algebricksOp, 1);
 
@@ -750,9 +755,9 @@ public class PushRuntimeTest {
         SinkWriterRuntimeFactory writer = new SinkWriterRuntimeFactory(new int[] { 0 },
                 new IPrinterFactory[] { IntegerPrinterFactory.INSTANCE }, outFile, project2Desc);
 
-        AlgebricksMetaOperatorDescriptor algebricksOp = new AlgebricksMetaOperatorDescriptor(spec, 0, 0, new IPushRuntimeFactory[] { ets,
-                assign1, subplan, project2, writer }, new RecordDescriptor[] { etsDesc, assign1Desc, subplanDesc,
-                project2Desc, null });
+        AlgebricksMetaOperatorDescriptor algebricksOp = new AlgebricksMetaOperatorDescriptor(spec, 0, 0,
+                new IPushRuntimeFactory[] { ets, assign1, subplan, project2, writer }, new RecordDescriptor[] {
+                        etsDesc, assign1Desc, subplanDesc, project2Desc, null });
 
         PartitionConstraintHelper.addAbsoluteLocationConstraint(spec, algebricksOp, DEFAULT_NODES);
 
@@ -762,6 +767,82 @@ public class PushRuntimeTest {
         StringBuilder buf = new StringBuilder();
         readFileToString(outFile, buf);
         Assert.assertEquals("403", buf.toString());
+        outFile.delete();
+    }
+
+    @Test
+    public void scanMicroSortGbySelectWrite() throws Exception {
+        JobSpecification spec = new JobSpecification();
+
+        // the scanner
+        FileSplit[] fileSplits = new FileSplit[1];
+        fileSplits[0] = new FileSplit(AlgebricksHyracksIntegrationUtil.NC1_ID, new FileReference(new File(
+                "data/tpch0.001/customer.tbl")));
+        IFileSplitProvider splitProvider = new ConstantFileSplitProvider(fileSplits);
+        RecordDescriptor scannerDesc = new RecordDescriptor(new ISerializerDeserializer[] {
+                IntegerSerializerDeserializer.INSTANCE, UTF8StringSerializerDeserializer.INSTANCE,
+                UTF8StringSerializerDeserializer.INSTANCE, IntegerSerializerDeserializer.INSTANCE,
+                UTF8StringSerializerDeserializer.INSTANCE, FloatSerializerDeserializer.INSTANCE,
+                UTF8StringSerializerDeserializer.INSTANCE, UTF8StringSerializerDeserializer.INSTANCE });
+        IValueParserFactory[] valueParsers = new IValueParserFactory[] { IntegerParserFactory.INSTANCE,
+                UTF8StringParserFactory.INSTANCE, UTF8StringParserFactory.INSTANCE, IntegerParserFactory.INSTANCE,
+                UTF8StringParserFactory.INSTANCE, FloatParserFactory.INSTANCE, UTF8StringParserFactory.INSTANCE,
+                UTF8StringParserFactory.INSTANCE };
+        FileScanOperatorDescriptor scanner = new FileScanOperatorDescriptor(spec, splitProvider,
+                new DelimitedDataTupleParserFactory(valueParsers, '|'), scannerDesc);
+
+        PartitionConstraintHelper.addAbsoluteLocationConstraint(spec, scanner,
+                new String[] { AlgebricksHyracksIntegrationUtil.NC1_ID });
+
+        // the sort (by nation id)
+        RecordDescriptor sortDesc = scannerDesc;
+        InMemorySortRuntimeFactory sort = new InMemorySortRuntimeFactory(new int[] { 3 }, null,
+                new IBinaryComparatorFactory[] { IntegerBinaryComparatorFactory.INSTANCE }, null);
+
+        // the group-by
+        NestedTupleSourceRuntimeFactory nts = new NestedTupleSourceRuntimeFactory();
+        RecordDescriptor ntsDesc = sortDesc;
+        AggregateRuntimeFactory agg = new AggregateRuntimeFactory(
+                new IAggregateFunctionFactory[] { new TupleCountAggregateFunctionFactory() });
+        RecordDescriptor aggDesc = new RecordDescriptor(
+                new ISerializerDeserializer[] { IntegerSerializerDeserializer.INSTANCE });
+        AlgebricksPipeline pipeline = new AlgebricksPipeline(new IPushRuntimeFactory[] { nts, agg },
+                new RecordDescriptor[] { ntsDesc, aggDesc });
+        NestedPlansAccumulatingAggregatorFactory npaaf = new NestedPlansAccumulatingAggregatorFactory(
+                new AlgebricksPipeline[] { pipeline }, new int[] { 3 }, new int[] {});
+        RecordDescriptor gbyDesc = new RecordDescriptor(new ISerializerDeserializer[] {
+                IntegerSerializerDeserializer.INSTANCE, IntegerSerializerDeserializer.INSTANCE });
+        MicroPreClusteredGroupRuntimeFactory gby = new MicroPreClusteredGroupRuntimeFactory(new int[] { 3 },
+                new IBinaryComparatorFactory[] { IntegerBinaryComparatorFactory.INSTANCE }, npaaf, sortDesc, gbyDesc,
+                null);
+
+        // the algebricks op.
+        IEvaluatorFactory cond = new IntegerEqualsEvalFactory(new IntegerConstantEvalFactory(3),
+                new ColumnAccessEvalFactory(0)); // Canadian customers
+        StreamSelectRuntimeFactory select = new StreamSelectRuntimeFactory(cond, new int[] { 1 },
+                BinaryBooleanInspectorImpl.INSTANCE);
+        RecordDescriptor selectDesc = new RecordDescriptor(
+                new ISerializerDeserializer[] { IntegerSerializerDeserializer.INSTANCE });
+
+        String filePath = PATH_ACTUAL + SEPARATOR + "scanSortGbySelectWrite.out";
+        File outFile = new File(filePath);
+        SinkWriterRuntimeFactory writer = new SinkWriterRuntimeFactory(new int[] { 0 },
+                new IPrinterFactory[] { IntegerPrinterFactory.INSTANCE }, outFile, selectDesc);
+
+        AlgebricksMetaOperatorDescriptor algebricksOp = new AlgebricksMetaOperatorDescriptor(spec, 1, 0,
+                new IPushRuntimeFactory[] { sort, gby, select, writer }, new RecordDescriptor[] { sortDesc, gbyDesc,
+                        selectDesc, null });
+
+        PartitionConstraintHelper.addAbsoluteLocationConstraint(spec, algebricksOp,
+                new String[] { AlgebricksHyracksIntegrationUtil.NC1_ID });
+
+        spec.connect(new OneToOneConnectorDescriptor(spec), scanner, 0, algebricksOp, 0);
+        spec.addRoot(algebricksOp);
+
+        AlgebricksHyracksIntegrationUtil.runJob(spec);
+        StringBuilder buf = new StringBuilder();
+        readFileToString(outFile, buf);
+        Assert.assertEquals("9", buf.toString());
         outFile.delete();
     }
 

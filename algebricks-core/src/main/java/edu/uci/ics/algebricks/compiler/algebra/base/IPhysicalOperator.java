@@ -55,4 +55,6 @@ public interface IPhysicalOperator {
     public void disableJobGenBelowMe();
 
     public boolean isJobGenDisabledBelowMe();
+
+    public boolean isMicroOperator();
 }

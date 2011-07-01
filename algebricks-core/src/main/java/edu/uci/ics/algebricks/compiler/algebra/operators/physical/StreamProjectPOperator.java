@@ -37,6 +37,11 @@ public class StreamProjectPOperator extends AbstractPropagatePropertiesForUsedVa
     }
 
     @Override
+    public boolean isMicroOperator() {
+        return true;
+    }
+
+    @Override
     public PhysicalRequirements getRequiredPropertiesForChildren(ILogicalOperator op,
             IPhysicalPropertiesVector reqdByParent) {
         return emptyUnaryRequirements();
