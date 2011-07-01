@@ -30,12 +30,9 @@ import edu.uci.ics.algebricks.compiler.optimizer.base.OptimizationUtil;
 
 public class IsolateHyracksOperatorsRule implements IAlgebraicRewriteRule {
 
-    private final PhysicalOperatorTag[] operatorsProvidedByHyrax;
     private final PhysicalOperatorTag[] operatorsBelowWhichJobGenIsDisabled;
 
-    public IsolateHyracksOperatorsRule(PhysicalOperatorTag[] operatorsProvidedByHyrax,
-            PhysicalOperatorTag[] operatorsBelowWhichJobGenIsDisabled) {
-        this.operatorsProvidedByHyrax = operatorsProvidedByHyrax;
+    public IsolateHyracksOperatorsRule(PhysicalOperatorTag[] operatorsBelowWhichJobGenIsDisabled) {
         this.operatorsBelowWhichJobGenIsDisabled = operatorsBelowWhichJobGenIsDisabled;
     }
 
@@ -44,10 +41,10 @@ public class IsolateHyracksOperatorsRule implements IAlgebraicRewriteRule {
         AbstractLogicalOperator op = (AbstractLogicalOperator) opRef.getOperator();
         IPhysicalOperator pt = op.getPhysicalOperator();
 
-        if (pt == null) {
+        if (pt == null || op.getOperatorTag() == LogicalOperatorTag.EXCHANGE) {
             return false;
         }
-        if (arrayContains(operatorsProvidedByHyrax, pt.getOperatorTag())) {
+        if (!pt.isMicroOperator()) {
             return testIfExchangeBelow(opRef, context);
         } else {
             return testIfExchangeAbove(opRef, context);
@@ -101,10 +98,10 @@ public class IsolateHyracksOperatorsRule implements IAlgebraicRewriteRule {
         for (LogicalOperatorReference i : op.getInputs()) {
             AbstractLogicalOperator c = (AbstractLogicalOperator) i.getOperator();
             IPhysicalOperator cpop = c.getPhysicalOperator();
-            if (cpop == null) {
+            if (c.getOperatorTag() == LogicalOperatorTag.EXCHANGE || cpop == null) {
                 continue;
             }
-            if (arrayContains(operatorsProvidedByHyrax, cpop.getOperatorTag())) {
+            if (!cpop.isMicroOperator()) {
                 insertOneToOneExchange(i, context);
                 exchInserted = true;
             }
@@ -126,6 +123,7 @@ public class IsolateHyracksOperatorsRule implements IAlgebraicRewriteRule {
         ExchangeOperator e = new ExchangeOperator();
         e.setPhysicalOperator(new OneToOneExchangePOperator());
         ILogicalOperator inOp = i.getOperator();
+
         e.getInputs().add(new LogicalOperatorReference(inOp));
         i.setOperator(e);
         // e.recomputeSchema();
