@@ -20,11 +20,12 @@ import edu.uci.ics.algebricks.compiler.algebra.operators.logical.AggregateOperat
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.GroupByOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.IOperatorSchema;
 import edu.uci.ics.algebricks.runtime.hyracks.base.IAggregateFunctionFactory;
+import edu.uci.ics.algebricks.runtime.hyracks.base.ISerializableAggregateFunctionFactory;
 import edu.uci.ics.algebricks.runtime.hyracks.jobgen.base.IHyracksJobBuilder;
 import edu.uci.ics.algebricks.runtime.hyracks.jobgen.impl.JobGenContext;
 import edu.uci.ics.algebricks.runtime.hyracks.jobgen.impl.JobGenHelper;
 import edu.uci.ics.algebricks.runtime.hyracks.jobgen.impl.OperatorSchemaImpl;
-import edu.uci.ics.algebricks.runtime.hyracks.operators.aggreg.SimpleAggregatorDescriptorFactory;
+import edu.uci.ics.algebricks.runtime.hyracks.operators.aggreg.SerializableAggregatorDescriptorFactory;
 import edu.uci.ics.algebricks.runtime.hyracks.operators.aggreg.SimpleMergeDescriptorFactory;
 import edu.uci.ics.algebricks.utils.Pair;
 import edu.uci.ics.hyracks.api.dataflow.value.IBinaryComparatorFactory;
@@ -101,12 +102,12 @@ public class ExternalGroupByPOperator extends HashGroupByPOperator {
         IPartialAggregationTypeComputer partialAggregationTypeComputer = context.getPartialAggregationTypeComputer();
         List<Object> intermediateTypes = new ArrayList<Object>();
         int n = aggOp.getExpressions().size();
-        IAggregateFunctionFactory[] aff = new IAggregateFunctionFactory[n];
+        ISerializableAggregateFunctionFactory[] aff = new ISerializableAggregateFunctionFactory[n];
         int i = 0;
         ILogicalExpressionJobGen exprJobGen = context.getExpressionJobGen();
         for (LogicalExpressionReference exprRef : aggOp.getExpressions()) {
             AggregateFunctionCallExpression aggFun = (AggregateFunctionCallExpression) exprRef.getExpression();
-            aff[i++] = exprJobGen.createAggregateFunctionFactory(aggFun, inputSchemas, context);
+            aff[i++] = exprJobGen.createSerializableAggregateFunctionFactory(aggFun, inputSchemas, context);
             intermediateTypes.add(partialAggregationTypeComputer.getType(aggFun, context));
         }
 
@@ -153,7 +154,7 @@ public class ExternalGroupByPOperator extends HashGroupByPOperator {
                     .get(i).getExpression();
             merges[i] = exprJobGen.createAggregateFunctionFactory(mergeFun, localInputSchemas, context);
         }
-        IAggregatorDescriptorFactory aggregatorFactory = new SimpleAggregatorDescriptorFactory(aff);
+        IAggregatorDescriptorFactory aggregatorFactory = new SerializableAggregatorDescriptorFactory(aff);
         IAggregatorDescriptorFactory mergeFactory = new SimpleMergeDescriptorFactory(merges);
 
         ITuplePartitionComputerFactory tpcf = new FieldHashPartitionComputerFactory(keys, hashFunctionFactories);

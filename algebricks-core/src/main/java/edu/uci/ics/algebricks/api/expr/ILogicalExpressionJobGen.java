@@ -23,6 +23,7 @@ import edu.uci.ics.algebricks.compiler.algebra.operators.logical.IOperatorSchema
 import edu.uci.ics.algebricks.runtime.hyracks.base.IAggregateFunctionFactory;
 import edu.uci.ics.algebricks.runtime.hyracks.base.IEvaluatorFactory;
 import edu.uci.ics.algebricks.runtime.hyracks.base.IRunningAggregateFunctionFactory;
+import edu.uci.ics.algebricks.runtime.hyracks.base.ISerializableAggregateFunctionFactory;
 import edu.uci.ics.algebricks.runtime.hyracks.base.IUnnestingFunctionFactory;
 import edu.uci.ics.algebricks.runtime.hyracks.jobgen.impl.JobGenContext;
 
@@ -33,6 +34,10 @@ public interface ILogicalExpressionJobGen {
 
     public IAggregateFunctionFactory createAggregateFunctionFactory(AggregateFunctionCallExpression expr,
             IOperatorSchema[] inputSchemas, JobGenContext context) throws AlgebricksException;
+
+    public ISerializableAggregateFunctionFactory createSerializableAggregateFunctionFactory(
+            AggregateFunctionCallExpression expr, IOperatorSchema[] inputSchemas, JobGenContext context)
+            throws AlgebricksException;
 
     public IRunningAggregateFunctionFactory createRunningAggregateFunctionFactory(StatefulFunctionCallExpression expr,
             IOperatorSchema[] inputSchemas, JobGenContext context) throws AlgebricksException;
