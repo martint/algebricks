@@ -27,6 +27,8 @@ import edu.uci.ics.hyracks.dataflow.common.comm.io.FrameTupleAccessor;
  */
 public interface ISpillableTable {
 
+    public void close();
+    
     public void reset();
 
     public int getFrameCount();

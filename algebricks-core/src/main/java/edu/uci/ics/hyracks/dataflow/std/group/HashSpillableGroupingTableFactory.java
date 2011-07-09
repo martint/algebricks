@@ -140,7 +140,7 @@ public class HashSpillableGroupingTableFactory implements ISpillableTableFactory
              * same partition based on the {@link #tpc} are stored as an array
              * of pointers.
              */
-            private final Link[] table = new Link[tableSize];
+            private Link[] table;
 
             private final List<ByteBuffer> frames = new ArrayList<ByteBuffer>();
 
@@ -156,6 +156,8 @@ public class HashSpillableGroupingTableFactory implements ISpillableTableFactory
 
             @Override
             public void reset() {
+                if (table == null)
+                    table = new Link[tableSize];
                 groupSize = 0;
                 dataFrameCount = -1;
                 tPointers = null;
@@ -458,6 +460,19 @@ public class HashSpillableGroupingTableFactory implements ISpillableTableFactory
                 for (int i = 0; i < n; i++, a++, b++) {
                     swap(x, a, b);
                 }
+            }
+
+            @Override
+            public void close() {
+                groupSize = 0;
+                dataFrameCount = -1;
+                tPointers = null;
+                // Reset the grouping hash table
+                for (int i = 0; i < table.length; i++) {
+                    table[i] = null;
+                }
+                frames.clear();
+                // aggregator.close();
             }
         };
     }

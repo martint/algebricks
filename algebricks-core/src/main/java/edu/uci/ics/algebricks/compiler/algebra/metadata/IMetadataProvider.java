@@ -36,8 +36,8 @@ public interface IMetadataProvider<S, I> {
      * contributeSchedulingConstraints instead.
      */
     public Pair<IOperatorDescriptor, AlgebricksPartitionConstraint> getScannerRuntime(IDataSource<S> dataSource,
-            List<LogicalVariable> scanVariables, JobGenContext context, JobSpecification jobSpec)
-            throws AlgebricksException;
+            List<LogicalVariable> scanVariables, List<LogicalVariable> projectVariables, JobGenContext context,
+            JobSpecification jobSpec) throws AlgebricksException;
 
     public boolean scannerOperatorIsLeaf(IDataSource<S> dataSource);
 

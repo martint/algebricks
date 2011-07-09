@@ -15,17 +15,22 @@
 package edu.uci.ics.algebricks.compiler.algebra.operators.logical;
 
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 
 import edu.uci.ics.algebricks.api.exceptions.AlgebricksException;
 import edu.uci.ics.algebricks.compiler.algebra.base.LogicalOperatorTag;
 import edu.uci.ics.algebricks.compiler.algebra.base.LogicalVariable;
 import edu.uci.ics.algebricks.compiler.algebra.metadata.IDataSource;
+import edu.uci.ics.algebricks.compiler.algebra.properties.VariablePropagationPolicy;
 import edu.uci.ics.algebricks.compiler.algebra.visitors.ILogicalExpressionReferenceTransform;
 import edu.uci.ics.algebricks.compiler.algebra.visitors.ILogicalOperatorVisitor;
 
 public class DataSourceScanOperator extends AbstractScanOperator {
 
     private IDataSource<?> dataSource;
+
+    private List<LogicalVariable> projectVars = new ArrayList<LogicalVariable>();
 
     public DataSourceScanOperator(ArrayList<LogicalVariable> variables, IDataSource<?> dataSource) {
         super(variables);
@@ -54,6 +59,31 @@ public class DataSourceScanOperator extends AbstractScanOperator {
     @Override
     public boolean isMap() {
         return false;
+    }
+
+    public void addProjectVariables(Collection<LogicalVariable> vars) {
+        projectVars.addAll(vars);
+    }
+
+    public List<LogicalVariable> getProjectVariables() {
+        return projectVars;
+    }
+
+    @Override
+    public VariablePropagationPolicy getVariablePropagationPolicy() {
+        return new VariablePropagationPolicy() {
+            @Override
+            public void propagateVariables(IOperatorSchema target, IOperatorSchema... sources)
+                    throws AlgebricksException {
+                if (sources.length > 0) {
+                    target.addAllVariables(sources[0]);
+                }
+                List<LogicalVariable> outputVariables = projectVars.size() == 0 ? variables : projectVars;
+                for (LogicalVariable v : outputVariables) {
+                    target.addVariable(v);
+                }
+            }
+        };
     }
 
 }

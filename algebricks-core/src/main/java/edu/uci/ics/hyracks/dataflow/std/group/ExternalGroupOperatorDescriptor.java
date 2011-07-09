@@ -203,6 +203,7 @@ public class ExternalGroupOperatorDescriptor extends AbstractOperatorDescriptor 
                         } else {
                             // flush the memory into the run file.
                             flushFramesToRun();
+                            gTable.close();
                         }
                     }
                     env.set(RUNS, runs);
@@ -318,6 +319,7 @@ public class ExternalGroupOperatorDescriptor extends AbstractOperatorDescriptor 
                         writer.close();
                     }
                     env.set(RUNS, null);
+                    inFrames.clear();
                 }
 
                 private void doPass(LinkedList<RunFileReader> runs) throws HyracksDataException {

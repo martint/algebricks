@@ -74,8 +74,9 @@ public class DataSourceScanPOperator extends AbstractScanPOperator {
             ++i;
         }
 
-        Pair<IOperatorDescriptor, AlgebricksPartitionConstraint> p = mp.getScannerRuntime(dataSource, vars, context,
-                builder.getJobSpec());
+        List<LogicalVariable> projectVars = scan.getProjectVariables();
+        Pair<IOperatorDescriptor, AlgebricksPartitionConstraint> p = mp.getScannerRuntime(dataSource, vars,
+                projectVars, context, builder.getJobSpec());
         builder.contributeHyracksOperator(scan, p.first);
         if (p.second != null) {
             builder.contributeAlgebricksPartitionConstraint(p.first, p.second);

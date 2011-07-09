@@ -227,7 +227,7 @@ public class LogicalOperatorPrettyPrintVisitor implements ILogicalOperatorVisito
     @Override
     public String visitDataScanOperator(DataSourceScanOperator op, Integer indent) {
         StringBuilder buffer = new StringBuilder();
-        addIndent(buffer, indent).append("data-scan " + op.getVariables() + " <- " + op.getDataSource());
+        addIndent(buffer, indent).append("data-scan " + op.getProjectVariables() +"<-"+ op.getVariables() + " <- " + op.getDataSource());
         return buffer.toString();
     }
 
