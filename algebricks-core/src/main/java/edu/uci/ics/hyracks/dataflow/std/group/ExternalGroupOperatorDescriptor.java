@@ -155,7 +155,8 @@ public class ExternalGroupOperatorDescriptor extends AbstractOperatorDescriptor 
             // Create the spillable table
             final ISpillableTable gTable = spillableTableFactory.buildSpillableTable(ctx, keyFields,
                     comparatorFactories, aggregatorFactory,
-                    recordDescProvider.getInputRecordDescriptor(getOperatorId(), 0), recordDescriptors[0], nPartitions);
+                    recordDescProvider.getInputRecordDescriptor(getOperatorId(), 0), recordDescriptors[0],
+                    ExternalGroupOperatorDescriptor.this.framesLimit);
             // Create the tuple accessor
             final FrameTupleAccessor accessor = new FrameTupleAccessor(ctx.getFrameSize(),
                     recordDescProvider.getInputRecordDescriptor(getOperatorId(), 0));
@@ -314,12 +315,12 @@ public class ExternalGroupOperatorDescriptor extends AbstractOperatorDescriptor 
                                     throw new HyracksDataException(e);
                                 }
                             }
+                            inFrames.clear();
                         }
                     } finally {
                         writer.close();
                     }
                     env.set(RUNS, null);
-                    inFrames.clear();
                 }
 
                 private void doPass(LinkedList<RunFileReader> runs) throws HyracksDataException {
@@ -428,7 +429,11 @@ public class ExternalGroupOperatorDescriptor extends AbstractOperatorDescriptor 
                         }
                         // After processing all records, flush the aggregator
                         currentWorkingAggregator.close();
-                        // Remove the processed run files
+                        // Remove the processed run files and close open files
+                        for (int i = 0; i < inFrames.size(); i++) {
+                            RunFileReader reader = runs.get(i);
+                            reader.close();
+                        }
                         runs.subList(0, inFrames.size()).clear();
                         // insert the new run file into the beginning of the run
                         // file list

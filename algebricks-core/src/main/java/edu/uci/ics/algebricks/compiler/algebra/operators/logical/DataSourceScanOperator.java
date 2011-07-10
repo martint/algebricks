@@ -32,6 +32,8 @@ public class DataSourceScanOperator extends AbstractScanOperator {
 
     private List<LogicalVariable> projectVars = new ArrayList<LogicalVariable>();
 
+    private boolean projectPushed = false;
+
     public DataSourceScanOperator(ArrayList<LogicalVariable> variables, IDataSource<?> dataSource) {
         super(variables);
         this.dataSource = dataSource;
@@ -63,10 +65,15 @@ public class DataSourceScanOperator extends AbstractScanOperator {
 
     public void addProjectVariables(Collection<LogicalVariable> vars) {
         projectVars.addAll(vars);
+        projectPushed = true;
     }
 
     public List<LogicalVariable> getProjectVariables() {
         return projectVars;
+    }
+
+    public boolean isProjectPushed() {
+        return projectPushed;
     }
 
     @Override
@@ -78,7 +85,7 @@ public class DataSourceScanOperator extends AbstractScanOperator {
                 if (sources.length > 0) {
                     target.addAllVariables(sources[0]);
                 }
-                List<LogicalVariable> outputVariables = projectVars.size() == 0 ? variables : projectVars;
+                List<LogicalVariable> outputVariables = projectPushed ? projectVars : variables;
                 for (LogicalVariable v : outputVariables) {
                     target.addVariable(v);
                 }
