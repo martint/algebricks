@@ -14,19 +14,17 @@
  */
 package edu.uci.ics.algebricks.compiler.optimizer.rules;
 
-import java.util.HashSet;
 import java.util.List;
 
 import edu.uci.ics.algebricks.api.exceptions.AlgebricksException;
 import edu.uci.ics.algebricks.compiler.algebra.base.LogicalExpressionReference;
 import edu.uci.ics.algebricks.compiler.algebra.base.LogicalOperatorReference;
 import edu.uci.ics.algebricks.compiler.algebra.base.LogicalOperatorTag;
-import edu.uci.ics.algebricks.compiler.algebra.base.LogicalVariable;
 import edu.uci.ics.algebricks.compiler.algebra.expressions.ConstantExpression;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.AbstractLogicalOperator;
+import edu.uci.ics.algebricks.compiler.algebra.operators.logical.AbstractScanOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.EmptyTupleSourceOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.InnerJoinOperator;
-import edu.uci.ics.algebricks.compiler.algebra.operators.logical.visitors.VariableUtilities;
 import edu.uci.ics.algebricks.compiler.optimizer.base.IAlgebraicRewriteRule;
 import edu.uci.ics.algebricks.compiler.optimizer.base.IOptimizationContext;
 
@@ -43,37 +41,23 @@ public class SimpleUnnestToProductRule implements IAlgebraicRewriteRule {
         if (op.getOperatorTag() != LogicalOperatorTag.DATASOURCESCAN) {
             return false;
         }
-        List<LogicalOperatorReference> ins = op.getInputs();
 
-        if (ins == null || ins.isEmpty()) {
-            return false;
-        }
-
-        LogicalOperatorReference opRef2 = ins.get(0);
+        LogicalOperatorReference opRef2 = op.getInputs().get(0);
         AbstractLogicalOperator op2 = (AbstractLogicalOperator) opRef2.getOperator();
 
-        if (!descOrSelfIsSourceScan(op2)) {
+        if (!(op2 instanceof AbstractScanOperator) && !descOrSelfIsSourceScan(op2)) {
             return false;
         }
+        InnerJoinOperator product = new InnerJoinOperator(new LogicalExpressionReference(ConstantExpression.TRUE));
 
-        HashSet<LogicalVariable> varsUsedInUnnest = new HashSet<LogicalVariable>();
-        VariableUtilities.getUsedVariables(op, varsUsedInUnnest);
-        if (varsUsedInUnnest.size() == 0) {
-            // if (AnalysisUtil.independent(unnestOuter.getExpression(),
-            // unnestInner.getExpression())) {
-            InnerJoinOperator product = new InnerJoinOperator(new LogicalExpressionReference(ConstantExpression.TRUE));
-
-            LogicalOperatorReference emptySrc = new LogicalOperatorReference(new EmptyTupleSourceOperator());
-            List<LogicalOperatorReference> opInpList = op.getInputs();
-            opInpList.clear();
-            opInpList.add(emptySrc);
-            product.getInputs().add(opRef2); // outer branch
-            product.getInputs().add(new LogicalOperatorReference(op));
-            opRef.setOperator(product); // plug the product in the plan
-            return true;
-        } else {
-            return false;
-        }
+        LogicalOperatorReference emptySrc = new LogicalOperatorReference(new EmptyTupleSourceOperator());
+        List<LogicalOperatorReference> opInpList = op.getInputs();
+        opInpList.clear();
+        opInpList.add(emptySrc);
+        product.getInputs().add(opRef2); // outer branch
+        product.getInputs().add(new LogicalOperatorReference(op));
+        opRef.setOperator(product); // plug the product in the plan
+        return true;
     }
 
     private boolean descOrSelfIsSourceScan(AbstractLogicalOperator op2) {
