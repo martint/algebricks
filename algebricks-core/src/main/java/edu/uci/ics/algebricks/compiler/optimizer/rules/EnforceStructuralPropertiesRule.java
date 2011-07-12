@@ -32,7 +32,6 @@ import edu.uci.ics.algebricks.compiler.algebra.operators.physical.BroadcastPOper
 import edu.uci.ics.algebricks.compiler.algebra.operators.physical.HashGroupByPOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.physical.HashPartitionExchangePOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.physical.HashPartitionMergeExchangePOperator;
-import edu.uci.ics.algebricks.compiler.algebra.operators.physical.InMemoryStableSortPOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.physical.PreSortedDistinctByPOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.physical.PreclusteredGroupByPOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.physical.RandomMergeExchangePOperator;
@@ -430,11 +429,7 @@ public class EnforceStructuralPropertiesRule implements IAlgebraicRewriteRule {
         }
         OrderOperator oo = new OrderOperator(oe);
         oo.setExecutionMode(AbstractLogicalOperator.ExecutionMode.LOCAL);
-//        if (!isMicroOp) {
-            oo.setPhysicalOperator(new StableSortPOperator(physicalOptimizationConfig.getMaxFramesExternalSort()));
-//        } else {
-//            oo.setPhysicalOperator(new InMemoryStableSortPOperator());
-//        }
+        oo.setPhysicalOperator(new StableSortPOperator(physicalOptimizationConfig.getMaxFramesExternalSort()));
         oo.getInputs().add(topOp);
         if (AlgebricksConfig.DEBUG) {
             AlgebricksConfig.ALGEBRICKS_LOGGER.fine(">>>> Added sort enforcer " + oo.getPhysicalOperator() + ".\n");
@@ -508,7 +503,11 @@ public class EnforceStructuralPropertiesRule implements IAlgebraicRewriteRule {
                         if (PropertiesUtil.matchLocalProperties(reqdLocals, cldLocals, ecs, fds)) {
                             List<OrderColumn> orderColumns = getOrderColumnsFromGroupingProperties(reqdLocals,
                                     cldLocals);
-                            pop = new HashPartitionMergeExchangePOperator(orderColumns, domain);
+                            List<LogicalVariable> partFields = new ArrayList<LogicalVariable>(orderColumns.size());
+                            for (OrderColumn oc : orderColumns) {
+                                partFields.add(oc.getColumn());
+                            }
+                            pop = new HashPartitionMergeExchangePOperator(orderColumns, partFields, domain);
                             propWasSet = true;
                         }
                     }

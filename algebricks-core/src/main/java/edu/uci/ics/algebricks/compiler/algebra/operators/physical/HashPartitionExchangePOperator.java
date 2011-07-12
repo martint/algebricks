@@ -59,6 +59,10 @@ public class HashPartitionExchangePOperator extends AbstractExchangePOperator {
         return hashFields;
     }
 
+    public INodeDomain getDomain() {
+        return domain;
+    }
+
     @Override
     public void computeDeliveredProperties(ILogicalOperator op, IOptimizationContext context) {
         IPartitioningProperty p = new UnorderedPartitionedProperty(new HashSet<LogicalVariable>(hashFields), domain);

@@ -14,7 +14,6 @@
  */
 package edu.uci.ics.algebricks.compiler.algebra.operators.physical;
 
-import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -53,11 +52,13 @@ import edu.uci.ics.hyracks.dataflow.std.connectors.MToNHashPartitioningMergingCo
 public class HashPartitionMergeExchangePOperator extends AbstractExchangePOperator {
 
     private List<OrderColumn> orderColumns;
+    private List<LogicalVariable> partitionFields;
     private INodeDomain domain;
 
-    // order expressions should only be of the form ASC or DESC
-    public HashPartitionMergeExchangePOperator(List<OrderColumn> orderColumns, INodeDomain domain) {
+    public HashPartitionMergeExchangePOperator(List<OrderColumn> orderColumns, List<LogicalVariable> partitionFields,
+            INodeDomain domain) {
         this.orderColumns = orderColumns;
+        this.partitionFields = partitionFields;
         this.domain = domain;
     }
 
@@ -72,8 +73,8 @@ public class HashPartitionMergeExchangePOperator extends AbstractExchangePOperat
 
     @Override
     public void computeDeliveredProperties(ILogicalOperator op, IOptimizationContext context) {
-        List<LogicalVariable> fields = computeHashFields();
-        IPartitioningProperty p = new UnorderedPartitionedProperty(new HashSet<LogicalVariable>(fields), domain);
+        IPartitioningProperty p = new UnorderedPartitionedProperty(new HashSet<LogicalVariable>(partitionFields),
+                domain);
         AbstractLogicalOperator op2 = (AbstractLogicalOperator) op.getInputs().get(0).getOperator();
         List<ILocalStructuralProperty> locals = op2.getDeliveredPhysicalProperties().getLocalProperties();
         this.deliveredProperties = new StructuralPropertiesVector(p, locals);
@@ -106,19 +107,18 @@ public class HashPartitionMergeExchangePOperator extends AbstractExchangePOperat
 
     @Override
     public String toString() {
-        return getOperatorTag().toString() + " " + orderColumns;
+        return getOperatorTag().toString() + " MERGE:" + orderColumns + " HASH:" + partitionFields;
     }
 
     @Override
     public Pair<IConnectorDescriptor, TargetConstraint> createConnectorDescriptor(JobSpecification spec,
             IOperatorSchema opSchema, JobGenContext context) throws AlgebricksException {
-        List<LogicalVariable> hashFields = computeHashFields();
         int[] keys = new int[orderColumns.size()];
-        IBinaryHashFunctionFactory[] hashFunctionFactories = new IBinaryHashFunctionFactory[hashFields.size()];
+        IBinaryHashFunctionFactory[] hashFunctionFactories = new IBinaryHashFunctionFactory[partitionFields.size()];
         {
             int i = 0;
             IBinaryHashFunctionFactoryProvider hashFunProvider = context.getBinaryHashFunctionFactoryProvider();
-            for (LogicalVariable v : hashFields) {
+            for (LogicalVariable v : partitionFields) {
                 keys[i] = opSchema.findVariable(v);
                 hashFunctionFactories[i] = hashFunProvider.getBinaryHashFunctionFactory(context.getVarType(v));
                 ++i;
@@ -144,15 +144,6 @@ public class HashPartitionMergeExchangePOperator extends AbstractExchangePOperat
         IConnectorDescriptor conn = new MToNHashPartitioningMergingConnectorDescriptor(spec, tpcf, sortFields,
                 comparatorFactories);
         return new Pair<IConnectorDescriptor, TargetConstraint>(conn, null);
-    }
-
-    private List<LogicalVariable> computeHashFields() {
-        List<LogicalVariable> fields = new ArrayList<LogicalVariable>(orderColumns.size());
-
-        for (OrderColumn oc : orderColumns) {
-            fields.add(oc.getColumn());
-        }
-        return fields;
     }
 
 }
