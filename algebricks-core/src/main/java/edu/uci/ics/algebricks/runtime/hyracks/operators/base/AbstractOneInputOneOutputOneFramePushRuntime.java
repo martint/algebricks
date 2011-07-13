@@ -17,7 +17,6 @@ package edu.uci.ics.algebricks.runtime.hyracks.operators.base;
 import java.nio.ByteBuffer;
 
 import edu.uci.ics.algebricks.runtime.hyracks.context.RuntimeContext;
-import edu.uci.ics.hyracks.api.comm.IFrameWriter;
 import edu.uci.ics.hyracks.api.context.IHyracksStageletContext;
 import edu.uci.ics.hyracks.api.exceptions.HyracksDataException;
 import edu.uci.ics.hyracks.dataflow.common.comm.io.ArrayTupleBuilder;
@@ -45,7 +44,7 @@ public abstract class AbstractOneInputOneOutputOneFramePushRuntime extends Abstr
     @Override
     public void flush() throws HyracksDataException {
         if (appender.getTupleCount() > 0) {
-            flushFrame(frame, writer);
+            FrameUtils.flushFrame(frame, writer);
         }
         writer.flush();
         appender.reset(frame, true);
@@ -97,12 +96,6 @@ public abstract class AbstractOneInputOneOutputOneFramePushRuntime extends Abstr
     protected final void initAccessAppendRef(RuntimeContext context) {
         initAccessAppend(context);
         tRef = new FrameTupleReference();
-    }
-
-    private void flushFrame(ByteBuffer buffer, IFrameWriter frameWriter) throws HyracksDataException {
-        buffer.position(0);
-        buffer.limit(buffer.capacity());
-        frameWriter.nextFrame(buffer);
     }
 
 }

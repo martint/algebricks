@@ -22,18 +22,18 @@ import edu.uci.ics.algebricks.runtime.hyracks.base.IUnnestingFunctionFactory;
 import edu.uci.ics.algebricks.runtime.hyracks.context.RuntimeContext;
 import edu.uci.ics.algebricks.runtime.hyracks.operators.base.AbstractOneInputOneOutputOneFramePushRuntime;
 import edu.uci.ics.algebricks.runtime.hyracks.operators.base.AbstractOneInputOneOutputRuntimeFactory;
-import edu.uci.ics.hyracks.api.comm.IFrameTupleAccessor;
 import edu.uci.ics.hyracks.api.exceptions.HyracksDataException;
 import edu.uci.ics.hyracks.dataflow.common.comm.io.ArrayTupleBuilder;
 import edu.uci.ics.hyracks.dataflow.common.data.accessors.ArrayBackedValueStorage;
-import edu.uci.ics.hyracks.dataflow.common.data.accessors.FrameTupleReference;
 
 public class UnnestRuntimeFactory extends AbstractOneInputOneOutputRuntimeFactory {
 
     private static final long serialVersionUID = 1L;
 
-    private int outCol;
-    private IUnnestingFunctionFactory unnestingFactory;
+    private final int outCol;
+    private final IUnnestingFunctionFactory unnestingFactory;
+    private int outColPos;
+    private final boolean outColIsProjected;
 
     // Each time step() is called on the aggregate, a new value is written in
     // its output. One byte is written before that value and is neglected.
@@ -44,6 +44,13 @@ public class UnnestRuntimeFactory extends AbstractOneInputOneOutputRuntimeFactor
         super(projectionList);
         this.outCol = outCol;
         this.unnestingFactory = unnestingFactory;
+        outColPos = -1;
+        for (int f = 0; f < projectionList.length; f++) {
+            if (projectionList[f] == outCol) {
+                outColPos = f;
+            }
+        }
+        outColIsProjected = outColPos >= 0;
     }
 
     @Override
@@ -80,39 +87,34 @@ public class UnnestRuntimeFactory extends AbstractOneInputOneOutputRuntimeFactor
                 int nTuple = tAccess.getTupleCount();
                 for (int t = 0; t < nTuple; t++) {
                     tRef.reset(tAccess, t);
-                    produceTuples(tupleBuilder, tAccess, t, tRef);
-                }
-            }
-
-            private void produceTuples(ArrayTupleBuilder tb, IFrameTupleAccessor accessor, int tIndex,
-                    FrameTupleReference tupleRef) throws HyracksDataException {
-                try {
-                    agg.init(tupleRef);
-                    boolean goon = true;
-                    do {
-                        tb.reset();
-                        evalOutput.reset();
-                        if (!agg.step()) {
-                            goon = false;
-                        } else {
-                            for (int f = 0; f < projectionList.length; f++) {
-                                if (projectionList[f] == outCol) {
-                                    tb.addField(evalOutput.getBytes(), evalOutput.getStartIndex(),
-                                            evalOutput.getLength());
+                    try {
+                        agg.init(tRef);
+                        boolean goon = true;
+                        do {
+                            tupleBuilder.reset();
+                            evalOutput.reset();
+                            if (!agg.step()) {
+                                goon = false;
+                            } else {
+                                if (!outColIsProjected) {
+                                    appendProjectionToFrame(t, projectionList);
                                 } else {
-                                    tb.addField(accessor, tIndex, f);
+                                    for (int f = 0; f < outColPos; f++) {
+                                        tupleBuilder.addField(tAccess, t, f);
+                                    }
+                                    tupleBuilder.addField(evalOutput.getBytes(), evalOutput.getStartIndex(), evalOutput
+                                            .getLength());
+                                    for (int f = outColPos + 1; f < projectionList.length; f++) {
+                                        tupleBuilder.addField(tAccess, t, f);
+                                    }
                                 }
+                                appendToFrameFromTupleBuilder(tupleBuilder);
                             }
-                            appendToFrameFromTupleBuilder(tupleBuilder);
-                        }
-                    } while (goon);
-                } catch (AlgebricksException ae) {
-                    throw new HyracksDataException(ae);
+                        } while (goon);
+                    } catch (AlgebricksException ae) {
+                        throw new HyracksDataException(ae);
+                    }
                 }
-            }
-
-            @Override
-            public void flush() throws HyracksDataException {
             }
         };
     }
