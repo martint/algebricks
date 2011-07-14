@@ -327,10 +327,10 @@ public class HashSpillableGroupingTableFactory implements ISpillableTableFactory
              */
             private boolean nextAvailableFrame() {
                 // Return false if the number of frames is equal to the limit.
-                if (dataFrameCount + table.getFrameCount() + 1 >= framesLimit)
+                if (dataFrameCount + 1 >= framesLimit)
                     return false;
 
-                if (frames.size() + table.getFrameCount() < framesLimit) {
+                if (frames.size()  < framesLimit) {
                     // Insert a new frame
                     ByteBuffer frame = ctx.allocateFrame();
                     frame.position(0);

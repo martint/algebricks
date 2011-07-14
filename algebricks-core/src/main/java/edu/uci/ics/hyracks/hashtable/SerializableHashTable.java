@@ -1,41 +1,40 @@
 package edu.uci.ics.hyracks.hashtable;
 
-import java.nio.IntBuffer;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import edu.uci.ics.hyracks.api.context.IHyracksStageletContext;
 
 /**
- * An entry in the table is: frameIndex, tupleIndex, nextFrame, nextOffset
- * <frameIndex, tupleIndex> is the tuple pointer
+ * An entry in the table is: #elements, #no-empty elements; fIndex, tIndex;
+ * fIndex, tIndex; .... <fIndex, tIndex> forms a tuple pointer
  */
 public class SerializableHashTable implements ISerializableTable {
 
-    private IntBuffer[] headers;
-    private List<IntBuffer> contents = new ArrayList<IntBuffer>();
-    private Map<Integer, Integer> contentToSize = new HashMap<Integer, Integer>();
+    private static final int INT_SIZE = 4;
+    private static final int INIT_ENTRY_SIZE = 4;
+
+    private IntSerDeBuffer[] headers;
+    private List<IntSerDeBuffer> contents = new ArrayList<IntSerDeBuffer>();
+    private List<Integer> frameCurrentIndex = new ArrayList<Integer>();
     private final IHyracksStageletContext ctx;
-    private final static int INT_SIZE = 4;
     private int frameCapacity = 0;
     private int currentLargestFrameIndex = 0;
     private int tupleCount = 0;
     private int headerFrameCount = 0;
+    private TuplePointer tempTuplePointer = new TuplePointer();
 
     public SerializableHashTable(int tableSize, final IHyracksStageletContext ctx) {
         this.ctx = ctx;
         int frameSize = ctx.getFrameSize();
-        // init headers
+
         int residual = tableSize * INT_SIZE * 2 % frameSize == 0 ? 0 : 1;
         int headerSize = tableSize * INT_SIZE * 2 / frameSize + residual;
-        headers = new IntBuffer[headerSize];
-        // init content frame
-        IntBuffer frame = ctx.allocateFrame().asIntBuffer();
-        contents.add(frame);
-        contentToSize.put(0, 0);
+        headers = new IntSerDeBuffer[headerSize];
 
+        IntSerDeBuffer frame = new IntSerDeBuffer(ctx.allocateFrame().array());
+        contents.add(frame);
+        frameCurrentIndex.add(0);
         frameCapacity = frame.capacity();
         if (!(frameCapacity % 4 == 0))
             throw new IllegalStateException("frame capacity is illegal: " + frameCapacity);
@@ -44,92 +43,70 @@ public class SerializableHashTable implements ISerializableTable {
     @Override
     public void insert(int entry, TuplePointer pointer) {
         int hFrameIndex = getHeaderFrameIndex(entry);
-        int hOffset = getHeaderFrameOffset(entry);
-        IntBuffer frame = headers[hFrameIndex];
-        if (frame == null) {
-            frame = ctx.allocateFrame().asIntBuffer();
-            headers[hFrameIndex] = frame;
-            resetFrame(frame);
+        int headerOffset = getHeaderFrameOffset(entry);
+        IntSerDeBuffer header = headers[hFrameIndex];
+        if (header == null) {
+            header = new IntSerDeBuffer(ctx.allocateFrame().array());
+            headers[hFrameIndex] = header;
+            resetFrame(header);
             headerFrameCount++;
         }
-
-        int frameIndex = frame.get(hOffset);
-        int offsetIndex = frame.get(hOffset + 1);
+        int frameIndex = header.getInt(headerOffset);
+        int offsetIndex = header.getInt(headerOffset + 1);
         if (frameIndex < 0) {
-            insertTuple(pointer);
-            int last = currentLargestFrameIndex;
-            int lastSize = contentToSize.get(last);
-            int lastIndex = lastSize - 4;
-            frame.put(hOffset, last);
-            frame.put(hOffset + 1, lastIndex);
+            // insert first tuple into the entry
+            insertNewEntry(header, headerOffset, INIT_ENTRY_SIZE, pointer);
         } else {
-            if (offsetIndex < 0)
-                throw new IllegalStateException("offset index cannot be less than zero!");
-            IntBuffer dataFrame;
-            int currentFrame = frameIndex;
-            int currentOffset = offsetIndex;
-            int nextFrame = frameIndex;
-            int nextOffset = offsetIndex;
-            while (nextFrame >= 0) {
-                currentFrame = nextFrame;
-                currentOffset = nextOffset;
-                dataFrame = contents.get(currentFrame);
-                nextFrame = dataFrame.get(currentOffset + 2);
-                nextOffset = dataFrame.get(currentOffset + 3);
-            }
-            insertTuple(pointer);
-            dataFrame = contents.get(currentFrame);
-            int last = currentLargestFrameIndex;
-            int lastIndex = contentToSize.get(last) - 4;
-            dataFrame.put(currentOffset + 2, last);
-            dataFrame.put(currentOffset + 3, lastIndex);
+            // insert non-first tuple into the entry
+            insertNonFirstTuple(header, headerOffset, frameIndex, offsetIndex, pointer);
         }
         tupleCount++;
     }
 
     @Override
-    public void getTuplePointer(int entry, int offset, TuplePointer tuplePointer) {
+    public void getTuplePointer(int entry, int offset, TuplePointer dataPointer) {
         int hFrameIndex = getHeaderFrameIndex(entry);
-        int hOffset = getHeaderFrameOffset(entry);
-        IntBuffer frame = headers[hFrameIndex];
-        if (frame == null) {
-            tuplePointer.frameIndex = -1;
-            tuplePointer.tupleIndex = -1;
+        int headerOffset = getHeaderFrameOffset(entry);
+        IntSerDeBuffer header = headers[hFrameIndex];
+        if (header == null) {
+            dataPointer.frameIndex = -1;
+            dataPointer.tupleIndex = -1;
             return;
         }
-        int frameIndex = frame.get(hOffset);
-        int offsetIndex = frame.get(hOffset + 1);
-
-        int pos = 0;
-        IntBuffer dataFrame;
-        int currentFrame = frameIndex;
-        int currentOffset = offsetIndex;
-        int nextFrame = frameIndex;
-        int nextOffset = offsetIndex;
-        while (nextFrame >= 0) {
-            currentFrame = nextFrame;
-            currentOffset = nextOffset;
-            dataFrame = contents.get(currentFrame);
-            nextFrame = dataFrame.get(currentOffset + 2);
-            nextOffset = dataFrame.get(currentOffset + 3);
-            if (pos == offset) {
-                tuplePointer.frameIndex = dataFrame.get(currentOffset);
-                tuplePointer.tupleIndex = dataFrame.get(currentOffset + 1);
-                return;
-            }
-            pos++;
+        int frameIndex = header.getInt(headerOffset);
+        int offsetIndex = header.getInt(headerOffset + 1);
+        if (frameIndex < 0) {
+            dataPointer.frameIndex = -1;
+            dataPointer.tupleIndex = -1;
+            return;
         }
-        tuplePointer.frameIndex = -1;
-        tuplePointer.tupleIndex = -1;
+        IntSerDeBuffer frame = contents.get(frameIndex);
+        int entryUsedItems = frame.getInt(offsetIndex + 1);
+        if (offset > entryUsedItems - 1) {
+            dataPointer.frameIndex = -1;
+            dataPointer.tupleIndex = -1;
+            return;
+        }
+        int startIndex = offsetIndex + 2 + offset * 2;
+        while (startIndex >= frameCapacity) {
+            frame = contents.get(++frameIndex);
+            startIndex -= frameCapacity;
+        }
+        dataPointer.frameIndex = frame.getInt(startIndex);
+        dataPointer.tupleIndex = frame.getInt(startIndex + 1);
     }
 
     @Override
     public void reset() {
-        for (IntBuffer frame : headers)
+        for (IntSerDeBuffer frame : headers)
             if (frame != null)
                 resetFrame(frame);
-        for (int i = 0; i < contents.size(); i++)
-            contentToSize.put(i++, 0);
+
+        frameCurrentIndex.clear();
+        for (int i = 0; i < contents.size(); i++) {
+            frameCurrentIndex.add(0);
+        }
+
         currentLargestFrameIndex = 0;
         tupleCount = 0;
     }
@@ -148,41 +125,107 @@ public class SerializableHashTable implements ISerializableTable {
         for (int i = 0; i < headers.length; i++)
             headers[i] = null;
         contents.clear();
-        contentToSize.clear();
+        frameCurrentIndex.clear();
         tupleCount = 0;
         currentLargestFrameIndex = 0;
     }
 
-    private void insertTuple(TuplePointer pointer) {
-        int last = currentLargestFrameIndex;
-        IntBuffer lastFrame = contents.get(last);
-        Integer lastSize = contentToSize.get(last);
-        if (lastSize == null)
-            throw new IllegalStateException("illegal");
-        if (lastSize >= frameCapacity) {
-            IntBuffer newFrame;
-            if (currentLargestFrameIndex >= contents.size() - 1) {
-                newFrame = ctx.allocateFrame().asIntBuffer();
-                contents.add(newFrame);
-                currentLargestFrameIndex++;
-            } else {
-                currentLargestFrameIndex++;
-                newFrame = contents.get(currentLargestFrameIndex);
-            }
-            lastSize = 0;
-            lastFrame = newFrame;
-            contentToSize.put(currentLargestFrameIndex, lastSize);
+    private void insertNewEntry(IntSerDeBuffer header, int headerOffset, int entryCapacity, TuplePointer pointer) {
+        IntSerDeBuffer lastFrame = contents.get(currentLargestFrameIndex);
+        int lastIndex = frameCurrentIndex.get(currentLargestFrameIndex);
+        int requiredIntCapacity = entryCapacity * 2;
+        int startFrameIndex = currentLargestFrameIndex;
+
+        if (lastIndex + requiredIntCapacity >= frameCapacity) {
+            IntSerDeBuffer newFrame;
+            startFrameIndex++;
+            do {
+                if (currentLargestFrameIndex >= contents.size() - 1) {
+                    newFrame = new IntSerDeBuffer(ctx.allocateFrame().array());
+                    currentLargestFrameIndex++;
+                    contents.add(newFrame);
+                    frameCurrentIndex.add(0);
+                } else {
+                    currentLargestFrameIndex++;
+                    newFrame = contents.get(currentLargestFrameIndex);
+                    frameCurrentIndex.set(currentLargestFrameIndex, 0);
+                }
+                requiredIntCapacity -= frameCapacity;
+            } while (requiredIntCapacity > 0);
+            lastIndex = 0;
+            lastFrame = contents.get(startFrameIndex);
         }
-        lastFrame.put(lastSize++, pointer.frameIndex);
-        lastFrame.put(lastSize++, pointer.tupleIndex);
-        lastFrame.put(lastSize++, -1);
-        lastFrame.put(lastSize++, -1);
-        contentToSize.put(currentLargestFrameIndex, lastSize);
+
+        // set header
+        header.writeInt(headerOffset, startFrameIndex);
+        header.writeInt(headerOffset + 1, lastIndex);
+
+        // set the entry
+        lastFrame.writeInt(lastIndex, entryCapacity - 1);
+        lastFrame.writeInt(lastIndex + 1, 1);
+        lastFrame.writeInt(lastIndex + 2, pointer.frameIndex);
+        lastFrame.writeInt(lastIndex + 3, pointer.tupleIndex);
+        int newLastIndex = lastIndex + entryCapacity * 2;
+        newLastIndex = newLastIndex < frameCapacity ? newLastIndex : frameCapacity - 1;
+        frameCurrentIndex.set(startFrameIndex, newLastIndex);
+
+        requiredIntCapacity = entryCapacity * 2 - (frameCapacity - lastIndex);
+        while (requiredIntCapacity > 0) {
+            startFrameIndex++;
+            requiredIntCapacity -= frameCapacity;
+            newLastIndex = requiredIntCapacity < 0 ? requiredIntCapacity + frameCapacity : frameCapacity - 1;
+            frameCurrentIndex.set(startFrameIndex, newLastIndex);
+        }
     }
 
-    private void resetFrame(IntBuffer frame) {
-        for (int i = 0; i < frame.capacity(); i++)
-            frame.put(i, -1);
+    private void insertNonFirstTuple(IntSerDeBuffer header, int headerOffset, int frameIndex, int offsetIndex,
+            TuplePointer pointer) {
+        IntSerDeBuffer frame = contents.get(frameIndex);
+        int entryItems = frame.getInt(offsetIndex);
+        int entryUsedItems = frame.getInt(offsetIndex + 1);
+
+        if (entryUsedItems < entryItems) {
+            frame.writeInt(offsetIndex + 1, entryUsedItems + 1);
+            int startIndex = offsetIndex + 2 + entryUsedItems * 2;
+            while (startIndex >= frameCapacity) {
+                frame = contents.get(++frameIndex);
+                startIndex -= frameCapacity;
+            }
+            frame.writeInt(startIndex, pointer.frameIndex);
+            frame.writeInt(startIndex + 1, pointer.tupleIndex);
+        } else {
+            int capacity = (entryItems + 1) * 2;
+            header.writeInt(headerOffset, -1);
+            header.writeInt(headerOffset + 1, -1);
+            int fIndex = frame.getInt(offsetIndex + 2);
+            int tIndex = frame.getInt(offsetIndex + 3);
+            tempTuplePointer.frameIndex = fIndex;
+            tempTuplePointer.tupleIndex = tIndex;
+            this.insertNewEntry(header, headerOffset, capacity, tempTuplePointer);
+            int newFrameIndex = header.getInt(headerOffset);
+            int newTupleIndex = header.getInt(headerOffset + 1);
+
+            for (int i = 1; i < entryUsedItems; i++) {
+                int startIndex = offsetIndex + 2 + i * 2;
+                int startFrameIndex = frameIndex;
+                while (startIndex >= frameCapacity) {
+                    ++startFrameIndex;
+                    startIndex -= frameCapacity;
+                }
+                frame = contents.get(startFrameIndex);
+                fIndex = frame.getInt(startIndex);
+                tIndex = frame.getInt(startIndex + 1);
+                tempTuplePointer.frameIndex = fIndex;
+                tempTuplePointer.tupleIndex = tIndex;
+                insertNonFirstTuple(header, headerOffset, newFrameIndex, newTupleIndex, tempTuplePointer);
+            }
+            insertNonFirstTuple(header, headerOffset, newFrameIndex, newTupleIndex, pointer);
+        }
+    }
+
+    private void resetFrame(IntSerDeBuffer frame) {
+        for (int i = 0; i < frameCapacity; i++)
+            frame.writeInt(i, -1);
     }
 
     private int getHeaderFrameIndex(int entry) {
@@ -193,5 +236,33 @@ public class SerializableHashTable implements ISerializableTable {
     private int getHeaderFrameOffset(int entry) {
         int offset = entry * 2 % frameCapacity;
         return offset;
+    }
+
+}
+
+class IntSerDeBuffer {
+
+    private byte[] bytes;
+
+    public IntSerDeBuffer(byte[] data) {
+        this.bytes = data;
+    }
+
+    public int getInt(int pos) {
+        int offset = pos * 4;
+        return ((bytes[offset] & 0xff) << 24) + ((bytes[offset + 1] & 0xff) << 16) + ((bytes[offset + 2] & 0xff) << 8)
+                + ((bytes[offset + 3] & 0xff) << 0);
+    }
+
+    public void writeInt(int pos, int value) {
+        int offset = pos * 4;
+        bytes[offset++] = (byte) (value >> 24);
+        bytes[offset++] = (byte) (value >> 16);
+        bytes[offset++] = (byte) (value >> 8);
+        bytes[offset++] = (byte) (value);
+    }
+
+    public int capacity() {
+        return bytes.length / 4;
     }
 }
