@@ -36,8 +36,6 @@ public class SerializableHashTable implements ISerializableTable {
         contents.add(frame);
         frameCurrentIndex.add(0);
         frameCapacity = frame.capacity();
-        if (!(frameCapacity % 4 == 0))
-            throw new IllegalStateException("frame capacity is illegal: " + frameCapacity);
     }
 
     @Override
@@ -89,9 +87,10 @@ public class SerializableHashTable implements ISerializableTable {
         }
         int startIndex = offsetIndex + 2 + offset * 2;
         while (startIndex >= frameCapacity) {
-            frame = contents.get(++frameIndex);
+            ++frameIndex;
             startIndex -= frameCapacity;
         }
+        frame = contents.get(frameIndex);
         dataPointer.frameIndex = frame.getInt(startIndex);
         dataPointer.tupleIndex = frame.getInt(startIndex + 1);
     }
@@ -147,7 +146,6 @@ public class SerializableHashTable implements ISerializableTable {
                     frameCurrentIndex.add(0);
                 } else {
                     currentLargestFrameIndex++;
-                    newFrame = contents.get(currentLargestFrameIndex);
                     frameCurrentIndex.set(currentLargestFrameIndex, 0);
                 }
                 requiredIntCapacity -= frameCapacity;
@@ -188,9 +186,10 @@ public class SerializableHashTable implements ISerializableTable {
             frame.writeInt(offsetIndex + 1, entryUsedItems + 1);
             int startIndex = offsetIndex + 2 + entryUsedItems * 2;
             while (startIndex >= frameCapacity) {
-                frame = contents.get(++frameIndex);
+                ++frameIndex;
                 startIndex -= frameCapacity;
             }
+            frame = contents.get(frameIndex);
             frame.writeInt(startIndex, pointer.frameIndex);
             frame.writeInt(startIndex + 1, pointer.tupleIndex);
         } else {
