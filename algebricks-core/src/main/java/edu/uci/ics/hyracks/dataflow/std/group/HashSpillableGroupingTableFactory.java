@@ -478,40 +478,4 @@ public class HashSpillableGroupingTableFactory implements ISpillableTableFactory
         };
     }
 
-    /**
-     * The pointers in the link store 3 int values for each entry in the
-     * hashtable: (bufferIdx, tIndex, accumulatorIdx).
-     * 
-     * @author vinayakb
-     */
-    private static class Link {
-        private static final int INIT_POINTERS_SIZE = 6;
-
-        int[] pointers;
-        int size;
-
-        Link() {
-            pointers = new int[INIT_POINTERS_SIZE];
-            size = 0;
-        }
-
-        void add(int bufferIdx, int tIndex) {
-            while (size + 2 > pointers.length) {
-                pointers = Arrays.copyOf(pointers, pointers.length * 2);
-            }
-            pointers[size++] = bufferIdx;
-            pointers[size++] = tIndex;
-        }
-
-        public String toString() {
-            StringBuilder sb = new StringBuilder();
-            sb.append("[Size=" + size + "]");
-            for (int i = 0; i < pointers.length; i = i + 2) {
-                sb.append(pointers[i] + ",");
-                sb.append(pointers[i + 1] + ";");
-            }
-            return sb.toString();
-        }
-    }
-
 }
