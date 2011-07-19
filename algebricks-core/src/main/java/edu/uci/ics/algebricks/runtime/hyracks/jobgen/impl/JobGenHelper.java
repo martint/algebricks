@@ -112,6 +112,8 @@ public final class JobGenHelper {
     public static INormalizedKeyComputerFactory variablesToAscNormalizedKeyComputerFactory(
             Collection<LogicalVariable> varLogical, JobGenContext context) {
         INormalizedKeyComputerFactoryProvider nkcfProvider = context.getNormalizedKeyComputerFactoryProvider();
+        if (nkcfProvider == null)
+            return null;
         for (LogicalVariable v : varLogical) {
             Object type = context.getVarType(v);
             return nkcfProvider.getNormalizedKeyComputerFactory(type, OrderKind.ASC);
