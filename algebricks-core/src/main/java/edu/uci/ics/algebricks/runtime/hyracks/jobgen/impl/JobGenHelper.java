@@ -18,6 +18,7 @@ import java.util.Collection;
 
 import edu.uci.ics.algebricks.api.data.IBinaryComparatorFactoryProvider;
 import edu.uci.ics.algebricks.api.data.IBinaryHashFunctionFactoryProvider;
+import edu.uci.ics.algebricks.api.data.INormalizedKeyComputerFactoryProvider;
 import edu.uci.ics.algebricks.api.data.IPrinterFactory;
 import edu.uci.ics.algebricks.api.data.IPrinterFactoryProvider;
 import edu.uci.ics.algebricks.api.data.ISerializerDeserializerProvider;
@@ -28,6 +29,7 @@ import edu.uci.ics.algebricks.compiler.algebra.operators.logical.IOperatorSchema
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.OrderOperator.IOrder.OrderKind;
 import edu.uci.ics.hyracks.api.dataflow.value.IBinaryComparatorFactory;
 import edu.uci.ics.hyracks.api.dataflow.value.IBinaryHashFunctionFactory;
+import edu.uci.ics.hyracks.api.dataflow.value.INormalizedKeyComputerFactory;
 import edu.uci.ics.hyracks.api.dataflow.value.ISerializerDeserializer;
 import edu.uci.ics.hyracks.api.dataflow.value.ITypeTrait;
 import edu.uci.ics.hyracks.api.dataflow.value.RecordDescriptor;
@@ -105,6 +107,16 @@ public final class JobGenHelper {
             compFactories[i++] = bcfProvider.getBinaryComparatorFactory(type, OrderKind.ASC);
         }
         return compFactories;
+    }
+
+    public static INormalizedKeyComputerFactory variablesToAscNormalizedKeyComputerFactory(
+            Collection<LogicalVariable> varLogical, JobGenContext context) {
+        INormalizedKeyComputerFactoryProvider nkcfProvider = context.getNormalizedKeyComputerFactoryProvider();
+        for (LogicalVariable v : varLogical) {
+            Object type = context.getVarType(v);
+            return nkcfProvider.getNormalizedKeyComputerFactory(type, OrderKind.ASC);
+        }
+        return null;
     }
 
     public static ITypeTrait[] variablesToTypeTraits(Collection<LogicalVariable> varLogical, JobGenContext context)

@@ -22,6 +22,8 @@ import edu.uci.ics.hyracks.api.comm.IFrameWriter;
 import edu.uci.ics.hyracks.api.context.IHyracksStageletContext;
 import edu.uci.ics.hyracks.api.dataflow.value.IBinaryComparator;
 import edu.uci.ics.hyracks.api.dataflow.value.IBinaryComparatorFactory;
+import edu.uci.ics.hyracks.api.dataflow.value.INormalizedKeyComputer;
+import edu.uci.ics.hyracks.api.dataflow.value.INormalizedKeyComputerFactory;
 import edu.uci.ics.hyracks.api.dataflow.value.ISerializerDeserializer;
 import edu.uci.ics.hyracks.api.dataflow.value.ITuplePartitionComputer;
 import edu.uci.ics.hyracks.api.dataflow.value.ITuplePartitionComputerFactory;
@@ -45,12 +47,10 @@ import edu.uci.ics.hyracks.hashtable.TuplePointer;
 public class HashSpillableGroupingTableFactory implements ISpillableTableFactory {
 
     private static final long serialVersionUID = 1L;
-
     /**
      * A partition computer to partition the hashing group table.
      */
     private final ITuplePartitionComputerFactory tpcf;
-
     private final int tableSize;
 
     public HashSpillableGroupingTableFactory(ITuplePartitionComputerFactory tpcf, int tableSize) {
@@ -58,20 +58,10 @@ public class HashSpillableGroupingTableFactory implements ISpillableTableFactory
         this.tableSize = tableSize;
     }
 
-    /*
-     * (non-Javadoc)
-     * 
-     * @see edu.uci.ics.hyracks.dataflow.std.group.ISpillableTableFactory#
-     * buildSpillableTable
-     * (edu.uci.ics.hyracks.api.context.IHyracksStageletContext, int[],
-     * edu.uci.ics.hyracks.api.dataflow.value.IBinaryComparatorFactory[],
-     * edu.uci.ics.hyracks.dataflow.std.group.IAggregatorDescriptorFactory,
-     * edu.uci.ics.hyracks.api.dataflow.value.RecordDescriptor,
-     * edu.uci.ics.hyracks.api.dataflow.value.RecordDescriptor, int)
-     */
     @Override
     public ISpillableTable buildSpillableTable(final IHyracksStageletContext ctx, final int[] keyFields,
-            IBinaryComparatorFactory[] comparatorFactories,
+            final IBinaryComparatorFactory[] comparatorFactories,
+            final INormalizedKeyComputerFactory firstKeyNormalizerFactory,
             final IAggregatorDescriptorFactory aggregateDescriptorFactory, final RecordDescriptor inRecordDescriptor,
             final RecordDescriptor outRecordDescriptor, final int framesLimit) throws HyracksDataException {
         final int[] storedKeys = new int[keyFields.length];
@@ -82,29 +72,26 @@ public class HashSpillableGroupingTableFactory implements ISpillableTableFactory
             storedKeySerDeser[i] = inRecordDescriptor.getFields()[keyFields[i]];
         }
 
+        RecordDescriptor internalRecordDescriptor = outRecordDescriptor;
         final FrameTupleAccessor storedKeysAccessor1;
         final FrameTupleAccessor storedKeysAccessor2;
-
-        if (keyFields.length < outRecordDescriptor.getFields().length) {
-            storedKeysAccessor1 = new FrameTupleAccessor(ctx.getFrameSize(), outRecordDescriptor);
-            storedKeysAccessor2 = new FrameTupleAccessor(ctx.getFrameSize(), outRecordDescriptor);
-        } else {
+        if (keyFields.length >= outRecordDescriptor.getFields().length) {
+            // for the case of zero-aggregations
             ISerializerDeserializer<?>[] fields = outRecordDescriptor.getFields();
             ITypeTrait[] types = outRecordDescriptor.getTypeTraits();
             ISerializerDeserializer<?>[] newFields = new ISerializerDeserializer[fields.length + 1];
             for (int i = 0; i < fields.length; i++)
                 newFields[i] = fields[i];
-
             ITypeTrait[] newTypes = null;
             if (types != null) {
                 newTypes = new ITypeTrait[types.length + 1];
                 for (int i = 0; i < types.length; i++)
                     newTypes[i] = types[i];
             }
-            RecordDescriptor descriptor = new RecordDescriptor(newFields, newTypes);
-            storedKeysAccessor1 = new FrameTupleAccessor(ctx.getFrameSize(), descriptor);
-            storedKeysAccessor2 = new FrameTupleAccessor(ctx.getFrameSize(), descriptor);
+            internalRecordDescriptor = new RecordDescriptor(newFields, newTypes);
         }
+        storedKeysAccessor1 = new FrameTupleAccessor(ctx.getFrameSize(), internalRecordDescriptor);
+        storedKeysAccessor2 = new FrameTupleAccessor(ctx.getFrameSize(), internalRecordDescriptor);
 
         final IBinaryComparator[] comparators = new IBinaryComparator[comparatorFactories.length];
         for (int i = 0; i < comparatorFactories.length; ++i) {
@@ -112,13 +99,9 @@ public class HashSpillableGroupingTableFactory implements ISpillableTableFactory
         }
 
         final FrameTuplePairComparator ftpcPartial = new FrameTuplePairComparator(keyFields, storedKeys, comparators);
-
         final FrameTuplePairComparator ftpcTuple = new FrameTuplePairComparator(storedKeys, storedKeys, comparators);
-
         final FrameTupleAppender appender = new FrameTupleAppender(ctx.getFrameSize());
-
         final ITuplePartitionComputer tpc = tpcf.createPartitioner();
-
         final ByteBuffer outFrame = ctx.allocateFrame();
 
         final ArrayTupleBuilder internalTupleBuilder;
@@ -126,44 +109,31 @@ public class HashSpillableGroupingTableFactory implements ISpillableTableFactory
             internalTupleBuilder = new ArrayTupleBuilder(outRecordDescriptor.getFields().length);
         else
             internalTupleBuilder = new ArrayTupleBuilder(outRecordDescriptor.getFields().length + 1);
-
         final ArrayTupleBuilder outputTupleBuilder = new ArrayTupleBuilder(outRecordDescriptor.getFields().length);
+        final INormalizedKeyComputer nkc = firstKeyNormalizerFactory == null ? null : firstKeyNormalizerFactory
+                .createNormalizedKeyComputer();
 
         return new ISpillableTable() {
-
             private int dataFrameCount;
-            /**
-             * The hashing group table containing pointers to aggregators and
-             * also the corresponding key tuples. So for each entry, there will
-             * be three integer fields: 1. The frame index containing the key
-             * tuple; 2. The tuple index inside of the frame for the key tuple;
-             * 3. The index of the aggregator. Note that each link in the table
-             * is a partition for the input records. Multiple records in the
-             * same partition based on the {@link #tpc} are stored as an array
-             * of pointers.
-             */
-            private ISerializableTable table = new SerializableHashTable(tableSize, ctx);;
-
-            private TuplePointer storedTuplePointer = new TuplePointer();
-
+            private final ISerializableTable table = new SerializableHashTable(tableSize, ctx);;
+            private final TuplePointer storedTuplePointer = new TuplePointer();
             private final List<ByteBuffer> frames = new ArrayList<ByteBuffer>();
-
             private int groupSize = 0;
-
-            /**
-             * Pointers for the sorted aggregators
-             */
-            private int[] tPointers;
-
             private IAggregatorDescriptor aggregator = aggregateDescriptorFactory.createAggregator(ctx,
                     inRecordDescriptor, outRecordDescriptor, keyFields);
+
+            /**
+             * A tuple is "pointed" to by 4 entries in the tPointers array. [0]
+             * = Frame index in the "Frames" list. [1] = Start offset of the
+             * tuple in the frame [3] = Poor man's normalized key for the tuple.
+             */
+            private int[] tPointers;
 
             @Override
             public void reset() {
                 groupSize = 0;
                 dataFrameCount = -1;
                 tPointers = null;
-                // Reset the grouping hash table
                 table.reset();
                 aggregator.close();
             }
@@ -176,7 +146,6 @@ public class HashSpillableGroupingTableFactory implements ISpillableTableFactory
                 int entry = tpc.partition(accessor, tIndex, tableSize);
                 boolean foundGroup = false;
                 int offset = 0;
-
                 // Find the corresponding aggregator from existing aggregators
                 do {
                     table.getTuplePointer(entry, offset++, storedTuplePointer);
@@ -224,7 +193,6 @@ public class HashSpillableGroupingTableFactory implements ISpillableTableFactory
                     aggregator.aggregate(accessor, tIndex, storedKeysAccessor1.getBuffer().array(), tupleOffset
                             + storedKeysAccessor1.getFieldSlotsLength() + aggFieldOffset, tupleLength);
                 }
-
                 return true;
             }
 
@@ -241,10 +209,8 @@ public class HashSpillableGroupingTableFactory implements ISpillableTableFactory
             @Override
             public void flushFrames(IFrameWriter writer, boolean isPartial) throws HyracksDataException {
                 FrameTupleAppender appender = new FrameTupleAppender(ctx.getFrameSize());
-
                 writer.open();
                 appender.reset(outFrame, true);
-
                 if (tPointers == null) {
                     // Not sorted
                     for (int i = 0; i < tableSize; ++i) {
@@ -279,10 +245,10 @@ public class HashSpillableGroupingTableFactory implements ISpillableTableFactory
                     aggregator.close();
                     return;
                 }
-                int n = tPointers.length / 2;
+                int n = tPointers.length / 3;
                 for (int ptr = 0; ptr < n; ptr++) {
-                    int tableIndex = tPointers[ptr * 2];
-                    int rowIndex = tPointers[ptr * 2 + 1];
+                    int tableIndex = tPointers[ptr * 3];
+                    int rowIndex = tPointers[ptr * 3 + 1];
                     table.getTuplePointer(tableIndex, rowIndex, storedTuplePointer);
                     int frameIndex = storedTuplePointer.frameIndex;
                     int tupleIndex = storedTuplePointer.tupleIndex;
@@ -299,7 +265,6 @@ public class HashSpillableGroupingTableFactory implements ISpillableTableFactory
                         aggregator.outputPartialResult(storedKeysAccessor1, tupleIndex, outputTupleBuilder);
                     else
                         aggregator.outputResult(storedKeysAccessor1, tupleIndex, outputTupleBuilder);
-
                     if (!appender.append(outputTupleBuilder.getFieldEndOffsets(), outputTupleBuilder.getByteArray(), 0,
                             outputTupleBuilder.getSize())) {
                         FrameUtils.flushFrame(outFrame, writer);
@@ -329,7 +294,7 @@ public class HashSpillableGroupingTableFactory implements ISpillableTableFactory
                 if (dataFrameCount + 1 >= framesLimit)
                     return false;
 
-                if (frames.size()  < framesLimit) {
+                if (frames.size() < framesLimit) {
                     // Insert a new frame
                     ByteBuffer frame = ctx.allocateFrame();
                     frame.position(0);
@@ -350,13 +315,16 @@ public class HashSpillableGroupingTableFactory implements ISpillableTableFactory
 
             @Override
             public void sortFrames() {
+                int sfIdx = keyFields[0];
                 int totalTCount = table.getTupleCount();
-                // Start sorting:
-                /*
-                 * Based on the data structure for the partial aggregates, the
-                 * pointers should be initialized.
+
+                /**
+                 * A tuple is "pointed" to by 4 entries in the tPointers array.
+                 * [0] = Frame index in the "Frames" list. [1] = Start offset of
+                 * the tuple in the frame [3] = Poor man's normalized key for
+                 * the tuple.
                  */
-                tPointers = new int[totalTCount * 2];
+                tPointers = new int[totalTCount * 3];
                 // Initialize pointers
                 int ptr = 0;
                 // Maintain two pointers to each entry of the hashing group
@@ -368,8 +336,20 @@ public class HashSpillableGroupingTableFactory implements ISpillableTableFactory
                         table.getTuplePointer(entry, offset, storedTuplePointer);
                         if (storedTuplePointer.frameIndex < 0)
                             break;
-                        tPointers[ptr * 2] = entry;
-                        tPointers[ptr * 2 + 1] = offset;
+                        tPointers[ptr * 3] = entry;
+                        tPointers[ptr * 3 + 1] = offset;
+                        table.getTuplePointer(entry, offset, storedTuplePointer);
+                        if (storedTuplePointer.frameIndex < 0)
+                            throw new IllegalStateException("invalid hash table entry and offset!");
+                        int fIndex = storedTuplePointer.frameIndex;
+                        int tIndex = storedTuplePointer.tupleIndex;
+                        storedKeysAccessor1.reset(frames.get(fIndex));
+                        int tStart = storedKeysAccessor1.getTupleStartOffset(tIndex);
+                        int f0StartRel = storedKeysAccessor1.getFieldStartOffset(tIndex, sfIdx);
+                        int f0EndRel = storedKeysAccessor1.getFieldEndOffset(tIndex, sfIdx);
+                        int f0Start = f0StartRel + tStart + storedKeysAccessor1.getFieldSlotsLength();
+                        tPointers[ptr * 3 + 2] = nkc == null ? 0 : nkc.normalize(storedKeysAccessor1.getBuffer()
+                                .array(), f0Start, f0EndRel - f0StartRel);
                         ptr++;
                         offset++;
                     } while (true);
@@ -383,8 +363,9 @@ public class HashSpillableGroupingTableFactory implements ISpillableTableFactory
             private void sort(int[] tPointers, int offset, int length) {
                 int m = offset + (length >> 1);
                 // Get table index
-                int mTable = tPointers[m * 2];
-                int mRow = tPointers[m * 2 + 1];
+                int mTable = tPointers[m * 3];
+                int mRow = tPointers[m * 3 + 1];
+                int mNormKey = tPointers[m * 3 + 2];
                 // Get frame and tuple index
                 table.getTuplePointer(mTable, mRow, storedTuplePointer);
                 int mFrame = storedTuplePointer.frameIndex;
@@ -397,14 +378,19 @@ public class HashSpillableGroupingTableFactory implements ISpillableTableFactory
                 int d = c;
                 while (true) {
                     while (b <= c) {
-                        int bTable = tPointers[b * 2];
-                        int bRow = tPointers[b * 2 + 1];
-                        table.getTuplePointer(bTable, bRow, storedTuplePointer);
-                        int bFrame = storedTuplePointer.frameIndex;
-                        int bTuple = storedTuplePointer.tupleIndex;
-                        storedKeysAccessor2.reset(frames.get(bFrame));
-                        int cmp = ftpcTuple.compare(storedKeysAccessor2, bTuple, storedKeysAccessor1, mTuple);
-                        // int cmp = compare(tPointers, b, mi, mj, mv);
+                        int bTable = tPointers[b * 3];
+                        int bRow = tPointers[b * 3 + 1];
+                        int bNormKey = tPointers[b * 3 + 2];
+                        int cmp = 0;
+                        if (bNormKey != mNormKey) {
+                            cmp = ((((long) bNormKey) & 0xffffffffL) < (((long) mNormKey) & 0xffffffffL)) ? -1 : 1;
+                        } else {
+                            table.getTuplePointer(bTable, bRow, storedTuplePointer);
+                            int bFrame = storedTuplePointer.frameIndex;
+                            int bTuple = storedTuplePointer.tupleIndex;
+                            storedKeysAccessor2.reset(frames.get(bFrame));
+                            cmp = ftpcTuple.compare(storedKeysAccessor2, bTuple, storedKeysAccessor1, mTuple);
+                        }
                         if (cmp > 0) {
                             break;
                         }
@@ -414,14 +400,19 @@ public class HashSpillableGroupingTableFactory implements ISpillableTableFactory
                         ++b;
                     }
                     while (c >= b) {
-                        int cTable = tPointers[c * 2];
-                        int cRow = tPointers[c * 2 + 1];
-                        table.getTuplePointer(cTable, cRow, storedTuplePointer);
-                        int cFrame = storedTuplePointer.frameIndex;
-                        int cTuple = storedTuplePointer.tupleIndex;
-                        storedKeysAccessor2.reset(frames.get(cFrame));
-                        int cmp = ftpcTuple.compare(storedKeysAccessor2, cTuple, storedKeysAccessor1, mTuple);
-                        // int cmp = compare(tPointers, c, mi, mj, mv);
+                        int cTable = tPointers[c * 3];
+                        int cRow = tPointers[c * 3 + 1];
+                        int cNormKey = tPointers[c * 3 + 2];
+                        int cmp = 0;
+                        if (cNormKey != mNormKey) {
+                            cmp = ((((long) cNormKey) & 0xffffffffL) < (((long) mNormKey) & 0xffffffffL)) ? -1 : 1;
+                        } else {
+                            table.getTuplePointer(cTable, cRow, storedTuplePointer);
+                            int cFrame = storedTuplePointer.frameIndex;
+                            int cTuple = storedTuplePointer.tupleIndex;
+                            storedKeysAccessor2.reset(frames.get(cFrame));
+                            cmp = ftpcTuple.compare(storedKeysAccessor2, cTuple, storedKeysAccessor1, mTuple);
+                        }
                         if (cmp < 0) {
                             break;
                         }
@@ -451,10 +442,10 @@ public class HashSpillableGroupingTableFactory implements ISpillableTableFactory
             }
 
             private void swap(int x[], int a, int b) {
-                for (int i = 0; i < 2; ++i) {
-                    int t = x[a * 2 + i];
-                    x[a * 2 + i] = x[b * 2 + i];
-                    x[b * 2 + i] = t;
+                for (int i = 0; i < 3; ++i) {
+                    int t = x[a * 3 + i];
+                    x[a * 3 + i] = x[b * 3 + i];
+                    x[b * 3 + i] = t;
                 }
             }
 
@@ -469,12 +460,9 @@ public class HashSpillableGroupingTableFactory implements ISpillableTableFactory
                 groupSize = 0;
                 dataFrameCount = -1;
                 tPointers = null;
-                // clear the grouping hash table
                 table.close();
                 frames.clear();
-                // aggregator.close();
             }
         };
     }
-
 }

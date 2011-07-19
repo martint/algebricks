@@ -30,6 +30,7 @@ import edu.uci.ics.hyracks.api.dataflow.IOperatorDescriptor;
 import edu.uci.ics.hyracks.api.dataflow.IOperatorNodePushable;
 import edu.uci.ics.hyracks.api.dataflow.value.IBinaryComparator;
 import edu.uci.ics.hyracks.api.dataflow.value.IBinaryComparatorFactory;
+import edu.uci.ics.hyracks.api.dataflow.value.INormalizedKeyComputerFactory;
 import edu.uci.ics.hyracks.api.dataflow.value.IRecordDescriptorProvider;
 import edu.uci.ics.hyracks.api.dataflow.value.RecordDescriptor;
 import edu.uci.ics.hyracks.api.exceptions.HyracksDataException;
@@ -58,45 +59,37 @@ public class ExternalGroupOperatorDescriptor extends AbstractOperatorDescriptor 
 
     private static final long serialVersionUID = 1L;
     /**
+     * XXX For debugging only. Remove this when deploying.
+     */
+    private static Logger LOGGER = Logger.getLogger(ExternalGroupOperatorDescriptor.class.getName());
+    /**
      * The input frame identifier (in the job environment)
      */
     private static final String GROUPTABLES = "gtables";
-
     /**
      * The runs files identifier (in the job environment)
      */
     private static final String RUNS = "runs";
-
     /**
      * The fields used for grouping (grouping keys).
      */
     private final int[] keyFields;
-
     /**
      * The comparator for checking the grouping keys, corresponding to the
      * {@link #keyFields}.
      */
     private final IBinaryComparatorFactory[] comparatorFactories;
-
-    private IAggregatorDescriptorFactory aggregatorFactory;
-
-    private IAggregatorDescriptorFactory mergeFactory;
-
-    /**
-     * XXX For debugging only. Remove this when deploying.
-     */
-    private static Logger LOGGER = Logger.getLogger(ExternalGroupOperatorDescriptor.class.getName());
-
+    private final INormalizedKeyComputerFactory firstNormalizerFactory;
+    private final IAggregatorDescriptorFactory aggregatorFactory;
+    private final IAggregatorDescriptorFactory mergeFactory;
     private final int framesLimit;
-
     private final ISpillableTableFactory spillableTableFactory;
-
     private final boolean isOutputSorted;
 
     public ExternalGroupOperatorDescriptor(JobSpecification spec, int[] keyFields, int framesLimit,
-            IBinaryComparatorFactory[] comparatorFactories, IAggregatorDescriptorFactory aggregatorFactory,
-            IAggregatorDescriptorFactory mergeFactory, RecordDescriptor recordDescriptor,
-            ISpillableTableFactory spillableTableFactory, boolean isOutputSorted) {
+            IBinaryComparatorFactory[] comparatorFactories, INormalizedKeyComputerFactory firstNormalizerFactory,
+            IAggregatorDescriptorFactory aggregatorFactory, IAggregatorDescriptorFactory mergeFactory,
+            RecordDescriptor recordDescriptor, ISpillableTableFactory spillableTableFactory, boolean isOutputSorted) {
         super(spec, 1, 1);
         this.framesLimit = framesLimit;
         if (framesLimit <= 1) {
@@ -109,6 +102,7 @@ public class ExternalGroupOperatorDescriptor extends AbstractOperatorDescriptor 
         this.mergeFactory = mergeFactory;
         this.keyFields = keyFields;
         this.comparatorFactories = comparatorFactories;
+        this.firstNormalizerFactory = firstNormalizerFactory;
         this.spillableTableFactory = spillableTableFactory;
         this.isOutputSorted = isOutputSorted;
 
@@ -118,13 +112,6 @@ public class ExternalGroupOperatorDescriptor extends AbstractOperatorDescriptor 
         recordDescriptors[0] = recordDescriptor;
     }
 
-    /*
-     * (non-Javadoc)
-     * 
-     * @see
-     * edu.uci.ics.hyracks.api.dataflow.IOperatorDescriptor#contributeTaskGraph
-     * (edu.uci.ics.hyracks.api.dataflow.IActivityGraphBuilder)
-     */
     @Override
     public void contributeTaskGraph(IActivityGraphBuilder builder) {
         AggregateActivity aggregateAct = new AggregateActivity();
@@ -154,7 +141,7 @@ public class ExternalGroupOperatorDescriptor extends AbstractOperatorDescriptor 
                 int nPartitions) throws HyracksDataException {
             // Create the spillable table
             final ISpillableTable gTable = spillableTableFactory.buildSpillableTable(ctx, keyFields,
-                    comparatorFactories, aggregatorFactory,
+                    comparatorFactories, firstNormalizerFactory, aggregatorFactory, 
                     recordDescProvider.getInputRecordDescriptor(getOperatorId(), 0), recordDescriptors[0],
                     ExternalGroupOperatorDescriptor.this.framesLimit);
             // Create the tuple accessor
@@ -277,16 +264,14 @@ public class ExternalGroupOperatorDescriptor extends AbstractOperatorDescriptor 
                 /**
                  * List of the run files to be merged
                  */
-                LinkedList<RunFileReader> runs;
+                private LinkedList<RunFileReader> runs;
 
                 /**
                  * Tuple appender for the output frame {@link #outFrame}.
                  */
                 private final FrameTupleAppender outFrameAppender = new FrameTupleAppender(ctx.getFrameSize());
-
                 private final FrameTupleAccessor outFrameAccessor = new FrameTupleAccessor(ctx.getFrameSize(),
                         recordDescriptors[0]);
-
                 private ArrayTupleBuilder finalTupleBuilder;
                 private FrameTupleAppender writerFrameAppender;
 
@@ -487,9 +472,6 @@ public class ExternalGroupOperatorDescriptor extends AbstractOperatorDescriptor 
                         FrameUtils.flushFrame(writerFrame, writer);
                         writerFrameAppender.reset(writerFrame, true);
                     }
-                    // } else {
-                    // FrameUtils.flushFrame(outFrame, writer);
-                    // }
                     outFrameAppender.reset(outFrame, true);
                 }
 
