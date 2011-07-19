@@ -128,7 +128,7 @@ public class JoinUtils {
                         + " fits in memory\n");
                 // maintains the local properties on the probe side
                 op.setPhysicalOperator(new InMemoryHashJoinPOperator(hhj.getKind(), hhj.getPartitioningType(), hhj
-                        .getKeysLeftBranch(), hhj.getKeysRightBranch(), hhj.getMemSizeInFrames()));
+                        .getKeysLeftBranch(), hhj.getKeysRightBranch(), v.getNumberOfTuples() * 2));
             }
         }
 

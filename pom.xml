@@ -62,5 +62,6 @@
   <modules>
     <module>algebricks-core</module>
     <module>algebricks-tests</module>
+    <module>algebricks-examples</module>
   </modules>
 </project>

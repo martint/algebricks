@@ -27,16 +27,16 @@ import edu.uci.ics.algebricks.compiler.algebra.visitors.ILogicalExpressionRefere
 import edu.uci.ics.algebricks.compiler.algebra.visitors.ILogicalOperatorVisitor;
 
 public class DataSourceScanOperator extends AbstractScanOperator {
-
     private IDataSource<?> dataSource;
 
-    private List<LogicalVariable> projectVars = new ArrayList<LogicalVariable>();
+    private List<LogicalVariable> projectVars;
 
     private boolean projectPushed = false;
 
-    public DataSourceScanOperator(ArrayList<LogicalVariable> variables, IDataSource<?> dataSource) {
+    public DataSourceScanOperator(List<LogicalVariable> variables, IDataSource<?> dataSource) {
         super(variables);
         this.dataSource = dataSource;
+        projectVars = new ArrayList<LogicalVariable>();
     }
 
     @Override

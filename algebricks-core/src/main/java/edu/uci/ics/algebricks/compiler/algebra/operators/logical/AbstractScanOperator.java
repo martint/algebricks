@@ -15,23 +15,24 @@
 package edu.uci.ics.algebricks.compiler.algebra.operators.logical;
 
 import java.util.ArrayList;
+import java.util.List;
 
 import edu.uci.ics.algebricks.api.exceptions.AlgebricksException;
 import edu.uci.ics.algebricks.compiler.algebra.base.LogicalVariable;
 import edu.uci.ics.algebricks.compiler.algebra.properties.VariablePropagationPolicy;
 
 public abstract class AbstractScanOperator extends AbstractLogicalOperator {
-    protected ArrayList<LogicalVariable> variables;
+    protected List<LogicalVariable> variables;
 
-    public AbstractScanOperator(ArrayList<LogicalVariable> variables) {
+    public AbstractScanOperator(List<LogicalVariable> variables) {
         this.variables = variables;
     }
 
-    public ArrayList<LogicalVariable> getVariables() {
+    public List<LogicalVariable> getVariables() {
         return variables;
     }
 
-    public void setVariables(ArrayList<LogicalVariable> variables) {
+    public void setVariables(List<LogicalVariable> variables) {
         this.variables = variables;
     }
 
