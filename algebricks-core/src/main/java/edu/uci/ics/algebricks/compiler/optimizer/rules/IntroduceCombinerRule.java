@@ -124,8 +124,10 @@ public class IntroduceCombinerRule implements IAlgebraicRewriteRule {
         for (Entry<String, Object> a : gbyOp.getAnnotations().entrySet())
             annotations.put(a.getKey(), a.getValue());
 
+        List<LogicalVariable> gbyVars = gbyOp.getGbyVarList();
+
         for (ILogicalPlan p : gbyOp.getNestedPlans()) {
-            ILogicalPlan pushedSubplan = tryToPushSubplan(p, newGbyOp, toReplaceMap, context);
+            ILogicalPlan pushedSubplan = tryToPushSubplan(p, newGbyOp, toReplaceMap, gbyVars, context);
             if (pushedSubplan != null) {
                 newGbyOp.getNestedPlans().add(pushedSubplan);
             } else {
@@ -138,12 +140,13 @@ public class IntroduceCombinerRule implements IAlgebraicRewriteRule {
 
     private ILogicalPlan tryToPushSubplan(ILogicalPlan p, GroupByOperator newGbyOp,
             Map<AggregateFunctionCallExpression, Pair<IFunctionInfo, LogicalExpressionReference>> toReplaceMap,
-            IOptimizationContext context) {
+            List<LogicalVariable> gbyVars, IOptimizationContext context) {
         List<LogicalOperatorReference> pushedRoots = new ArrayList<LogicalOperatorReference>();
         for (LogicalOperatorReference r : p.getRoots()) {
-            LogicalOperatorReference pushedOpRef = tryToPushRoot(r, newGbyOp, toReplaceMap, context);
-            if (pushedOpRef != null) {
-                pushedRoots.add(pushedOpRef);
+            Pair<List<LogicalVariable>, LogicalOperatorReference> pushedRoot = tryToPushRoot(r, newGbyOp, toReplaceMap,
+                    gbyVars, context);
+            if (pushedRoot != null) {
+                pushedRoots.add(pushedRoot.second);
             } else {
                 // for now, if we cannot push everything, give up
                 return null;
@@ -156,9 +159,11 @@ public class IntroduceCombinerRule implements IAlgebraicRewriteRule {
         }
     }
 
-    private LogicalOperatorReference tryToPushRoot(LogicalOperatorReference r, GroupByOperator newGbyOp,
+    private Pair<List<LogicalVariable>, LogicalOperatorReference> tryToPushRoot(LogicalOperatorReference r,
+            GroupByOperator newGbyOp,
             Map<AggregateFunctionCallExpression, Pair<IFunctionInfo, LogicalExpressionReference>> toReplaceMap,
-            IOptimizationContext context) {
+            List<LogicalVariable> gbyVars, IOptimizationContext context) {
+
         AbstractLogicalOperator op1 = (AbstractLogicalOperator) r.getOperator();
         if (op1.getOperatorTag() != LogicalOperatorTag.AGGREGATE) {
             return null;
@@ -168,10 +173,24 @@ public class IntroduceCombinerRule implements IAlgebraicRewriteRule {
             return null;
         }
 
+        AggregateOperator initAgg = (AggregateOperator) op1;
+
+        LogicalOperatorReference opRef = tryToPushAgg(initAgg, newGbyOp, toReplaceMap, context);
+
+        if (opRef == null) {
+            return null;
+        }
+
+        return new Pair<List<LogicalVariable>, LogicalOperatorReference>(gbyVars, opRef);
+    }
+
+    private LogicalOperatorReference tryToPushAgg(AggregateOperator initAgg, GroupByOperator newGbyOp,
+            Map<AggregateFunctionCallExpression, Pair<IFunctionInfo, LogicalExpressionReference>> toReplaceMap,
+            IOptimizationContext context) {
+
         ArrayList<LogicalVariable> pushedVars = new ArrayList<LogicalVariable>();
         ArrayList<LogicalExpressionReference> pushedExprs = new ArrayList<LogicalExpressionReference>();
 
-        AggregateOperator initAgg = (AggregateOperator) op1;
         ArrayList<LogicalVariable> initVars = initAgg.getVariables();
         ArrayList<LogicalExpressionReference> initExprs = initAgg.getExpressions();
         int sz = initVars.size();

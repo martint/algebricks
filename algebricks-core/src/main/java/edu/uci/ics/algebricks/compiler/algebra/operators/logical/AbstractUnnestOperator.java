@@ -14,7 +14,7 @@
  */
 package edu.uci.ics.algebricks.compiler.algebra.operators.logical;
 
-import java.util.ArrayList;
+import java.util.List;
 
 import edu.uci.ics.algebricks.api.exceptions.AlgebricksException;
 import edu.uci.ics.algebricks.compiler.algebra.base.LogicalExpressionReference;
@@ -25,7 +25,7 @@ public abstract class AbstractUnnestOperator extends AbstractScanOperator {
 
     protected final LogicalExpressionReference expression;
 
-    public AbstractUnnestOperator(ArrayList<LogicalVariable> variables, LogicalExpressionReference expression) {
+    public AbstractUnnestOperator(List<LogicalVariable> variables, LogicalExpressionReference expression) {
         super(variables);
         this.expression = expression;
     }
