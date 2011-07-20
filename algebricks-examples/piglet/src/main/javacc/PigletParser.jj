@@ -95,10 +95,10 @@ Type TypeName(): {
         return IntegerType.INSTANCE;
     }
     | "long" {
-        return new LongType();
+        return LongType.INSTANCE;
     }
     | "float" {
-        return new FloatType();
+        return FloatType.INSTANCE;
     }
     | "double" {
         return DoubleType.INSTANCE;
