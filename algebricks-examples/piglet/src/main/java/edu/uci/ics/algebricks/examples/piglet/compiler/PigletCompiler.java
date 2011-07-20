@@ -12,6 +12,7 @@ import java.util.logging.Logger;
 import edu.uci.ics.algebricks.api.compiler.HeuristicCompilerFactoryBuilder;
 import edu.uci.ics.algebricks.api.compiler.ICompiler;
 import edu.uci.ics.algebricks.api.compiler.ICompilerFactory;
+import edu.uci.ics.algebricks.api.data.ISerializerDeserializerProvider;
 import edu.uci.ics.algebricks.api.exceptions.AlgebricksException;
 import edu.uci.ics.algebricks.compiler.algebra.base.ILogicalOperator;
 import edu.uci.ics.algebricks.compiler.algebra.base.ILogicalPlan;
@@ -43,6 +44,7 @@ import edu.uci.ics.algebricks.examples.piglet.rewriter.PigletRewriteRuleset;
 import edu.uci.ics.algebricks.examples.piglet.types.Schema;
 import edu.uci.ics.algebricks.examples.piglet.types.Type;
 import edu.uci.ics.algebricks.utils.Pair;
+import edu.uci.ics.hyracks.api.dataflow.value.ISerializerDeserializer;
 import edu.uci.ics.hyracks.api.job.JobSpecification;
 
 public class PigletCompiler {
@@ -83,6 +85,14 @@ public class PigletCompiler {
         HeuristicCompilerFactoryBuilder builder = new HeuristicCompilerFactoryBuilder();
         builder.setLogicalRewrites(DEFAULT_LOGICAL_REWRITES);
         builder.setPhysicalRewrites(DEFAULT_PHYSICAL_REWRITES);
+        builder.setSerializerDeserializerProvider(new ISerializerDeserializerProvider() {
+            @SuppressWarnings("unchecked")
+            @Override
+            public ISerializerDeserializer getSerializerDeserializer(Object type) throws AlgebricksException {
+                return null;
+            }
+        });
+        builder.setPrinterProvider(PigletPrinterFactoryProvider.INSTANCE);
         cFactory = builder.create();
         metadataProvider = new PigletMetadataProvider();
     }

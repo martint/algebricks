@@ -16,4 +16,7 @@ package edu.uci.ics.algebricks.compiler.algebra.properties;
 
 public interface INodeDomain {
     public boolean sameAs(INodeDomain domain);
+
+    /** @return the number of nodes in that domain or null if unknown */
+    public Integer cardinality();
 }

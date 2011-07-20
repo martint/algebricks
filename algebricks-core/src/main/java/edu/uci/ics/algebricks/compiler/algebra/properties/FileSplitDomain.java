@@ -25,6 +25,28 @@ public class FileSplitDomain implements INodeDomain {
     }
 
     @Override
+    public Integer cardinality() {
+        return splits.length;
+    }
+
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("FileSplitDomain[");
+        boolean fst = true;
+        for (FileSplit fs : splits) {
+            if (fst) {
+                fst = false;
+            } else {
+                sb.append(", ");
+            }
+            sb.append(fs.getNodeName() + ":" + fs.getLocalFile());
+        }
+        sb.append(']');
+        return sb.toString();
+    }
+
+    @Override
     public boolean sameAs(INodeDomain domain) {
         if (!(domain instanceof FileSplitDomain)) {
             return false;
@@ -46,4 +68,5 @@ public class FileSplitDomain implements INodeDomain {
     private boolean ncEq(FileSplit fs1, FileSplit fs2) {
         return fs1.getNodeName().equals(fs2.getNodeName());
     }
+
 }

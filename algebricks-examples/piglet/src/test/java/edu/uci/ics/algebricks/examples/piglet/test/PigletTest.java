@@ -18,9 +18,9 @@ public class PigletTest {
             PigletCompiler c = new PigletCompiler();
 
             List<ASTNode> ast = c.parse(in);
-//            JobSpecification jobSpec = c.compile(ast);
+            JobSpecification jobSpec = c.compile(ast);
 
-//            System.err.println(jobSpec.toJSON());
+            System.err.println(jobSpec.toJSON());
         } finally {
             in.close();
         }

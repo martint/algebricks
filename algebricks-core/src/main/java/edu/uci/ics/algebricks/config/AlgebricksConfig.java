@@ -14,6 +14,9 @@
  */
 package edu.uci.ics.algebricks.config;
 
+import java.util.logging.ConsoleHandler;
+import java.util.logging.Handler;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public class AlgebricksConfig {
@@ -21,4 +24,19 @@ public class AlgebricksConfig {
     public static final String ALGEBRICKS_LOGGER_NAME = "edu.uci.ics.algebricks";
     public static final Logger ALGEBRICKS_LOGGER = Logger.getLogger(ALGEBRICKS_LOGGER_NAME);
     public static final String HYRACKS_APP_NAME = "algebricks";
+
+//    public static final Level ALGEBRICKS_LOG_LEVEL = Level.FINEST;
+//
+//    static {
+//        Handler h;
+//        try {
+//            h = new ConsoleHandler();
+//            h.setFormatter(new SysoutFormatter());
+//        } catch (Exception e) {
+//            h = new ConsoleHandler();
+//        }
+//        h.setLevel(ALGEBRICKS_LOG_LEVEL);
+//        ALGEBRICKS_LOGGER.addHandler(h);
+//        ALGEBRICKS_LOGGER.setLevel(ALGEBRICKS_LOG_LEVEL);
+//    }
 }

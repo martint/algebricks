@@ -31,6 +31,11 @@ public interface IPartitioningProperty extends IStructuralProperty {
         public boolean sameAs(INodeDomain domain) {
             return domain == this;
         }
+
+        @Override
+        public Integer cardinality() {
+            return null;
+        }
     };
 
     public static final IPartitioningProperty UNPARTITIONED = new IPartitioningProperty() {

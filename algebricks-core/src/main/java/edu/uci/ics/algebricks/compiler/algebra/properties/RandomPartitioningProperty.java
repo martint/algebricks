@@ -35,6 +35,11 @@ public class RandomPartitioningProperty implements IPartitioningProperty {
     }
 
     @Override
+    public String toString() {
+        return getPartitioningType() + " domain:" + domain;
+    }
+
+    @Override
     public void normalize(Map<LogicalVariable, EquivalenceClass> equivalenceClasses, List<FunctionalDependency> fds) {
         // do nothing
     }

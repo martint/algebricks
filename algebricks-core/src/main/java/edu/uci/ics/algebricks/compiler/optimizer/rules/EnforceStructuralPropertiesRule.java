@@ -524,6 +524,23 @@ public class EnforceStructuralPropertiesRule implements IAlgebraicRewriteRule {
                     pop = new BroadcastPOperator(domain);
                     break;
                 }
+                case RANDOM: {
+                    RandomPartitioningProperty rpp = (RandomPartitioningProperty) pp;
+                    INodeDomain nd = rpp.getNodeDomain();
+                    if (nd == null) {
+                        throw new AlgebricksException("Unknown node domain for " + rpp);
+                    }
+                    if (nd.cardinality() == null) {
+                        throw new AlgebricksException("Unknown cardinality for node domain " + nd);
+                    }
+                    if (nd.cardinality() != 1) {
+                        throw new NotImplementedException(
+                                "Random repartitioning is only implemented for target domains of"
+                                        + "cardinality equal to 1.");
+                    }
+                    pop = new BroadcastPOperator(nd);
+                    break;
+                }
                 default: {
                     throw new NotImplementedException("Enforcer for " + pp.getPartitioningType()
                             + " partitioning type has not been implemented.");

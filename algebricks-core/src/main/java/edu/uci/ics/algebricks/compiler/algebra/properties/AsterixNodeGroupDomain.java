@@ -35,4 +35,9 @@ public class AsterixNodeGroupDomain implements INodeDomain {
     public String toString() {
         return "AsterixDomain(" + groupName + ")";
     }
+
+    @Override
+    public Integer cardinality() {
+        return null;
+    }
 }

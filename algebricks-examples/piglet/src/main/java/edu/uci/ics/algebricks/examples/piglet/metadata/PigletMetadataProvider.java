@@ -40,6 +40,7 @@ public class PigletMetadataProvider implements IMetadataProvider<String, String>
         return null;
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public Pair<IOperatorDescriptor, AlgebricksPartitionConstraint> getScannerRuntime(IDataSource<String> dataSource,
             List<LogicalVariable> scanVariables, List<LogicalVariable> projectVariables, boolean projectPushed,
