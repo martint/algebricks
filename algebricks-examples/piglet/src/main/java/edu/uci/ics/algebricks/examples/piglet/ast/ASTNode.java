@@ -4,7 +4,12 @@ public abstract class ASTNode {
     public enum Tag {
         ASSIGNMENT,
         DUMP,
-        LOAD
+        LOAD,
+        FILTER,
+
+        SCALAR_FUNCTION,
+        LITERAL,
+        FIELD_ACCESS,
     }
 
     public abstract Tag getTag();
