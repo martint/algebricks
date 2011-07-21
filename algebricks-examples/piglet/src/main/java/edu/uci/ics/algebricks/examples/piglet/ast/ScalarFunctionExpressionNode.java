@@ -8,7 +8,7 @@ public class ScalarFunctionExpressionNode extends ExpressionNode {
     private String fName;
 
     private List<ASTNode> arguments;
-    
+
     public ScalarFunctionExpressionNode(FunctionTag fTag, String fName, List<ASTNode> arguments) {
         this.fTag = fTag;
         this.fName = fName;
@@ -18,5 +18,17 @@ public class ScalarFunctionExpressionNode extends ExpressionNode {
     @Override
     public Tag getTag() {
         return Tag.SCALAR_FUNCTION;
+    }
+
+    public FunctionTag getFunctionTag() {
+        return fTag;
+    }
+
+    public String getFunctionName() {
+        return fName;
+    }
+
+    public List<ASTNode> getArguments() {
+        return arguments;
     }
 }

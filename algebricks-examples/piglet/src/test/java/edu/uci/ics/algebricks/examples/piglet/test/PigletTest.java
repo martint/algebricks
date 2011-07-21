@@ -4,25 +4,52 @@ import java.io.File;
 import java.io.FileReader;
 import java.util.List;
 
-import org.junit.Test;
-
+import junit.framework.Test;
+import junit.framework.TestCase;
+import junit.framework.TestResult;
+import junit.framework.TestSuite;
 import edu.uci.ics.algebricks.examples.piglet.ast.ASTNode;
 import edu.uci.ics.algebricks.examples.piglet.compiler.PigletCompiler;
 import edu.uci.ics.hyracks.api.job.JobSpecification;
 
 public class PigletTest {
-    @Test
-    public void test01() throws Exception {
-        FileReader in = new FileReader("testcases/q1.piglet");
-        try {
-            PigletCompiler c = new PigletCompiler();
+    public static Test suite() {
+        TestSuite suite = new TestSuite();
+        File dir = new File("testcases");
+        findAndAddTests(suite, dir);
 
-            List<ASTNode> ast = c.parse(in);
-            JobSpecification jobSpec = c.compile(ast);
+        return suite;
+    }
 
-            System.err.println(jobSpec.toJSON());
-        } finally {
-            in.close();
+    private static void findAndAddTests(TestSuite suite, File dir) {
+        for (final File f : dir.listFiles()) {
+            if (f.getName().startsWith(".")) {
+                continue;
+            }
+            if (f.isDirectory()) {
+                findAndAddTests(suite, f);
+            } else if (f.getName().endsWith(".piglet")) {
+                suite.addTest(new TestCase(f.getPath()) {
+                    @Override
+                    public void run(TestResult result) {
+                        try {
+                            FileReader in = new FileReader(f);
+                            try {
+                                PigletCompiler c = new PigletCompiler();
+
+                                List<ASTNode> ast = c.parse(in);
+                                JobSpecification jobSpec = c.compile(ast);
+
+                                System.err.println(jobSpec.toJSON());
+                            } finally {
+                                in.close();
+                            }
+                        } catch (Exception e) {
+                            throw new RuntimeException(e);
+                        }
+                    }
+                });
+            }
         }
     }
 }
