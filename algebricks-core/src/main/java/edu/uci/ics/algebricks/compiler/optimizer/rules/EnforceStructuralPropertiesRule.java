@@ -32,6 +32,7 @@ import edu.uci.ics.algebricks.compiler.algebra.operators.physical.BroadcastPOper
 import edu.uci.ics.algebricks.compiler.algebra.operators.physical.HashGroupByPOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.physical.HashPartitionExchangePOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.physical.HashPartitionMergeExchangePOperator;
+import edu.uci.ics.algebricks.compiler.algebra.operators.physical.InMemoryStableSortPOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.physical.PreSortedDistinctByPOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.physical.PreclusteredGroupByPOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.physical.RandomMergeExchangePOperator;
@@ -103,7 +104,7 @@ public class EnforceStructuralPropertiesRule implements IAlgebraicRewriteRule {
 
         StructuralPropertiesVector pvector = new StructuralPropertiesVector(new RandomPartitioningProperty(null),
                 new LinkedList<ILocalStructuralProperty>());
-        boolean changed = physOptimizeOp(opRef, pvector, context);
+        boolean changed = physOptimizeOp(opRef, pvector, false, context);
         op.computeDeliveredPhysicalProperties(context);
         AlgebricksConfig.ALGEBRICKS_LOGGER.finest(">>>> Structural properties for " + op.getPhysicalOperator() + ": "
                 + op.getDeliveredPhysicalProperties() + "\n");
@@ -113,11 +114,11 @@ public class EnforceStructuralPropertiesRule implements IAlgebraicRewriteRule {
         return changed;
     }
 
-    private boolean physOptimizePlan(ILogicalPlan plan, IPhysicalPropertiesVector pvector, IOptimizationContext context)
-            throws AlgebricksException {
+    private boolean physOptimizePlan(ILogicalPlan plan, IPhysicalPropertiesVector pvector, boolean nestedPlan,
+            IOptimizationContext context) throws AlgebricksException {
         boolean changed = false;
         for (LogicalOperatorReference root : plan.getRoots()) {
-            if (physOptimizeOp(root, pvector, context)) {
+            if (physOptimizeOp(root, pvector, nestedPlan, context)) {
                 changed = true;
             }
             AbstractLogicalOperator op = (AbstractLogicalOperator) root.getOperator();
@@ -129,7 +130,7 @@ public class EnforceStructuralPropertiesRule implements IAlgebraicRewriteRule {
     }
 
     private boolean physOptimizeOp(LogicalOperatorReference opRef, IPhysicalPropertiesVector required,
-            IOptimizationContext context) throws AlgebricksException {
+            boolean nestedPlan, IOptimizationContext context) throws AlgebricksException {
 
         boolean changed = false;
         AbstractLogicalOperator op = (AbstractLogicalOperator) opRef.getOperator();
@@ -148,7 +149,7 @@ public class EnforceStructuralPropertiesRule implements IAlgebraicRewriteRule {
             for (LogicalOperatorReference childRef : op.getInputs()) {
                 AbstractLogicalOperator child = (AbstractLogicalOperator) childRef.getOperator();
                 // recursive call
-                if (physOptimizeOp(childRef, reqdProperties[j], context)) {
+                if (physOptimizeOp(childRef, reqdProperties[j], nestedPlan, context)) {
                     changed = true;
                 }
                 child.computeDeliveredPhysicalProperties(context);
@@ -201,7 +202,7 @@ public class EnforceStructuralPropertiesRule implements IAlgebraicRewriteRule {
 
             if (diff != null) {
                 changed = true;
-                addEnforcers(op, i, diff, rqd, delivered, childrenDomain, context);
+                addEnforcers(op, i, diff, rqd, delivered, childrenDomain, nestedPlan, context);
 
                 AbstractLogicalOperator newChild = ((AbstractLogicalOperator) op.getInputs().get(i).getOperator());
 
@@ -232,7 +233,7 @@ public class EnforceStructuralPropertiesRule implements IAlgebraicRewriteRule {
         if (op.hasNestedPlans()) {
             AbstractOperatorWithNestedPlans nested = (AbstractOperatorWithNestedPlans) op;
             for (ILogicalPlan p : nested.getNestedPlans()) {
-                if (physOptimizePlan(p, required, context)) {
+                if (physOptimizePlan(p, required, true, context)) {
                     changed = true;
                 }
             }
@@ -256,7 +257,7 @@ public class EnforceStructuralPropertiesRule implements IAlgebraicRewriteRule {
                 transferTo = (AbstractLogicalOperator) transferTo.getInputs().get(0).getOperator();
             }
             transferTo.getAnnotations().putAll(op.getAnnotations());
-            physOptimizeOp(opRef, required, context);
+            physOptimizeOp(opRef, required, nestedPlan, context);
         }
         return changed;
     }
@@ -352,12 +353,12 @@ public class EnforceStructuralPropertiesRule implements IAlgebraicRewriteRule {
 
     private void addEnforcers(AbstractLogicalOperator op, int childIndex,
             IPhysicalPropertiesVector diffPropertiesVector, IPhysicalPropertiesVector required,
-            IPhysicalPropertiesVector deliveredByChild, INodeDomain domain, IOptimizationContext context)
-            throws AlgebricksException {
+            IPhysicalPropertiesVector deliveredByChild, INodeDomain domain, boolean nestedPlan,
+            IOptimizationContext context) throws AlgebricksException {
 
         IPartitioningProperty pp = diffPropertiesVector.getPartitioningProperty();
         if (pp == null || pp.getPartitioningType() == PartitioningType.UNPARTITIONED) {
-            addLocalEnforcers(op, childIndex, diffPropertiesVector.getLocalProperties(), context);
+            addLocalEnforcers(op, childIndex, diffPropertiesVector.getLocalProperties(), nestedPlan, context);
             IPhysicalPropertiesVector deliveredByNewChild = ((AbstractLogicalOperator) op.getInputs().get(0)
                     .getOperator()).getDeliveredPhysicalProperties();
             addPartitioningEnforcers(op, childIndex, pp, required, deliveredByNewChild, domain, context);
@@ -367,13 +368,13 @@ public class EnforceStructuralPropertiesRule implements IAlgebraicRewriteRule {
             IPhysicalPropertiesVector newDiff = newPropertiesDiff(newChild, required, true, context);
             AlgebricksConfig.ALGEBRICKS_LOGGER.finest(">>>> New properties diff: " + newDiff + "\n");
             if (newDiff != null) {
-                addLocalEnforcers(op, childIndex, newDiff.getLocalProperties(), context);
+                addLocalEnforcers(op, childIndex, newDiff.getLocalProperties(), nestedPlan, context);
             }
         }
     }
 
     private void addLocalEnforcers(AbstractLogicalOperator op, int i, List<ILocalStructuralProperty> localProperties,
-            IOptimizationContext context) throws AlgebricksException {
+            boolean nestedPlan, IOptimizationContext context) throws AlgebricksException {
         if (AlgebricksConfig.DEBUG) {
             AlgebricksConfig.ALGEBRICKS_LOGGER.fine(">>>> Adding local enforcers for local props = " + localProperties
                     + "\n");
@@ -410,7 +411,7 @@ public class EnforceStructuralPropertiesRule implements IAlgebraicRewriteRule {
             }
         }
         if (!oList.isEmpty()) {
-            topOp = enforceOrderProperties(oList, topOp, op.getPhysicalOperator().isMicroOperator());
+            topOp = enforceOrderProperties(oList, topOp, nestedPlan);
         }
 
         op.getInputs().set(i, topOp);
@@ -429,7 +430,11 @@ public class EnforceStructuralPropertiesRule implements IAlgebraicRewriteRule {
         }
         OrderOperator oo = new OrderOperator(oe);
         oo.setExecutionMode(AbstractLogicalOperator.ExecutionMode.LOCAL);
-        oo.setPhysicalOperator(new StableSortPOperator(physicalOptimizationConfig.getMaxFramesExternalSort()));
+        if (isMicroOp) {
+            oo.setPhysicalOperator(new InMemoryStableSortPOperator());
+        } else {
+            oo.setPhysicalOperator(new StableSortPOperator(physicalOptimizationConfig.getMaxFramesExternalSort()));
+        }
         oo.getInputs().add(topOp);
         if (AlgebricksConfig.DEBUG) {
             AlgebricksConfig.ALGEBRICKS_LOGGER.fine(">>>> Added sort enforcer " + oo.getPhysicalOperator() + ".\n");

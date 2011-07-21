@@ -241,11 +241,11 @@ public class IntroduceGroupByForSubplanRule implements IAlgebraicRewriteRule {
                     varExpr)));
             for (ILogicalPlan p : g.getNestedPlans()) {
                 for (LogicalOperatorReference r : p.getRoots()) {
-                    OperatorManipulationUtil.substituteVarRec((AbstractLogicalOperator) r.getOperator(), ov, newVar);
+                    OperatorManipulationUtil.substituteVarRec((AbstractLogicalOperator) r.getOperator(), ov, newVar, true);
                 }
             }
             AbstractLogicalOperator opUnder = (AbstractLogicalOperator) g.getInputs().get(0).getOperator();
-            OperatorManipulationUtil.substituteVarRec(opUnder, ov, newVar);
+            OperatorManipulationUtil.substituteVarRec(opUnder, ov, newVar, true);
         }
     }
 

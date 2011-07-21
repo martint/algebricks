@@ -142,7 +142,6 @@ public class InlineVariablesRule implements IAlgebraicRewriteRule {
                     m.add(varRight);
                     m.add(varLeft);
                     EquivalenceClass ec = new EquivalenceClass(m, varRight);
-                    // equivClassesForParent.add(ec);
                     equivClasses.add(ec);
                     if (AlgebricksConfig.DEBUG) {
                         AlgebricksConfig.ALGEBRICKS_LOGGER.finest("--- New equivalence class: " + ec + "\n");
@@ -164,25 +163,16 @@ public class InlineVariablesRule implements IAlgebraicRewriteRule {
             Pair<Boolean, Boolean> r2 = processVarExprPairs(group.getDecorList(), context, equivClasses);
             modified = modified || r1.first || r2.first;
             ecChange = r1.second || r2.second;
-            // if (ecFromGroup) {
-            // context.addToDontApplySet(this, op);
-            // }
         }
 
-        // if (toRemove) {
-        // modified = true;
-        // context.addToDontApplySet(this, op);
-        // } else {
         substVisitor.setEquivalenceClasses(equivClasses);
         if (op.getOperatorTag() == LogicalOperatorTag.PROJECT) {
             assignVarsNeededByProject((ProjectOperator) op, equivClasses, context);
         } else {
             if (op.acceptExpressionTransform(substVisitor)) {
                 modified = true;
-                // context.addToDontApplySet(this, op);
             }
         }
-        // }
 
         return new Pair<Boolean, Boolean>(modified, ecChange);
     }

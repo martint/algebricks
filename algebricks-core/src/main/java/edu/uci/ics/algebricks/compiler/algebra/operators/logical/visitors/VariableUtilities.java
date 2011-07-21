@@ -57,7 +57,13 @@ public class VariableUtilities {
 
     public static void substituteVariables(ILogicalOperator op, LogicalVariable v1, LogicalVariable v2)
             throws AlgebricksException {
-        ILogicalOperatorVisitor<Void, Pair<LogicalVariable, LogicalVariable>> visitor = new SubstituteVariableVisitor();
+        substituteVariables(op, v1, v2, true);
+    }
+
+    public static void substituteVariables(ILogicalOperator op, LogicalVariable v1, LogicalVariable v2,
+            boolean goThroughNts) throws AlgebricksException {
+        ILogicalOperatorVisitor<Void, Pair<LogicalVariable, LogicalVariable>> visitor = new SubstituteVariableVisitor(
+                goThroughNts);
         op.accept(visitor, new Pair<LogicalVariable, LogicalVariable>(v1, v2));
     }
 

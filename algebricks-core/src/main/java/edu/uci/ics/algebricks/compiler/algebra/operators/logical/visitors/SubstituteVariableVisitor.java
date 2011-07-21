@@ -36,7 +36,6 @@ import edu.uci.ics.algebricks.compiler.algebra.operators.logical.LeftOuterJoinOp
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.LimitOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.NestedTupleSourceOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.OrderOperator;
-import edu.uci.ics.algebricks.compiler.algebra.operators.logical.OrderOperator.IOrder;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.PartitioningSplitOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.ProjectOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.ReplicateOperator;
@@ -49,6 +48,7 @@ import edu.uci.ics.algebricks.compiler.algebra.operators.logical.UnnestMapOperat
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.UnnestOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.WriteOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.WriteResultOperator;
+import edu.uci.ics.algebricks.compiler.algebra.operators.logical.OrderOperator.IOrder;
 import edu.uci.ics.algebricks.compiler.algebra.visitors.ILogicalOperatorVisitor;
 import edu.uci.ics.algebricks.compiler.optimizer.base.OperatorManipulationUtil;
 import edu.uci.ics.algebricks.utils.Pair;
@@ -56,7 +56,10 @@ import edu.uci.ics.algebricks.utils.Triple;
 
 public class SubstituteVariableVisitor implements ILogicalOperatorVisitor<Void, Pair<LogicalVariable, LogicalVariable>> {
 
-    public SubstituteVariableVisitor() {
+    private final boolean goThroughNts;
+
+    public SubstituteVariableVisitor(boolean goThroughNts) {
+        this.goThroughNts = goThroughNts;
     }
 
     @Override
@@ -127,7 +130,7 @@ public class SubstituteVariableVisitor implements ILogicalOperatorVisitor<Void, 
         for (ILogicalPlan p : op.getNestedPlans()) {
             for (LogicalOperatorReference r : p.getRoots()) {
                 OperatorManipulationUtil.substituteVarRec((AbstractLogicalOperator) r.getOperator(), pair.first,
-                        pair.second);
+                        pair.second, goThroughNts);
             }
         }
         return null;
@@ -223,7 +226,7 @@ public class SubstituteVariableVisitor implements ILogicalOperatorVisitor<Void, 
         for (ILogicalPlan p : op.getNestedPlans()) {
             for (LogicalOperatorReference r : p.getRoots()) {
                 OperatorManipulationUtil.substituteVarRec((AbstractLogicalOperator) r.getOperator(), pair.first,
-                        pair.second);
+                        pair.second, goThroughNts);
             }
         }
         return null;

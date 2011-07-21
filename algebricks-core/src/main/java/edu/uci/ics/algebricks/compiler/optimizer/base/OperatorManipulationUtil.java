@@ -134,18 +134,18 @@ public class OperatorManipulationUtil {
         return change;
     }
 
-    public static void substituteVarRec(AbstractLogicalOperator op, LogicalVariable v1, LogicalVariable v2)
-            throws AlgebricksException {
-        VariableUtilities.substituteVariables(op, v1, v2);
+    public static void substituteVarRec(AbstractLogicalOperator op, LogicalVariable v1, LogicalVariable v2,
+            boolean goThroughNts) throws AlgebricksException {
+        VariableUtilities.substituteVariables(op, v1, v2, goThroughNts);
         for (LogicalOperatorReference opRef2 : op.getInputs()) {
-            substituteVarRec((AbstractLogicalOperator) opRef2.getOperator(), v1, v2);
+            substituteVarRec((AbstractLogicalOperator) opRef2.getOperator(), v1, v2, goThroughNts);
         }
-        if (op.getOperatorTag() == LogicalOperatorTag.NESTEDTUPLESOURCE) {
+        if (op.getOperatorTag() == LogicalOperatorTag.NESTEDTUPLESOURCE && goThroughNts) {
             NestedTupleSourceOperator nts = (NestedTupleSourceOperator) op;
             if (nts.getDataSourceReference() != null) {
                 AbstractLogicalOperator op2 = (AbstractLogicalOperator) nts.getDataSourceReference().getOperator()
                         .getInputs().get(0).getOperator();
-                substituteVarRec(op2, v1, v2);
+                substituteVarRec(op2, v1, v2, goThroughNts);
             }
         }
         if (op.hasNestedPlans()) {
@@ -153,7 +153,7 @@ public class OperatorManipulationUtil {
             for (ILogicalPlan p : aonp.getNestedPlans()) {
                 for (LogicalOperatorReference ref : p.getRoots()) {
                     AbstractLogicalOperator aop = (AbstractLogicalOperator) ref.getOperator();
-                    substituteVarRec(aop, v1, v2);
+                    substituteVarRec(aop, v1, v2, goThroughNts);
                 }
             }
         }

@@ -84,7 +84,8 @@ public abstract class AbstractDecorrelationRule implements IAlgebraicRewriteRule
                     varExpr)));
             for (ILogicalPlan p : g.getNestedPlans()) {
                 for (LogicalOperatorReference r : p.getRoots()) {
-                    OperatorManipulationUtil.substituteVarRec((AbstractLogicalOperator) r.getOperator(), ov, newVar);
+                    OperatorManipulationUtil.substituteVarRec((AbstractLogicalOperator) r.getOperator(), ov, newVar,
+                            true);
                 }
             }
             // g.substituteVarInNestedPlans(ov, newVar);
