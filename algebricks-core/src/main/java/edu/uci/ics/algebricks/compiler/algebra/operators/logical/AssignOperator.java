@@ -14,7 +14,7 @@
  */
 package edu.uci.ics.algebricks.compiler.algebra.operators.logical;
 
-import java.util.ArrayList;
+import java.util.List;
 
 import edu.uci.ics.algebricks.api.exceptions.AlgebricksException;
 import edu.uci.ics.algebricks.compiler.algebra.base.LogicalExpressionReference;
@@ -33,8 +33,8 @@ import edu.uci.ics.algebricks.compiler.algebra.visitors.ILogicalOperatorVisitor;
 
 public class AssignOperator extends AbstractAssignOperator {
 
-    public AssignOperator(ArrayList<LogicalVariable> variables, ArrayList<LogicalExpressionReference> expressions) {
-        super(variables, expressions);
+    public AssignOperator(List<LogicalVariable> vars, List<LogicalExpressionReference> exprs) {
+        super(vars, exprs);
     }
 
     public AssignOperator(LogicalVariable var, LogicalExpressionReference expr) {

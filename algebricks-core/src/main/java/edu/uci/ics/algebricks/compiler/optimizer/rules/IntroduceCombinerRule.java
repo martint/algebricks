@@ -205,8 +205,8 @@ public class IntroduceCombinerRule implements IAlgebraicRewriteRule {
         ArrayList<LogicalVariable> pushedVars = new ArrayList<LogicalVariable>();
         ArrayList<LogicalExpressionReference> pushedExprs = new ArrayList<LogicalExpressionReference>();
 
-        ArrayList<LogicalVariable> initVars = initAgg.getVariables();
-        ArrayList<LogicalExpressionReference> initExprs = initAgg.getExpressions();
+        List<LogicalVariable> initVars = initAgg.getVariables();
+        List<LogicalExpressionReference> initExprs = initAgg.getExpressions();
         int sz = initVars.size();
         for (int i = 0; i < sz; i++) {
             AggregateFunctionCallExpression aggFun = (AggregateFunctionCallExpression) initExprs.get(i).getExpression();

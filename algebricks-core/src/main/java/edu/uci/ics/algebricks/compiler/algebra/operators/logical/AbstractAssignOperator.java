@@ -15,6 +15,7 @@
 package edu.uci.ics.algebricks.compiler.algebra.operators.logical;
 
 import java.util.ArrayList;
+import java.util.List;
 
 import edu.uci.ics.algebricks.api.exceptions.AlgebricksException;
 import edu.uci.ics.algebricks.compiler.algebra.base.LogicalExpressionReference;
@@ -26,25 +27,25 @@ import edu.uci.ics.algebricks.compiler.algebra.visitors.ILogicalExpressionRefere
  * 
  */
 public abstract class AbstractAssignOperator extends AbstractLogicalOperator {
-    protected final ArrayList<LogicalVariable> variables;
-    protected final ArrayList<LogicalExpressionReference> expressions;
+    protected final List<LogicalVariable> variables;
+    protected final List<LogicalExpressionReference> expressions;
 
     public AbstractAssignOperator() {
         this.variables = new ArrayList<LogicalVariable>();
         this.expressions = new ArrayList<LogicalExpressionReference>();
     }
 
-    public AbstractAssignOperator(ArrayList<LogicalVariable> variables,
-            ArrayList<LogicalExpressionReference> expressions) {
+    public AbstractAssignOperator(List<LogicalVariable> variables,
+            List<LogicalExpressionReference> expressions) {
         this.variables = variables;
         this.expressions = expressions;
     }
 
-    public ArrayList<LogicalVariable> getVariables() {
+    public List<LogicalVariable> getVariables() {
         return variables;
     }
 
-    public ArrayList<LogicalExpressionReference> getExpressions() {
+    public List<LogicalExpressionReference> getExpressions() {
         return expressions;
     }
 
