@@ -508,11 +508,7 @@ public class EnforceStructuralPropertiesRule implements IAlgebraicRewriteRule {
                         if (PropertiesUtil.matchLocalProperties(reqdLocals, cldLocals, ecs, fds)) {
                             List<OrderColumn> orderColumns = getOrderColumnsFromGroupingProperties(reqdLocals,
                                     cldLocals);
-                            List<LogicalVariable> partFields = new ArrayList<LogicalVariable>(orderColumns.size());
-                            for (OrderColumn oc : orderColumns) {
-                                partFields.add(oc.getColumn());
-                            }
-                            pop = new HashPartitionMergeExchangePOperator(orderColumns, partFields, domain);
+                            pop = new HashPartitionMergeExchangePOperator(orderColumns, varList, domain);
                             propWasSet = true;
                         }
                     }

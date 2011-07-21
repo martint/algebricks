@@ -10,8 +10,12 @@ import java.util.Set;
 import edu.uci.ics.algebricks.compiler.algebra.base.EquivalenceClass;
 import edu.uci.ics.algebricks.compiler.algebra.base.ILogicalExpression;
 import edu.uci.ics.algebricks.compiler.algebra.base.ILogicalOperator;
+import edu.uci.ics.algebricks.compiler.algebra.base.ILogicalPlan;
+import edu.uci.ics.algebricks.compiler.algebra.base.IPhysicalOperator;
 import edu.uci.ics.algebricks.compiler.algebra.base.LogicalExpressionReference;
 import edu.uci.ics.algebricks.compiler.algebra.base.LogicalExpressionTag;
+import edu.uci.ics.algebricks.compiler.algebra.base.LogicalOperatorReference;
+import edu.uci.ics.algebricks.compiler.algebra.base.LogicalOperatorTag;
 import edu.uci.ics.algebricks.compiler.algebra.base.LogicalVariable;
 import edu.uci.ics.algebricks.compiler.algebra.expressions.VariableReferenceExpression;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.AbstractLogicalOperator;
@@ -115,12 +119,37 @@ public abstract class AbstractPreclusteredGroupByPOperator extends AbstractPhysi
 
         localProps = new ArrayList<ILocalStructuralProperty>(1);
         Set<LogicalVariable> gbvars = new HashSet<LogicalVariable>(columnList);
-        localProps.add(new LocalGroupingProperty(gbvars, columnList));
+        LocalGroupingProperty groupProp = new LocalGroupingProperty(gbvars, new ArrayList<LogicalVariable>(columnList));
+
+        GroupByOperator gby = (GroupByOperator) op;
+        boolean goon = true;
+        for (ILogicalPlan p : gby.getNestedPlans()) {
+            // try to propagate secondary order requirements from nested
+            // groupings
+            for (LogicalOperatorReference r : p.getRoots()) {
+                AbstractLogicalOperator op1 = (AbstractLogicalOperator) r.getOperator();
+                if (op1.getOperatorTag() == LogicalOperatorTag.AGGREGATE) {
+                    AbstractLogicalOperator op2 = (AbstractLogicalOperator) op1.getInputs().get(0).getOperator();
+                    IPhysicalOperator pop2 = op2.getPhysicalOperator();
+                    if (pop2 instanceof AbstractPreclusteredGroupByPOperator) {
+                        List<LogicalVariable> sndOrder = ((AbstractPreclusteredGroupByPOperator) pop2).getGbyColumns();
+                        groupProp.getColumnSet().addAll(sndOrder);
+                        groupProp.getPreferredOrderEnforcer().addAll(sndOrder);
+                        goon = false;
+                        break;
+                    }
+                }
+            }
+            if (!goon) {
+                break;
+            }
+        }
+
+        localProps.add(groupProp);
 
         if (reqdByParent != null) {
+            // propagate parent requirements
             List<ILocalStructuralProperty> lpPar = reqdByParent.getLocalProperties();
-            // List<LogicalVariable> covered = new ArrayList<LogicalVariable>();
-            GroupByOperator gby = (GroupByOperator) op;
             if (lpPar != null) {
                 boolean allOk = true;
                 List<ILocalStructuralProperty> props = new ArrayList<ILocalStructuralProperty>(lpPar.size());
@@ -142,10 +171,9 @@ public abstract class AbstractPreclusteredGroupByPOperator extends AbstractPhysi
                     ILogicalExpression e = p.second.getExpression();
                     if (e.getExpressionTag() != LogicalExpressionTag.VARIABLE) {
                         throw new IllegalStateException(
-                                "Right hand side of group by assignment should have been normalized to a variable reference.");
+                                "Right hand side of group-by assignment should have been normalized to a variable reference.");
                     }
                     LogicalVariable v = ((VariableReferenceExpression) e).getVariableReference();
-                    // covered.add(v);
                     props.add(new LocalOrderProperty(new OrderColumn(v, lop.getOrder())));
                 }
                 List<FunctionalDependency> fdList = new ArrayList<FunctionalDependency>();

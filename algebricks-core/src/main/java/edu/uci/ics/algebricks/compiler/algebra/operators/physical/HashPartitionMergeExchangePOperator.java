@@ -14,6 +14,7 @@
  */
 package edu.uci.ics.algebricks.compiler.algebra.operators.physical;
 
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -37,6 +38,7 @@ import edu.uci.ics.algebricks.compiler.algebra.properties.OrderColumn;
 import edu.uci.ics.algebricks.compiler.algebra.properties.PhysicalRequirements;
 import edu.uci.ics.algebricks.compiler.algebra.properties.StructuralPropertiesVector;
 import edu.uci.ics.algebricks.compiler.algebra.properties.UnorderedPartitionedProperty;
+import edu.uci.ics.algebricks.compiler.algebra.properties.ILocalStructuralProperty.PropertyType;
 import edu.uci.ics.algebricks.compiler.optimizer.base.IOptimizationContext;
 import edu.uci.ics.algebricks.runtime.hyracks.jobgen.base.IHyracksJobBuilder.TargetConstraint;
 import edu.uci.ics.algebricks.runtime.hyracks.jobgen.impl.JobGenContext;
@@ -76,7 +78,16 @@ public class HashPartitionMergeExchangePOperator extends AbstractExchangePOperat
         IPartitioningProperty p = new UnorderedPartitionedProperty(new HashSet<LogicalVariable>(partitionFields),
                 domain);
         AbstractLogicalOperator op2 = (AbstractLogicalOperator) op.getInputs().get(0).getOperator();
-        List<ILocalStructuralProperty> locals = op2.getDeliveredPhysicalProperties().getLocalProperties();
+        List<ILocalStructuralProperty> op2Locals = op2.getDeliveredPhysicalProperties().getLocalProperties();
+        List<ILocalStructuralProperty> locals = new ArrayList<ILocalStructuralProperty>();
+        for (ILocalStructuralProperty prop : op2Locals) {
+            if (prop.getPropertyType() == PropertyType.LOCAL_ORDER_PROPERTY) {
+                locals.add(prop);
+            } else {
+                break;
+            }
+        }
+
         this.deliveredProperties = new StructuralPropertiesVector(p, locals);
     }
 

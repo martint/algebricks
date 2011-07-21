@@ -93,11 +93,6 @@ public class IntroduceCombinerRule implements IAlgebraicRewriteRule {
 
         Set<LogicalVariable> freeVars = new HashSet<LogicalVariable>();
         OptimizationUtil.getFreeVariablesInSubplans(gbyOp, freeVars);
-//        for (ILogicalPlan p : gbyOp.getNestedPlans()) {
-//            for (LogicalOperatorReference r : p.getRoots()) {
-//                VariableUtilities.getUsedVariables(r.getOperator(), freeVars);
-//            }
-//        }
 
         for (LogicalVariable var : freeVars) {
             if (!propagatedVars.contains(var)) {
