@@ -154,11 +154,6 @@ public abstract class AbstractFunctionCallExpression extends AbstractLogicalExpr
                 VariableReferenceExpression op2 = (VariableReferenceExpression) opRight;
                 getFDsAndEquivClassesForEqWithConstant(op1, op2, fds, equivClasses);
             } else if (opLeft.getExpressionTag() == LogicalExpressionTag.VARIABLE
-                    && opRight.getExpressionTag() == LogicalExpressionTag.CONSTANT) {
-                VariableReferenceExpression op1 = (VariableReferenceExpression) opLeft;
-                ConstantExpression op2 = (ConstantExpression) opRight;
-                getFDsAndEquivClassesForEqWithConstant(op2, op1, fds, equivClasses);
-            } else if (opLeft.getExpressionTag() == LogicalExpressionTag.VARIABLE
                     && opRight.getExpressionTag() == LogicalExpressionTag.VARIABLE) {
                 VariableReferenceExpression op1 = (VariableReferenceExpression) opLeft;
                 VariableReferenceExpression op2 = (VariableReferenceExpression) opRight;

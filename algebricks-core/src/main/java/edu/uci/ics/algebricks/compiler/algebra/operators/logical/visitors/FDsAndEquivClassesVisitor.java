@@ -32,11 +32,13 @@ import edu.uci.ics.algebricks.compiler.algebra.base.ILogicalPlan;
 import edu.uci.ics.algebricks.compiler.algebra.base.LogicalExpressionReference;
 import edu.uci.ics.algebricks.compiler.algebra.base.LogicalExpressionTag;
 import edu.uci.ics.algebricks.compiler.algebra.base.LogicalOperatorReference;
+import edu.uci.ics.algebricks.compiler.algebra.base.LogicalOperatorTag;
 import edu.uci.ics.algebricks.compiler.algebra.base.LogicalVariable;
 import edu.uci.ics.algebricks.compiler.algebra.expressions.AbstractFunctionCallExpression;
 import edu.uci.ics.algebricks.compiler.algebra.expressions.UnnestingFunctionCallExpression;
 import edu.uci.ics.algebricks.compiler.algebra.expressions.VariableReferenceExpression;
 import edu.uci.ics.algebricks.compiler.algebra.expressions.AbstractFunctionCallExpression.FunctionKind;
+import edu.uci.ics.algebricks.compiler.algebra.operators.logical.AbstractLogicalOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.AbstractUnnestOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.AggregateOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.AssignOperator;
@@ -73,7 +75,8 @@ public class FDsAndEquivClassesVisitor implements ILogicalOperatorVisitor<Void, 
 
     @Override
     public Void visitAggregateOperator(AggregateOperator op, IOptimizationContext ctx) throws AlgebricksException {
-        propagateFDsAndEquivClasses(op, ctx);
+        ctx.putEquivalenceClassMap(op, new HashMap<LogicalVariable, EquivalenceClass>());
+        ctx.putFDList(op, new ArrayList<FunctionalDependency>());
         return null;
     }
 
@@ -350,10 +353,21 @@ public class FDsAndEquivClassesVisitor implements ILogicalOperatorVisitor<Void, 
     @Override
     public Void visitNestedTupleSourceOperator(NestedTupleSourceOperator op, IOptimizationContext ctx)
             throws AlgebricksException {
-        ILogicalOperator inp1 = op.getDataSourceReference().getOperator().getInputs().get(0).getOperator();
+        AbstractLogicalOperator op1 = (AbstractLogicalOperator) op.getDataSourceReference().getOperator();
+        ILogicalOperator inp1 = op1.getInputs().get(0).getOperator();
         Map<LogicalVariable, EquivalenceClass> eqClasses = getOrComputeEqClasses(inp1, ctx);
         ctx.putEquivalenceClassMap(op, eqClasses);
-        List<FunctionalDependency> fds = getOrComputeFDs(inp1, ctx);
+        List<FunctionalDependency> fds = new ArrayList<FunctionalDependency>(getOrComputeFDs(inp1, ctx));
+        if (op1.getOperatorTag() == LogicalOperatorTag.GROUP) {
+            GroupByOperator gby = (GroupByOperator) op1;
+            LinkedList<LogicalVariable> tail = new LinkedList<LogicalVariable>();
+            for (LogicalVariable v : gby.getGbyVarList()) {
+                tail.add(v);
+                // all values for gby vars. are the same
+            }
+            FunctionalDependency gbyfd = new FunctionalDependency(new LinkedList<LogicalVariable>(), tail);
+            fds.add(gbyfd);
+        }
         ctx.putFDList(op, fds);
         return null;
     }
@@ -397,7 +411,15 @@ public class FDsAndEquivClassesVisitor implements ILogicalOperatorVisitor<Void, 
 
     @Override
     public Void visitSelectOperator(SelectOperator op, IOptimizationContext ctx) throws AlgebricksException {
-        propagateFDsAndEquivClasses(op, ctx);
+        Map<LogicalVariable, EquivalenceClass> equivalenceClasses = new HashMap<LogicalVariable, EquivalenceClass>();
+        List<FunctionalDependency> functionalDependencies = new ArrayList<FunctionalDependency>();
+        ctx.putEquivalenceClassMap(op, equivalenceClasses);
+        ctx.putFDList(op, functionalDependencies);
+        ILogicalOperator op0 = op.getInputs().get(0).getOperator();
+        functionalDependencies.addAll(getOrComputeFDs(op0, ctx));
+        equivalenceClasses.putAll(getOrComputeEqClasses(op0, ctx));
+        ILogicalExpression expr = op.getCondition().getExpression();
+        expr.getConstraintsAndEquivClasses(functionalDependencies, equivalenceClasses);
         return null;
     }
 
