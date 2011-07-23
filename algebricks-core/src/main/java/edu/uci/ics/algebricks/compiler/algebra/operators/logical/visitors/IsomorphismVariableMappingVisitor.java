@@ -288,7 +288,9 @@ public class IsomorphismVariableMappingVisitor implements ILogicalOperatorVisito
                 ILogicalExpression exprRight = copyExpressionAndSubtituteVars(rightPairs.get(j).second).getExpression();
                 if (exprLeft.equals(exprRight)) {
                     LogicalVariable rightVar = rightPairs.get(j).first;
-                    variableMapping.put(rightVar, leftVar);
+                    if (rightVar != null && leftVar != null) {
+                        variableMapping.put(rightVar, leftVar);
+                    }
                     break;
                 }
             }

@@ -37,6 +37,9 @@ public class GroupByOperator extends AbstractOperatorWithNestedPlans {
     private final List<Pair<LogicalVariable, LogicalExpressionReference>> gByList;
     private final List<Pair<LogicalVariable, LogicalExpressionReference>> decorList;
 
+    // In decorList, if the variable (first member of the pair) is null, the
+    // second member of the pair is variable reference which is propagated.
+
     public GroupByOperator() {
         super();
         gByList = new ArrayList<Pair<LogicalVariable, LogicalExpressionReference>>();
@@ -116,7 +119,7 @@ public class GroupByOperator extends AbstractOperatorWithNestedPlans {
             schema.add(p.first);
         }
         for (Pair<LogicalVariable, LogicalExpressionReference> p : decorList) {
-            schema.add(p.first);
+            schema.add(getDecorVariable(p));
         }
     }
 
@@ -202,6 +205,15 @@ public class GroupByOperator extends AbstractOperatorWithNestedPlans {
     @Override
     public <R, T> R accept(ILogicalOperatorVisitor<R, T> visitor, T arg) throws AlgebricksException {
         return visitor.visitGroupByOperator(this, arg);
+    }
+
+    public static LogicalVariable getDecorVariable(Pair<LogicalVariable, LogicalExpressionReference> p) {
+        if (p.first != null) {
+            return p.first;
+        } else {
+            VariableReferenceExpression e = (VariableReferenceExpression) p.second.getExpression();
+            return e.getVariableReference();
+        }
     }
 
     public List<Pair<LogicalVariable, LogicalExpressionReference>> getDecorList() {

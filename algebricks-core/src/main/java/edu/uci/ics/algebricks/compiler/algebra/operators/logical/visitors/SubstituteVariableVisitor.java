@@ -295,7 +295,7 @@ public class SubstituteVariableVisitor implements ILogicalOperatorVisitor<Void, 
     private void subst(LogicalVariable v1, LogicalVariable v2,
             List<Pair<LogicalVariable, LogicalExpressionReference>> varExprPairList) {
         for (Pair<LogicalVariable, LogicalExpressionReference> ve : varExprPairList) {
-            if (ve.first.equals(v1)) {
+            if (ve.first != null && ve.first.equals(v1)) {
                 ve.first = v2;
                 return;
             }

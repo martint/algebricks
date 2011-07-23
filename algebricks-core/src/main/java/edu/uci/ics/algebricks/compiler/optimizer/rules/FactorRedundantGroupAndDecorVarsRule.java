@@ -20,7 +20,6 @@ import java.util.ListIterator;
 import java.util.Map;
 
 import edu.uci.ics.algebricks.api.exceptions.AlgebricksException;
-import edu.uci.ics.algebricks.compiler.algebra.base.ILogicalExpression;
 import edu.uci.ics.algebricks.compiler.algebra.base.ILogicalOperator;
 import edu.uci.ics.algebricks.compiler.algebra.base.LogicalExpressionReference;
 import edu.uci.ics.algebricks.compiler.algebra.base.LogicalExpressionTag;
@@ -37,8 +36,6 @@ import edu.uci.ics.algebricks.utils.Pair;
 
 public class FactorRedundantGroupAndDecorVarsRule implements IAlgebraicRewriteRule {
 
-    private Map<LogicalVariable, LogicalVariable> decorVarRhsToLhs = new HashMap<LogicalVariable, LogicalVariable>();
-
     @Override
     public boolean rewritePre(LogicalOperatorReference opRef, IOptimizationContext context) throws AlgebricksException {
         return false;
@@ -51,36 +48,37 @@ public class FactorRedundantGroupAndDecorVarsRule implements IAlgebraicRewriteRu
             return false;
         }
         GroupByOperator gby = (GroupByOperator) op;
-        boolean gvChanged = factorRedundantRhsVars(gby.getGroupByList(), opRef);
-        boolean dvChanged = factorRedundantRhsVars(gby.getDecorList(), opRef);
+        Map<LogicalVariable, LogicalVariable> varRhsToLhs = new HashMap<LogicalVariable, LogicalVariable>();
+        boolean gvChanged = factorRedundantRhsVars(gby.getGroupByList(), opRef, varRhsToLhs);
+        boolean dvChanged = factorRedundantRhsVars(gby.getDecorList(), opRef, varRhsToLhs);
 
         return gvChanged || dvChanged;
     }
 
     private boolean factorRedundantRhsVars(List<Pair<LogicalVariable, LogicalExpressionReference>> veList,
-            LogicalOperatorReference opRef) {
-        decorVarRhsToLhs.clear();
+            LogicalOperatorReference opRef, Map<LogicalVariable, LogicalVariable> varRhsToLhs) {
+        varRhsToLhs.clear();
         ListIterator<Pair<LogicalVariable, LogicalExpressionReference>> iter = veList.listIterator();
         boolean changed = false;
         while (iter.hasNext()) {
             Pair<LogicalVariable, LogicalExpressionReference> p = iter.next();
-            ILogicalExpression expr = p.second.getExpression();
-            if (expr.getExpressionTag() != LogicalExpressionTag.VARIABLE) {
+            if (p.second.getExpression().getExpressionTag() != LogicalExpressionTag.VARIABLE) {
                 continue;
             }
-            VariableReferenceExpression varRef = (VariableReferenceExpression) expr;
-            LogicalVariable v = varRef.getVariableReference();
-            LogicalVariable lhs = decorVarRhsToLhs.get(v);
+            LogicalVariable v = GroupByOperator.getDecorVariable(p);
+            LogicalVariable lhs = varRhsToLhs.get(v);
             if (lhs != null) {
-                AssignOperator assign = new AssignOperator(p.first, new LogicalExpressionReference(
-                        new VariableReferenceExpression(lhs)));
-                ILogicalOperator op = opRef.getOperator();
-                assign.getInputs().add(new LogicalOperatorReference(op));
-                opRef.setOperator(assign);
+                if (p.first != null) {
+                    AssignOperator assign = new AssignOperator(p.first, new LogicalExpressionReference(
+                            new VariableReferenceExpression(lhs)));
+                    ILogicalOperator op = opRef.getOperator();
+                    assign.getInputs().add(new LogicalOperatorReference(op));
+                    opRef.setOperator(assign);
+                }
                 iter.remove();
                 changed = true;
             } else {
-                decorVarRhsToLhs.put(v, p.first);
+                varRhsToLhs.put(v, p.first);
             }
         }
         return changed;

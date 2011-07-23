@@ -124,7 +124,7 @@ public class ExternalGroupByPOperator extends HashGroupByPOperator {
         for (Pair<LogicalVariable, LogicalExpressionReference> p : gby.getGroupByList())
             keyAndDecVariables.add(p.first);
         for (Pair<LogicalVariable, LogicalExpressionReference> p : gby.getDecorList())
-            keyAndDecVariables.add(p.first);
+            keyAndDecVariables.add(GroupByOperator.getDecorVariable(p));
 
         compileSubplans(inputSchemas[0], gby, opSchema, context);
         JobSpecification spec = builder.getJobSpec();

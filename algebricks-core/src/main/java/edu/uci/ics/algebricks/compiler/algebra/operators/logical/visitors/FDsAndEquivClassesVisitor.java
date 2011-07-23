@@ -248,7 +248,7 @@ public class FDsAndEquivClassesVisitor implements ILogicalOperatorVisitor<Void, 
 
         LinkedList<LogicalVariable> conclDecor = new LinkedList<LogicalVariable>();
         for (Pair<LogicalVariable, LogicalExpressionReference> p : decorList) {
-            conclDecor.add(p.first);
+            conclDecor.add(GroupByOperator.getDecorVariable(p));
         }
         if (!conclDecor.isEmpty()) {
             functionalDependencies.add(new FunctionalDependency(premiseGby, conclDecor));
@@ -601,7 +601,7 @@ public class FDsAndEquivClassesVisitor implements ILogicalOperatorVisitor<Void, 
             if (e.getExpressionTag() == LogicalExpressionTag.VARIABLE) {
                 LogicalVariable v2 = ((VariableReferenceExpression) e).getVariableReference();
                 if (v2 == v) {
-                    return p.first;
+                    return (p.first != null) ? p.first : v2;
                 }
             }
         }

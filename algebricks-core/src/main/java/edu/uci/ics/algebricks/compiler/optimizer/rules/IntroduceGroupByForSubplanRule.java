@@ -195,7 +195,12 @@ public class IntroduceGroupByForSubplanRule implements IAlgebraicRewriteRule {
         VariableUtilities.getLiveVariables(subplan.getInputs().get(0).getOperator(), underVars);
         underVars.removeAll(pkVars);
         buildVarExprList(pkVars, context, g, g.getGroupByList());
-        buildVarExprList(underVars, context, g, g.getDecorList());
+        // buildVarExprList(underVars, context, g, g.getDecorList());
+        for (LogicalVariable uv : underVars) {
+            g.getDecorList().add(
+                    new Pair<LogicalVariable, LogicalExpressionReference>(null, new LogicalExpressionReference(
+                            new VariableReferenceExpression(uv))));
+        }
 
         return true;
     }
@@ -241,7 +246,8 @@ public class IntroduceGroupByForSubplanRule implements IAlgebraicRewriteRule {
                     varExpr)));
             for (ILogicalPlan p : g.getNestedPlans()) {
                 for (LogicalOperatorReference r : p.getRoots()) {
-                    OperatorManipulationUtil.substituteVarRec((AbstractLogicalOperator) r.getOperator(), ov, newVar, true);
+                    OperatorManipulationUtil.substituteVarRec((AbstractLogicalOperator) r.getOperator(), ov, newVar,
+                            true);
                 }
             }
             AbstractLogicalOperator opUnder = (AbstractLogicalOperator) g.getInputs().get(0).getOperator();

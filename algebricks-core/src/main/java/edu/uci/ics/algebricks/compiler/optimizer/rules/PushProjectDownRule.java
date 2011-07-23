@@ -113,7 +113,7 @@ public class PushProjectDownRule implements IAlgebraicRewriteRule {
             GroupByOperator gby = (GroupByOperator) op2;
             List<Pair<LogicalVariable, LogicalExpressionReference>> newDecorList = new ArrayList<Pair<LogicalVariable, LogicalExpressionReference>>();
             for (Pair<LogicalVariable, LogicalExpressionReference> p : gby.getDecorList()) {
-                LogicalVariable decorVar = p.first;
+                LogicalVariable decorVar = GroupByOperator.getDecorVariable(p);
                 if (!toPush.contains(decorVar)) {
                     used2.remove(decorVar);
                 } else {

@@ -17,10 +17,14 @@ package edu.uci.ics.algebricks.compiler.algebra.operators.logical.visitors;
 import java.util.Collection;
 
 import edu.uci.ics.algebricks.api.exceptions.AlgebricksException;
+import edu.uci.ics.algebricks.compiler.algebra.base.ILogicalExpression;
 import edu.uci.ics.algebricks.compiler.algebra.base.ILogicalOperator;
 import edu.uci.ics.algebricks.compiler.algebra.base.ILogicalPlan;
+import edu.uci.ics.algebricks.compiler.algebra.base.LogicalExpressionReference;
+import edu.uci.ics.algebricks.compiler.algebra.base.LogicalExpressionTag;
 import edu.uci.ics.algebricks.compiler.algebra.base.LogicalOperatorReference;
 import edu.uci.ics.algebricks.compiler.algebra.base.LogicalVariable;
+import edu.uci.ics.algebricks.compiler.algebra.expressions.VariableReferenceExpression;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.AggregateOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.AssignOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.DataSourceScanOperator;
@@ -46,6 +50,7 @@ import edu.uci.ics.algebricks.compiler.algebra.operators.logical.UnnestOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.WriteOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.WriteResultOperator;
 import edu.uci.ics.algebricks.compiler.algebra.visitors.ILogicalOperatorVisitor;
+import edu.uci.ics.algebricks.utils.Pair;
 
 public class SchemaVariableVisitor implements ILogicalOperatorVisitor<Void, Void> {
 
@@ -93,7 +98,26 @@ public class SchemaVariableVisitor implements ILogicalOperatorVisitor<Void, Void
 
     @Override
     public Void visitGroupByOperator(GroupByOperator op, Void arg) throws AlgebricksException {
-        VariableUtilities.getProducedVariables(op, schemaVariables);
+        for (ILogicalPlan p : op.getNestedPlans()) {
+            for (LogicalOperatorReference r : p.getRoots()) {
+                VariableUtilities.getLiveVariables(r.getOperator(), schemaVariables);
+            }
+        }
+        for (Pair<LogicalVariable, LogicalExpressionReference> p : op.getGroupByList()) {
+            if (p.first != null) {
+                schemaVariables.add(p.first);
+            }
+        }
+        for (Pair<LogicalVariable, LogicalExpressionReference> p : op.getDecorList()) {
+            if (p.first != null) {
+                schemaVariables.add(p.first);
+            } else {
+                ILogicalExpression e = p.second.getExpression();
+                if (e.getExpressionTag() == LogicalExpressionTag.VARIABLE) {
+                    schemaVariables.add(((VariableReferenceExpression) e).getVariableReference());
+                }
+            }
+        }
         return null;
     }
 
