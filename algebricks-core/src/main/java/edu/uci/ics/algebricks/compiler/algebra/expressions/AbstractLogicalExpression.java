@@ -36,6 +36,4 @@ public abstract class AbstractLogicalExpression implements ILogicalExpression {
         // do nothing
     }
 
-    public abstract AbstractLogicalExpression cloneExpression();
-
 }

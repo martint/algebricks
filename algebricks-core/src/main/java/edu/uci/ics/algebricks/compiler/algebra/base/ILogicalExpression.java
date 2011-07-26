@@ -64,4 +64,5 @@ public interface ILogicalExpression {
      */
     public boolean splitIntoConjuncts(List<LogicalExpressionReference> conjs);
 
+    public abstract ILogicalExpression cloneExpression();
 }
