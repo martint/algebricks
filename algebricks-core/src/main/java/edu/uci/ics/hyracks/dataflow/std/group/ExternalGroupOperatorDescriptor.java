@@ -141,7 +141,7 @@ public class ExternalGroupOperatorDescriptor extends AbstractOperatorDescriptor 
                 int nPartitions) throws HyracksDataException {
             // Create the spillable table
             final ISpillableTable gTable = spillableTableFactory.buildSpillableTable(ctx, keyFields,
-                    comparatorFactories, firstNormalizerFactory, aggregatorFactory, 
+                    comparatorFactories, firstNormalizerFactory, aggregatorFactory,
                     recordDescProvider.getInputRecordDescriptor(getOperatorId(), 0), recordDescriptors[0],
                     ExternalGroupOperatorDescriptor.this.framesLimit);
             // Create the tuple accessor
@@ -396,14 +396,13 @@ public class ExternalGroupOperatorDescriptor extends AbstractOperatorDescriptor 
                                 // current aggregator
                                 // do merge and output to the outFrame
                                 int tupleOffset = outFrameAccessor.getTupleStartOffset(currentTupleInOutFrame);
-                                int fieldCount = outFrameAccessor.getFieldCount();
                                 int fieldOffset = outFrameAccessor.getFieldStartOffset(currentTupleInOutFrame,
                                         keyFields.length);
                                 int fieldLength = outFrameAccessor.getFieldLength(currentTupleInOutFrame,
                                         keyFields.length);
                                 currentWorkingAggregator.aggregate(fta, tupleIndex, outFrameAccessor.getBuffer()
-                                        .array(), tupleOffset + 2 * fieldCount + fieldOffset, fieldLength);
-
+                                        .array(), tupleOffset + outFrameAccessor.getFieldSlotsLength() + fieldOffset,
+                                        fieldLength);
                             }
                             tupleIndices[runIndex]++;
                             setNextTopTuple(runIndex, tupleIndices, runFileReaders, tupleAccessors, topTuples);
