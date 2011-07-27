@@ -124,7 +124,7 @@ public class HashPartitionMergeExchangePOperator extends AbstractExchangePOperat
     @Override
     public Pair<IConnectorDescriptor, TargetConstraint> createConnectorDescriptor(JobSpecification spec,
             IOperatorSchema opSchema, JobGenContext context) throws AlgebricksException {
-        int[] keys = new int[orderColumns.size()];
+        int[] keys = new int[partitionFields.size()];
         IBinaryHashFunctionFactory[] hashFunctionFactories = new IBinaryHashFunctionFactory[partitionFields.size()];
         {
             int i = 0;
