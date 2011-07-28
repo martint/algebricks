@@ -19,14 +19,12 @@ import edu.uci.ics.algebricks.compiler.algebra.expressions.VariableReferenceExpr
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.AggregateOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.GroupByOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.IOperatorSchema;
-import edu.uci.ics.algebricks.runtime.hyracks.base.IAggregateFunctionFactory;
 import edu.uci.ics.algebricks.runtime.hyracks.base.ISerializableAggregateFunctionFactory;
 import edu.uci.ics.algebricks.runtime.hyracks.jobgen.base.IHyracksJobBuilder;
 import edu.uci.ics.algebricks.runtime.hyracks.jobgen.impl.JobGenContext;
 import edu.uci.ics.algebricks.runtime.hyracks.jobgen.impl.JobGenHelper;
 import edu.uci.ics.algebricks.runtime.hyracks.jobgen.impl.OperatorSchemaImpl;
 import edu.uci.ics.algebricks.runtime.hyracks.operators.aggreg.SerializableAggregatorDescriptorFactory;
-import edu.uci.ics.algebricks.runtime.hyracks.operators.aggreg.SimpleMergeDescriptorFactory;
 import edu.uci.ics.algebricks.utils.Pair;
 import edu.uci.ics.hyracks.api.dataflow.value.IBinaryComparatorFactory;
 import edu.uci.ics.hyracks.api.dataflow.value.IBinaryHashFunctionFactory;
@@ -134,7 +132,7 @@ public class ExternalGroupByPOperator extends HashGroupByPOperator {
         IBinaryHashFunctionFactory[] hashFunctionFactories = JobGenHelper.variablesToBinaryHashFunctionFactories(
                 columnSet, context);
 
-        IAggregateFunctionFactory[] merges = new IAggregateFunctionFactory[n];
+        ISerializableAggregateFunctionFactory[] merges = new ISerializableAggregateFunctionFactory[n];
         List<LogicalVariable> usedVars = new ArrayList<LogicalVariable>();
         IOperatorSchema[] localInputSchemas = new IOperatorSchema[1];
         localInputSchemas[0] = new OperatorSchemaImpl();
@@ -153,10 +151,10 @@ public class ExternalGroupByPOperator extends HashGroupByPOperator {
         for (i = 0; i < n; i++) {
             AggregateFunctionCallExpression mergeFun = (AggregateFunctionCallExpression) aggOp.getMergeExpressions()
                     .get(i).getExpression();
-            merges[i] = exprJobGen.createAggregateFunctionFactory(mergeFun, localInputSchemas, context);
+            merges[i] = exprJobGen.createSerializableAggregateFunctionFactory(mergeFun, localInputSchemas, context);
         }
         IAggregatorDescriptorFactory aggregatorFactory = new SerializableAggregatorDescriptorFactory(aff);
-        IAggregatorDescriptorFactory mergeFactory = new SimpleMergeDescriptorFactory(merges);
+        IAggregatorDescriptorFactory mergeFactory = new SerializableAggregatorDescriptorFactory(merges);
 
         ITuplePartitionComputerFactory tpcf = new FieldHashPartitionComputerFactory(keys, hashFunctionFactories);
         INormalizedKeyComputerFactory noramlizedKeyFactory = JobGenHelper.variablesToAscNormalizedKeyComputerFactory(

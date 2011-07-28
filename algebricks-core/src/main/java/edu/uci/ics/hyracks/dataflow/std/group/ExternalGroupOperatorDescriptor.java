@@ -279,6 +279,7 @@ public class ExternalGroupOperatorDescriptor extends AbstractOperatorDescriptor 
                 public void initialize() throws HyracksDataException {
                     runs = (LinkedList<RunFileReader>) env.get(RUNS);
                     writer.open();
+                    long start = System.currentTimeMillis();
                     try {
                         if (runs.size() <= 0) {
                             ISpillableTable gTable = (ISpillableTable) env.get(GROUPTABLES);
@@ -305,6 +306,8 @@ public class ExternalGroupOperatorDescriptor extends AbstractOperatorDescriptor 
                     } finally {
                         writer.close();
                     }
+                    long end = System.currentTimeMillis();
+                    System.out.println("merge time " + (end - start));
                     env.set(RUNS, null);
                 }
 
@@ -380,17 +383,23 @@ public class ExternalGroupOperatorDescriptor extends AbstractOperatorDescriptor 
                                     || compareFrameTuples(fta, tupleIndex, outFrameAccessor, currentTupleInOutFrame) != 0) {
                                 // Initialize the first output record
                                 // Reset the tuple builder
-                                flushOutFrame(writer, finalPass);
-
                                 tupleBuilder.reset();
                                 for (int i = 0; i < keyFields.length; i++) {
                                     tupleBuilder.addField(fta, tupleIndex, i);
                                 }
 
                                 currentWorkingAggregator.init(fta, tupleIndex, tupleBuilder);
-                                outFrameAppender.reset(outFrame, true);
-                                outFrameAppender.append(tupleBuilder.getFieldEndOffsets(), tupleBuilder.getByteArray(),
-                                        0, tupleBuilder.getSize());
+                                if (!outFrameAppender.append(tupleBuilder.getFieldEndOffsets(),
+                                        tupleBuilder.getByteArray(), 0, tupleBuilder.getSize())) {
+                                    // Make sure that when the outFrame is being
+                                    // flushed, all results in it are in
+                                    // the correct state
+                                    flushOutFrame(writer, finalPass);
+                                    if (!outFrameAppender.append(tupleBuilder.getFieldEndOffsets(),
+                                            tupleBuilder.getByteArray(), 0, tupleBuilder.getSize()))
+                                        throw new HyracksDataException(
+                                                "Failed to append an aggregation result to the output frame.");
+                                }
                             } else {
                                 // if new tuple is in the same group of the
                                 // current aggregator
