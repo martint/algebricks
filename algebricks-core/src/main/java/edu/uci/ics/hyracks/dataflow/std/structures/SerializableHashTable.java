@@ -1,4 +1,4 @@
-package edu.uci.ics.hyracks.hashtable;
+package edu.uci.ics.hyracks.dataflow.std.structures;
 
 import java.util.ArrayList;
 import java.util.List;

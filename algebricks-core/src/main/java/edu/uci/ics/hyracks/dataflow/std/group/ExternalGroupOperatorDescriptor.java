@@ -20,7 +20,6 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.logging.Logger;
 
 import edu.uci.ics.hyracks.api.comm.IFrameTupleAccessor;
 import edu.uci.ics.hyracks.api.comm.IFrameWriter;
@@ -52,16 +51,9 @@ import edu.uci.ics.hyracks.dataflow.std.base.AbstractUnaryOutputSourceOperatorNo
 import edu.uci.ics.hyracks.dataflow.std.util.ReferenceEntry;
 import edu.uci.ics.hyracks.dataflow.std.util.ReferencedPriorityQueue;
 
-/**
- * @author jarodwen
- */
 public class ExternalGroupOperatorDescriptor extends AbstractOperatorDescriptor {
 
     private static final long serialVersionUID = 1L;
-    /**
-     * XXX For debugging only. Remove this when deploying.
-     */
-    private static Logger LOGGER = Logger.getLogger(ExternalGroupOperatorDescriptor.class.getName());
     /**
      * The input frame identifier (in the job environment)
      */
@@ -70,14 +62,7 @@ public class ExternalGroupOperatorDescriptor extends AbstractOperatorDescriptor 
      * The runs files identifier (in the job environment)
      */
     private static final String RUNS = "runs";
-    /**
-     * The fields used for grouping (grouping keys).
-     */
     private final int[] keyFields;
-    /**
-     * The comparator for checking the grouping keys, corresponding to the
-     * {@link #keyFields}.
-     */
     private final IBinaryComparatorFactory[] comparatorFactories;
     private final INormalizedKeyComputerFactory firstNormalizerFactory;
     private final IAggregatorDescriptorFactory aggregatorFactory;
@@ -139,15 +124,12 @@ public class ExternalGroupOperatorDescriptor extends AbstractOperatorDescriptor 
         public IOperatorNodePushable createPushRuntime(final IHyracksStageletContext ctx,
                 final IOperatorEnvironment env, IRecordDescriptorProvider recordDescProvider, int partition,
                 int nPartitions) throws HyracksDataException {
-            // Create the spillable table
             final ISpillableTable gTable = spillableTableFactory.buildSpillableTable(ctx, keyFields,
                     comparatorFactories, firstNormalizerFactory, aggregatorFactory,
                     recordDescProvider.getInputRecordDescriptor(getOperatorId(), 0), recordDescriptors[0],
                     ExternalGroupOperatorDescriptor.this.framesLimit);
-            // Create the tuple accessor
             final FrameTupleAccessor accessor = new FrameTupleAccessor(ctx.getFrameSize(),
                     recordDescProvider.getInputRecordDescriptor(getOperatorId(), 0));
-            // Create the partial aggregate activity node
             IOperatorNodePushable op = new AbstractUnaryInputSinkOperatorNodePushable() {
 
                 /**
@@ -267,8 +249,12 @@ public class ExternalGroupOperatorDescriptor extends AbstractOperatorDescriptor 
                 private LinkedList<RunFileReader> runs;
 
                 /**
-                 * Tuple appender for the output frame {@link #outFrame}.
+                 * how many frames to be read ahead once
                  */
+                private int runFrameLimit = 1;
+
+                private int[] currentFrameIndexInRun;
+                private int[] currentRunFrames;
                 private final FrameTupleAppender outFrameAppender = new FrameTupleAppender(ctx.getFrameSize());
                 private final FrameTupleAccessor outFrameAccessor = new FrameTupleAccessor(ctx.getFrameSize(),
                         recordDescriptors[0]);
@@ -279,7 +265,6 @@ public class ExternalGroupOperatorDescriptor extends AbstractOperatorDescriptor 
                 public void initialize() throws HyracksDataException {
                     runs = (LinkedList<RunFileReader>) env.get(RUNS);
                     writer.open();
-                    long start = System.currentTimeMillis();
                     try {
                         if (runs.size() <= 0) {
                             ISpillableTable gTable = (ISpillableTable) env.get(GROUPTABLES);
@@ -290,6 +275,7 @@ public class ExternalGroupOperatorDescriptor extends AbstractOperatorDescriptor 
                             }
                             env.set(GROUPTABLES, null);
                         } else {
+                            long start = System.currentTimeMillis();
                             inFrames = new ArrayList<ByteBuffer>();
                             outFrame = ctx.allocateFrame();
                             outFrameAppender.reset(outFrame, true);
@@ -302,12 +288,12 @@ public class ExternalGroupOperatorDescriptor extends AbstractOperatorDescriptor 
                                 }
                             }
                             inFrames.clear();
+                            long end = System.currentTimeMillis();
+                            System.out.println("merge time " + (end - start));
                         }
                     } finally {
                         writer.close();
                     }
-                    long end = System.currentTimeMillis();
-                    System.out.println("merge time " + (end - start));
                     env.set(RUNS, null);
                 }
 
@@ -316,58 +302,58 @@ public class ExternalGroupOperatorDescriptor extends AbstractOperatorDescriptor 
                     IFrameWriter writer = this.writer;
                     boolean finalPass = false;
 
+                    while (inFrames.size() + 2 < framesLimit) {
+                        inFrames.add(ctx.allocateFrame());
+                    }
+                    int runNumber;
                     if (runs.size() + 2 <= framesLimit) {
-                        // All in-frames can be fit into memory, so no run file
-                        // will be produced and this will be the final pass.
                         finalPass = true;
-                        // Remove the unnecessary frames.
-                        while (inFrames.size() < runs.size()) {
-                            inFrames.add(ctx.allocateFrame());
-                        }
+                        runFrameLimit = (framesLimit - 2) / runs.size();
+                        runNumber = runs.size();
                     } else {
-                        while (inFrames.size() + 2 < framesLimit) {
-                            inFrames.add(ctx.allocateFrame());
-                        }
-                        // Files need to be merged.
+                        runNumber = framesLimit - 2;
                         newRun = ctx.getJobletContext().createWorkspaceFile(
                                 ExternalGroupOperatorDescriptor.class.getSimpleName());
                         writer = new RunFileWriter(newRun, ctx.getIOManager());
                         writer.open();
                     }
                     try {
+                        currentFrameIndexInRun = new int[runNumber];
+                        currentRunFrames = new int[runNumber];
                         // Create file readers for each input run file, only
                         // for the ones fit into the inFrames
-                        RunFileReader[] runFileReaders = new RunFileReader[inFrames.size()];
+                        RunFileReader[] runFileReaders = new RunFileReader[runNumber];
                         // Create input frame accessor
                         FrameTupleAccessor[] tupleAccessors = new FrameTupleAccessor[inFrames.size()];
-
                         // Build a priority queue for extracting tuples in order
                         Comparator<ReferenceEntry> comparator = createEntryComparator(comparators);
 
                         ReferencedPriorityQueue topTuples = new ReferencedPriorityQueue(ctx.getFrameSize(),
-                                recordDescriptors[0], inFrames.size(), comparator);
-                        // Maintain a list of visiting index for all inFrames
-                        int[] tupleIndices = new int[inFrames.size()];
-                        for (int i = 0; i < inFrames.size(); i++) {
-                            tupleIndices[i] = 0;
-                            // Get the run file index for this in-frame
-                            // Note that empty entry in the queue will be
-                            // the minimum one so it is always at the peek
-                            int runIndex = topTuples.peek().getRunid();
+                                recordDescriptors[0], runNumber, comparator);
+                        // Maintain a list of visiting index for all runs'
+                        // current frame
+                        int[] tupleIndices = new int[runNumber];
+                        for (int runIndex = runNumber - 1; runIndex >= 0; runIndex--) {
+                            tupleIndices[runIndex] = 0;
                             // Load the run file
                             runFileReaders[runIndex] = runs.get(runIndex);
                             runFileReaders[runIndex].open();
-                            // Load the first frame of the file into
-                            // the inFrame
-                            if (runFileReaders[runIndex].nextFrame(inFrames.get(runIndex))) {
-                                // Initialize the tuple accessor for this run
-                                // file
-                                tupleAccessors[runIndex] = new FrameTupleAccessor(ctx.getFrameSize(),
-                                        recordDescriptors[0]);
-                                tupleAccessors[runIndex].reset(inFrames.get(runIndex));
-                                setNextTopTuple(runIndex, tupleIndices, runFileReaders, tupleAccessors, topTuples);
-                            } else {
-                                closeRun(runIndex, runFileReaders, tupleAccessors);
+
+                            currentRunFrames[runIndex] = 0;
+                            currentFrameIndexInRun[runIndex] = runIndex * runFrameLimit;
+                            for (int j = 0; j < runFrameLimit; j++) {
+                                int frameIndex = currentFrameIndexInRun[runIndex] + j;
+                                if (runFileReaders[runIndex].nextFrame(inFrames.get(frameIndex))) {
+                                    tupleAccessors[frameIndex] = new FrameTupleAccessor(ctx.getFrameSize(),
+                                            recordDescriptors[0]);
+                                    tupleAccessors[frameIndex].reset(inFrames.get(frameIndex));
+                                    currentRunFrames[runIndex]++;
+                                    if (j == 0)
+                                        setNextTopTuple(runIndex, tupleIndices, runFileReaders, tupleAccessors,
+                                                topTuples);
+                                } else {
+                                    break;
+                                }
                             }
                         }
 
@@ -378,6 +364,7 @@ public class ExternalGroupOperatorDescriptor extends AbstractOperatorDescriptor 
                             int tupleIndex = top.getTupleIndex();
                             int runIndex = topTuples.peek().getRunid();
                             FrameTupleAccessor fta = top.getAccessor();
+
                             int currentTupleInOutFrame = outFrameAccessor.getTupleCount() - 1;
                             if (currentTupleInOutFrame < 0
                                     || compareFrameTuples(fta, tupleIndex, outFrameAccessor, currentTupleInOutFrame) != 0) {
@@ -422,19 +409,11 @@ public class ExternalGroupOperatorDescriptor extends AbstractOperatorDescriptor 
                         }
                         // After processing all records, flush the aggregator
                         currentWorkingAggregator.close();
-                        // Remove the processed run files and close open files
-                        for (int i = 0; i < inFrames.size(); i++) {
-                            RunFileReader reader = runs.get(i);
-                            reader.close();
-                        }
-                        runs.subList(0, inFrames.size()).clear();
+                        runs.subList(0, runNumber).clear();
                         // insert the new run file into the beginning of the run
                         // file list
                         if (!finalPass) {
                             runs.add(0, ((RunFileWriter) writer).createReader());
-                            // XXX Remove this when deploying
-                            LOGGER.warning("==== [MRG]\t" + newRun.getFile().getAbsolutePath() + "\t"
-                                    + newRun.getFile().length());
                         }
                     } finally {
                         if (!finalPass) {
@@ -444,7 +423,6 @@ public class ExternalGroupOperatorDescriptor extends AbstractOperatorDescriptor 
                 }
 
                 private void flushOutFrame(IFrameWriter writer, boolean isFinal) throws HyracksDataException {
-                    // if (isFinal) {
                     if (finalTupleBuilder == null) {
                         finalTupleBuilder = new ArrayTupleBuilder(recordDescriptors[0].getFields().length);
                     }
@@ -486,42 +464,57 @@ public class ExternalGroupOperatorDescriptor extends AbstractOperatorDescriptor 
                 private void setNextTopTuple(int runIndex, int[] tupleIndices, RunFileReader[] runCursors,
                         FrameTupleAccessor[] tupleAccessors, ReferencedPriorityQueue topTuples)
                         throws HyracksDataException {
-                    // Check whether the run file for the given runIndex has
-                    // more tuples
-                    boolean exists = hasNextTuple(runIndex, tupleIndices, runCursors, tupleAccessors);
-                    if (exists) {
-                        topTuples.popAndReplace(tupleAccessors[runIndex], tupleIndices[runIndex]);
+                    int runStart = runIndex * runFrameLimit;
+                    boolean existNext = false;
+                    if (tupleAccessors[currentFrameIndexInRun[runIndex]] == null || runCursors[runIndex] == null) {
+                        // run already closed
+                        existNext = false;
+                    } else if (currentFrameIndexInRun[runIndex] - runStart < currentRunFrames[runIndex] - 1) {
+                        // not the last frame for this run
+                        existNext = true;
+                        if (tupleIndices[runIndex] >= tupleAccessors[currentFrameIndexInRun[runIndex]].getTupleCount()) {
+                            tupleIndices[runIndex] = 0;
+                            currentFrameIndexInRun[runIndex]++;
+                        }
+                    } else if (tupleIndices[runIndex] < tupleAccessors[currentFrameIndexInRun[runIndex]]
+                            .getTupleCount()) {
+                        // the last frame has expired
+                        existNext = true;
                     } else {
-                        topTuples.pop();
-                        closeRun(runIndex, runCursors, tupleAccessors);
-                    }
-                }
-
-                private boolean hasNextTuple(int runIndex, int[] tupleIndexes, RunFileReader[] runCursors,
-                        FrameTupleAccessor[] tupleAccessors) throws HyracksDataException {
-
-                    if (tupleAccessors[runIndex] == null || runCursors[runIndex] == null) {
-                        /*
-                         * Return false if the targeting run file is not
-                         * available, or the frame for the run file is not
-                         * available.
-                         */
-                        return false;
-                    } else if (tupleIndexes[runIndex] >= tupleAccessors[runIndex].getTupleCount()) {
-                        /*
+                        /**
                          * If all tuples in the targeting frame have been
                          * checked.
                          */
-                        ByteBuffer buf = tupleAccessors[runIndex].getBuffer(); // same-as-inFrames.get(runIndex)
-                        // Refill the buffer with contents from the run file.
-                        if (runCursors[runIndex].nextFrame(buf)) {
-                            tupleIndexes[runIndex] = 0;
-                            return hasNextTuple(runIndex, tupleIndexes, runCursors, tupleAccessors);
-                        } else {
-                            return false;
+                        int frameOffset = runIndex * runFrameLimit;
+                        tupleIndices[runIndex] = 0;
+                        currentFrameIndexInRun[runIndex] = frameOffset;
+                        /**
+                         * read in batch
+                         */
+                        currentRunFrames[runIndex] = 0;
+                        for (int j = 0; j < runFrameLimit; j++, frameOffset++) {
+                            ByteBuffer buffer = tupleAccessors[frameOffset].getBuffer();
+                            if (runCursors[runIndex].nextFrame(buffer)) {
+                                tupleAccessors[frameOffset].reset(buffer);
+                                if (tupleAccessors[frameOffset].getTupleCount() > 0) {
+                                    existNext = true;
+                                } else {
+                                    throw new IllegalStateException("illegal: empty run file");
+                                }
+                                currentRunFrames[runIndex]++;
+                            } else {
+                                break;
+                            }
                         }
+                    }
+                    // Check whether the run file for the given runIndex has
+                    // more tuples
+                    if (existNext) {
+                        topTuples.popAndReplace(tupleAccessors[currentFrameIndexInRun[runIndex]],
+                                tupleIndices[runIndex]);
                     } else {
-                        return true;
+                        topTuples.pop();
+                        closeRun(runIndex, runCursors, tupleAccessors);
                     }
                 }
 
@@ -536,9 +529,10 @@ public class ExternalGroupOperatorDescriptor extends AbstractOperatorDescriptor 
                  */
                 private void closeRun(int index, RunFileReader[] runCursors, IFrameTupleAccessor[] tupleAccessor)
                         throws HyracksDataException {
-                    runCursors[index].close();
-                    runCursors[index] = null;
-                    tupleAccessor[index] = null;
+                    if (runCursors[index] != null) {
+                        runCursors[index].close();
+                        runCursors[index] = null;
+                    }
                 }
 
                 private int compareFrameTuples(IFrameTupleAccessor fta1, int j1, IFrameTupleAccessor fta2, int j2) {

@@ -1,4 +1,4 @@
-package edu.uci.ics.hyracks.hashtable;
+package edu.uci.ics.hyracks.dataflow.std.structures;
 
 public interface ISerializableTable {
 

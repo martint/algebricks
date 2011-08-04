@@ -37,19 +37,13 @@ import edu.uci.ics.hyracks.dataflow.common.comm.io.FrameTuplePairComparator;
 import edu.uci.ics.hyracks.dataflow.common.comm.util.FrameUtils;
 import edu.uci.ics.hyracks.dataflow.std.aggregators.IAggregatorDescriptor;
 import edu.uci.ics.hyracks.dataflow.std.aggregators.IAggregatorDescriptorFactory;
-import edu.uci.ics.hyracks.hashtable.ISerializableTable;
-import edu.uci.ics.hyracks.hashtable.SerializableHashTable;
-import edu.uci.ics.hyracks.hashtable.TuplePointer;
+import edu.uci.ics.hyracks.dataflow.std.structures.ISerializableTable;
+import edu.uci.ics.hyracks.dataflow.std.structures.SerializableHashTable;
+import edu.uci.ics.hyracks.dataflow.std.structures.TuplePointer;
 
-/**
- * @author jarodwen
- */
 public class HashSpillableGroupingTableFactory implements ISpillableTableFactory {
 
     private static final long serialVersionUID = 1L;
-    /**
-     * A partition computer to partition the hashing group table.
-     */
     private final ITuplePartitionComputerFactory tpcf;
     private final int tableSize;
 
@@ -123,9 +117,9 @@ public class HashSpillableGroupingTableFactory implements ISpillableTableFactory
                     inRecordDescriptor, outRecordDescriptor, keyFields);
 
             /**
-             * A tuple is "pointed" to by 4 entries in the tPointers array. [0]
-             * = Frame index in the "Frames" list. [1] = Start offset of the
-             * tuple in the frame [3] = Poor man's normalized key for the tuple.
+             * A tuple is "pointed" to by 3 entries in the tPointers array. [0]
+             * = Frame index in the "Frames" list, [1] = Tuple index in the
+             * frame, [2] = Poor man's normalized key for the tuple.
              */
             private int[] tPointers;
 
@@ -142,11 +136,9 @@ public class HashSpillableGroupingTableFactory implements ISpillableTableFactory
             public boolean insert(FrameTupleAccessor accessor, int tIndex) throws HyracksDataException {
                 if (dataFrameCount < 0)
                     nextAvailableFrame();
-                // Get the partition for the inserting tuple
                 int entry = tpc.partition(accessor, tIndex, tableSize);
                 boolean foundGroup = false;
                 int offset = 0;
-                // Find the corresponding aggregator from existing aggregators
                 do {
                     table.getTuplePointer(entry, offset++, storedTuplePointer);
                     if (storedTuplePointer.frameIndex < 0)
@@ -158,7 +150,7 @@ public class HashSpillableGroupingTableFactory implements ISpillableTableFactory
                         break;
                     }
                 } while (true);
-                // Do insert
+
                 if (!foundGroup) {
                     // If no matching group is found, create a new aggregator
                     // Create a tuple for the new group
@@ -178,7 +170,7 @@ public class HashSpillableGroupingTableFactory implements ISpillableTableFactory
                             }
                         }
                     }
-                    // Write the aggregator back to the hash table
+
                     storedTuplePointer.frameIndex = dataFrameCount;
                     storedTuplePointer.tupleIndex = appender.getTupleCount() - 1;
                     table.insert(entry, storedTuplePointer);
@@ -255,8 +247,7 @@ public class HashSpillableGroupingTableFactory implements ISpillableTableFactory
                     // Get the frame containing the value
                     ByteBuffer buffer = frames.get(frameIndex);
                     storedKeysAccessor1.reset(buffer);
-                    // Insert
-                    // Reset the tuple for the partial result
+
                     outputTupleBuilder.reset();
                     for (int k = 0; k < keyFields.length; k++) {
                         outputTupleBuilder.addField(storedKeysAccessor1, tupleIndex, k);
@@ -315,20 +306,11 @@ public class HashSpillableGroupingTableFactory implements ISpillableTableFactory
 
             @Override
             public void sortFrames() {
-                int sfIdx = keyFields[0];
+                int sfIdx = storedKeys[0];
                 int totalTCount = table.getTupleCount();
-
-                /**
-                 * A tuple is "pointed" to by 4 entries in the tPointers array.
-                 * [0] = Frame index in the "Frames" list. [1] = Start offset of
-                 * the tuple in the frame [3] = Poor man's normalized key for
-                 * the tuple.
-                 */
                 tPointers = new int[totalTCount * 3];
-                // Initialize pointers
                 int ptr = 0;
-                // Maintain two pointers to each entry of the hashing group
-                // table
+
                 for (int i = 0; i < tableSize; i++) {
                     int entry = i;
                     int offset = 0;
@@ -339,8 +321,6 @@ public class HashSpillableGroupingTableFactory implements ISpillableTableFactory
                         tPointers[ptr * 3] = entry;
                         tPointers[ptr * 3 + 1] = offset;
                         table.getTuplePointer(entry, offset, storedTuplePointer);
-                        if (storedTuplePointer.frameIndex < 0)
-                            throw new IllegalStateException("invalid hash table entry and offset!");
                         int fIndex = storedTuplePointer.frameIndex;
                         int tIndex = storedTuplePointer.tupleIndex;
                         storedKeysAccessor1.reset(frames.get(fIndex));
