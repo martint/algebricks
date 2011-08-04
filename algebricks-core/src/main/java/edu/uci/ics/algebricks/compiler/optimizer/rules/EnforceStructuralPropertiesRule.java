@@ -29,7 +29,7 @@ import edu.uci.ics.algebricks.compiler.algebra.operators.logical.OrderOperator.I
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.visitors.FDsAndEquivClassesVisitor;
 import edu.uci.ics.algebricks.compiler.algebra.operators.physical.AbstractStableSortPOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.physical.BroadcastPOperator;
-import edu.uci.ics.algebricks.compiler.algebra.operators.physical.HashGroupByPOperator;
+import edu.uci.ics.algebricks.compiler.algebra.operators.physical.ExternalGroupByPOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.physical.HashPartitionExchangePOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.physical.HashPartitionMergeExchangePOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.physical.InMemoryStableSortPOperator;
@@ -45,8 +45,10 @@ import edu.uci.ics.algebricks.compiler.algebra.prettyprint.PlanPrettyPrinter;
 import edu.uci.ics.algebricks.compiler.algebra.properties.AsterixNodeGroupDomain;
 import edu.uci.ics.algebricks.compiler.algebra.properties.FunctionalDependency;
 import edu.uci.ics.algebricks.compiler.algebra.properties.ILocalStructuralProperty;
+import edu.uci.ics.algebricks.compiler.algebra.properties.ILocalStructuralProperty.PropertyType;
 import edu.uci.ics.algebricks.compiler.algebra.properties.INodeDomain;
 import edu.uci.ics.algebricks.compiler.algebra.properties.IPartitioningProperty;
+import edu.uci.ics.algebricks.compiler.algebra.properties.IPartitioningProperty.PartitioningType;
 import edu.uci.ics.algebricks.compiler.algebra.properties.IPartitioningRequirementsCoordinator;
 import edu.uci.ics.algebricks.compiler.algebra.properties.IPhysicalPropertiesVector;
 import edu.uci.ics.algebricks.compiler.algebra.properties.LocalGroupingProperty;
@@ -58,8 +60,6 @@ import edu.uci.ics.algebricks.compiler.algebra.properties.PropertiesUtil;
 import edu.uci.ics.algebricks.compiler.algebra.properties.RandomPartitioningProperty;
 import edu.uci.ics.algebricks.compiler.algebra.properties.StructuralPropertiesVector;
 import edu.uci.ics.algebricks.compiler.algebra.properties.UnorderedPartitionedProperty;
-import edu.uci.ics.algebricks.compiler.algebra.properties.ILocalStructuralProperty.PropertyType;
-import edu.uci.ics.algebricks.compiler.algebra.properties.IPartitioningProperty.PartitioningType;
 import edu.uci.ics.algebricks.compiler.optimizer.base.IAlgebraicRewriteRule;
 import edu.uci.ics.algebricks.compiler.optimizer.base.IOptimizationContext;
 import edu.uci.ics.algebricks.compiler.optimizer.base.OptimizationUtil;
@@ -185,11 +185,11 @@ public class EnforceStructuralPropertiesRule implements IAlgebraicRewriteRule {
             AlgebricksConfig.ALGEBRICKS_LOGGER.finest(">>>> Properties delivered by " + child.getPhysicalOperator()
                     + ": " + delivered + "\n");
             IPartitioningRequirementsCoordinator prc = pr.getPartitioningCoordinator();
-            Pair<Boolean, IPartitioningProperty> pbpp = prc.coordinateRequirements(reqdProperties[i]
-                    .getPartitioningProperty(), firstDeliveredPartitioning, op, context);
+            Pair<Boolean, IPartitioningProperty> pbpp = prc.coordinateRequirements(
+                    reqdProperties[i].getPartitioningProperty(), firstDeliveredPartitioning, op, context);
             boolean mayExpandPartitioningProperties = pbpp.first;
-            IPhysicalPropertiesVector rqd = new StructuralPropertiesVector(pbpp.second, reqdProperties[i]
-                    .getLocalProperties());
+            IPhysicalPropertiesVector rqd = new StructuralPropertiesVector(pbpp.second,
+                    reqdProperties[i].getLocalProperties());
 
             AlgebricksConfig.ALGEBRICKS_LOGGER.finest(">>>> Required properties for " + child.getPhysicalOperator()
                     + ": " + rqd + "\n");
@@ -288,7 +288,7 @@ public class EnforceStructuralPropertiesRule implements IAlgebraicRewriteRule {
             case HASH_GROUP_BY:
             case EXTERNAL_GROUP_BY: {
                 GroupByOperator gby = (GroupByOperator) op;
-                HashGroupByPOperator hgbyOp = (HashGroupByPOperator) pOp;
+                ExternalGroupByPOperator hgbyOp = (ExternalGroupByPOperator) pOp;
                 hgbyOp.computeColumnSet(gby.getGroupByList());
                 break;
             }
@@ -347,8 +347,8 @@ public class EnforceStructuralPropertiesRule implements IAlgebraicRewriteRule {
         AbstractStableSortPOperator sortOp = (AbstractStableSortPOperator) op.getPhysicalOperator();
         sortOp.computeLocalProperties(op);
         List<ILocalStructuralProperty> orderProps = sortOp.getOrderProperties();
-        return PropertiesUtil.matchLocalProperties(orderProps, delivered.getLocalProperties(), context
-                .getEquivalenceClassMap(op), context.getFDList(op));
+        return PropertiesUtil.matchLocalProperties(orderProps, delivered.getLocalProperties(),
+                context.getEquivalenceClassMap(op), context.getFDList(op));
     }
 
     private void addEnforcers(AbstractLogicalOperator op, int childIndex,
@@ -459,8 +459,8 @@ public class EnforceStructuralPropertiesRule implements IAlgebraicRewriteRule {
         LogicalOperatorReference newBotOp = new LogicalOperatorReference();
         g.getInputs().add(newBotOp);
         g.setExecutionMode(AbstractLogicalOperator.ExecutionMode.PARTITIONED);
-        g.setPhysicalOperator(new HashGroupByPOperator(g.getGroupByList(), physicalOptimizationConfig
-                .getHashGroupByTableSize()));
+        g.setPhysicalOperator(new ExternalGroupByPOperator(g.getGroupByList(), physicalOptimizationConfig
+                .getMaxFramesExternalGroupBy(), physicalOptimizationConfig.getHashGroupByTableSize()));
         if (AlgebricksConfig.DEBUG) {
             AlgebricksConfig.ALGEBRICKS_LOGGER.fine(">>>> Added grouping enforcer " + g.getPhysicalOperator() + ".\n");
         }
@@ -495,8 +495,8 @@ public class EnforceStructuralPropertiesRule implements IAlgebraicRewriteRule {
                     break;
                 }
                 case UNORDERED_PARTITIONED: {
-                    List<LogicalVariable> varList = new ArrayList<LogicalVariable>(((UnorderedPartitionedProperty) pp)
-                            .getColumnSet());
+                    List<LogicalVariable> varList = new ArrayList<LogicalVariable>(
+                            ((UnorderedPartitionedProperty) pp).getColumnSet());
                     List<ILocalStructuralProperty> cldLocals = deliveredByChild.getLocalProperties();
                     List<ILocalStructuralProperty> reqdLocals = required.getLocalProperties();
                     boolean propWasSet = false;

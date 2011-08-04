@@ -32,7 +32,6 @@ import edu.uci.ics.algebricks.compiler.algebra.operators.physical.AssignPOperato
 import edu.uci.ics.algebricks.compiler.algebra.operators.physical.DataSourceScanPOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.physical.EmptyTupleSourcePOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.physical.ExternalGroupByPOperator;
-import edu.uci.ics.algebricks.compiler.algebra.operators.physical.HashGroupByPOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.physical.InMemoryStableSortPOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.physical.MicroPreclusteredGroupByPOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.physical.NestedTupleSourcePOperator;
@@ -115,25 +114,15 @@ public class SetAlgebricksPhysicalOperatorsRule implements IAlgebraicRewriteRule
                     if (gby.getNestedPlans().size() == 1) {
                         ILogicalPlan p0 = gby.getNestedPlans().get(0);
                         if (p0.getRoots().size() == 1) {
-                            if (gby.getAnnotations().get(OperatorAnnotations.USE_HASH_GROUP_BY) == Boolean.TRUE) {
-                                if (!topLevelOp) {
-                                    throw new NotImplementedException(
-                                            "Hash group-by for nested grouping is not implemented.");
-                                }
-                                HashGroupByPOperator hashGby = new HashGroupByPOperator(((GroupByOperator) op)
-                                        .getGroupByList(), physicalOptimizationConfig.getHashGroupByTableSize());
-                                op.setPhysicalOperator(hashGby);
-                                break;
-                            }
-                            if (gby.getAnnotations().get(OperatorAnnotations.USE_EXTERNAL_GROUP_BY) == Boolean.TRUE) {
+                            if (gby.getAnnotations().get(OperatorAnnotations.USE_HASH_GROUP_BY) == Boolean.TRUE
+                                    || gby.getAnnotations().get(OperatorAnnotations.USE_EXTERNAL_GROUP_BY) == Boolean.TRUE) {
                                 if (!topLevelOp) {
                                     throw new NotImplementedException(
                                             "External hash group-by for nested grouping is not implemented.");
                                 }
                                 ExternalGroupByPOperator externalGby = new ExternalGroupByPOperator(
-                                        ((GroupByOperator) op).getGroupByList(), physicalOptimizationConfig
-                                                .getMaxFramesExternalGroupBy(), physicalOptimizationConfig
-                                                .getExternalGroupByTableSize());
+                                        gby.getGroupByList(), physicalOptimizationConfig.getMaxFramesExternalGroupBy(),
+                                        physicalOptimizationConfig.getExternalGroupByTableSize());
                                 op.setPhysicalOperator(externalGby);
                                 generateMergeAggregationExpressions(gby, context);
                                 break;

@@ -1,6 +1,8 @@
 package edu.uci.ics.algebricks.compiler.algebra.operators.physical;
 
 import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 
 import edu.uci.ics.algebricks.api.exceptions.AlgebricksException;
@@ -16,9 +18,19 @@ import edu.uci.ics.algebricks.compiler.algebra.base.LogicalVariable;
 import edu.uci.ics.algebricks.compiler.algebra.base.PhysicalOperatorTag;
 import edu.uci.ics.algebricks.compiler.algebra.expressions.AggregateFunctionCallExpression;
 import edu.uci.ics.algebricks.compiler.algebra.expressions.VariableReferenceExpression;
+import edu.uci.ics.algebricks.compiler.algebra.operators.logical.AbstractLogicalOperator;
+import edu.uci.ics.algebricks.compiler.algebra.operators.logical.AbstractLogicalOperator.ExecutionMode;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.AggregateOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.GroupByOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.IOperatorSchema;
+import edu.uci.ics.algebricks.compiler.algebra.properties.ILocalStructuralProperty;
+import edu.uci.ics.algebricks.compiler.algebra.properties.IPartitioningRequirementsCoordinator;
+import edu.uci.ics.algebricks.compiler.algebra.properties.IPhysicalPropertiesVector;
+import edu.uci.ics.algebricks.compiler.algebra.properties.LocalGroupingProperty;
+import edu.uci.ics.algebricks.compiler.algebra.properties.PhysicalRequirements;
+import edu.uci.ics.algebricks.compiler.algebra.properties.StructuralPropertiesVector;
+import edu.uci.ics.algebricks.compiler.algebra.properties.UnorderedPartitionedProperty;
+import edu.uci.ics.algebricks.compiler.optimizer.base.IOptimizationContext;
 import edu.uci.ics.algebricks.runtime.hyracks.base.ISerializableAggregateFunctionFactory;
 import edu.uci.ics.algebricks.runtime.hyracks.jobgen.base.IHyracksJobBuilder;
 import edu.uci.ics.algebricks.runtime.hyracks.jobgen.impl.JobGenContext;
@@ -37,21 +49,83 @@ import edu.uci.ics.hyracks.dataflow.std.aggregators.IAggregatorDescriptorFactory
 import edu.uci.ics.hyracks.dataflow.std.group.ExternalGroupOperatorDescriptor;
 import edu.uci.ics.hyracks.dataflow.std.group.HashSpillableGroupingTableFactory;
 
-public class ExternalGroupByPOperator extends HashGroupByPOperator {
+public class ExternalGroupByPOperator extends AbstractPhysicalOperator {
 
     private int tableSize = 0;
     private int frameLimit = 0;
+    private List<LogicalVariable> columnSet = new ArrayList<LogicalVariable>();
 
     public ExternalGroupByPOperator(List<Pair<LogicalVariable, LogicalExpressionReference>> gbyList, int frameLimit,
             int tableSize) {
-        super(gbyList, tableSize);
         this.tableSize = tableSize;
         this.frameLimit = frameLimit;
+        computeColumnSet(gbyList);
+    }
+
+    public void computeColumnSet(List<Pair<LogicalVariable, LogicalExpressionReference>> gbyList) {
+        columnSet.clear();
+        for (Pair<LogicalVariable, LogicalExpressionReference> p : gbyList) {
+            ILogicalExpression expr = p.second.getExpression();
+            if (expr.getExpressionTag() == LogicalExpressionTag.VARIABLE) {
+                VariableReferenceExpression v = (VariableReferenceExpression) expr;
+                columnSet.add(v.getVariableReference());
+            }
+        }
     }
 
     @Override
     public PhysicalOperatorTag getOperatorTag() {
         return PhysicalOperatorTag.EXTERNAL_GROUP_BY;
+    }
+
+    @Override
+    public String toString() {
+        return getOperatorTag().toString() + columnSet;
+    }
+
+    @Override
+    public boolean isMicroOperator() {
+        return false;
+    }
+
+    public List<LogicalVariable> getGbyColumns() {
+        return columnSet;
+    }
+
+    @Override
+    public void computeDeliveredProperties(ILogicalOperator op, IOptimizationContext context) {
+        List<ILocalStructuralProperty> propsLocal = new LinkedList<ILocalStructuralProperty>();
+
+        GroupByOperator gOp = (GroupByOperator) op;
+        HashSet<LogicalVariable> columnSet = new HashSet<LogicalVariable>();
+
+        if (!columnSet.isEmpty()) {
+            propsLocal.add(new LocalGroupingProperty(columnSet));
+        }
+        for (ILogicalPlan p : gOp.getNestedPlans()) {
+            for (LogicalOperatorReference r : p.getRoots()) {
+                ILogicalOperator rOp = r.getOperator();
+                propsLocal.addAll(rOp.getDeliveredPhysicalProperties().getLocalProperties());
+            }
+        }
+
+        ILogicalOperator op2 = op.getInputs().get(0).getOperator();
+        IPhysicalPropertiesVector childProp = op2.getDeliveredPhysicalProperties();
+        deliveredProperties = new StructuralPropertiesVector(childProp.getPartitioningProperty(), propsLocal);
+    }
+
+    @Override
+    public PhysicalRequirements getRequiredPropertiesForChildren(ILogicalOperator op,
+            IPhysicalPropertiesVector reqdByParent) {
+        AbstractLogicalOperator aop = (AbstractLogicalOperator) op;
+        if (aop.getExecutionMode() == ExecutionMode.PARTITIONED) {
+            StructuralPropertiesVector[] pv = new StructuralPropertiesVector[1];
+            pv[0] = new StructuralPropertiesVector(new UnorderedPartitionedProperty(new HashSet<LogicalVariable>(
+                    columnSet), null), null);
+            return new PhysicalRequirements(pv, IPartitioningRequirementsCoordinator.NO_COORDINATION);
+        } else {
+            return emptyUnaryRequirements();
+        }
     }
 
     @Override
