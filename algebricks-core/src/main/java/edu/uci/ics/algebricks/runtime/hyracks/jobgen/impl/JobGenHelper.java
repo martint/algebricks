@@ -33,20 +33,19 @@ import edu.uci.ics.hyracks.api.dataflow.value.INormalizedKeyComputerFactory;
 import edu.uci.ics.hyracks.api.dataflow.value.ISerializerDeserializer;
 import edu.uci.ics.hyracks.api.dataflow.value.ITypeTrait;
 import edu.uci.ics.hyracks.api.dataflow.value.RecordDescriptor;
-import edu.uci.ics.hyracks.storage.am.btree.api.IBTreeInteriorFrameFactory;
-import edu.uci.ics.hyracks.storage.am.btree.api.IBTreeLeafFrameFactory;
-import edu.uci.ics.hyracks.storage.am.btree.frames.NSMInteriorFrameFactory;
-import edu.uci.ics.hyracks.storage.am.btree.frames.NSMLeafFrameFactory;
-import edu.uci.ics.hyracks.storage.am.btree.tuples.TypeAwareTupleWriterFactory;
+import edu.uci.ics.hyracks.storage.am.btree.frames.BTreeNSMInteriorFrameFactory;
+import edu.uci.ics.hyracks.storage.am.btree.frames.BTreeNSMLeafFrameFactory;
+import edu.uci.ics.hyracks.storage.am.common.api.ITreeIndexFrameFactory;
+import edu.uci.ics.hyracks.storage.am.common.tuples.TypeAwareTupleWriterFactory;
 
 public final class JobGenHelper {
 
-    public static IBTreeInteriorFrameFactory createNSMInteriorFrameFactory(ITypeTrait[] typeTraits) {
-        return new NSMInteriorFrameFactory(new TypeAwareTupleWriterFactory(typeTraits));
+    public static ITreeIndexFrameFactory createNSMInteriorFrameFactory(ITypeTrait[] typeTraits) {
+        return new BTreeNSMInteriorFrameFactory(new TypeAwareTupleWriterFactory(typeTraits));
     }
 
-    public static IBTreeLeafFrameFactory createNSMLeafFrameFactory(ITypeTrait[] typeTraits) {
-        return new NSMLeafFrameFactory(new TypeAwareTupleWriterFactory(typeTraits));
+    public static ITreeIndexFrameFactory createNSMLeafFrameFactory(ITypeTrait[] typeTraits) {
+        return new BTreeNSMLeafFrameFactory(new TypeAwareTupleWriterFactory(typeTraits));
     }
 
     @SuppressWarnings("unchecked")

@@ -15,7 +15,6 @@
 package edu.uci.ics.algebricks.runtime.hyracks.operators.aggreg;
 
 import edu.uci.ics.algebricks.api.exceptions.AlgebricksException;
-import edu.uci.ics.algebricks.api.exceptions.NotImplementedException;
 import edu.uci.ics.algebricks.runtime.hyracks.base.IAggregateFunction;
 import edu.uci.ics.algebricks.runtime.hyracks.base.IAggregateFunctionFactory;
 import edu.uci.ics.hyracks.api.comm.IFrameTupleAccessor;
@@ -28,7 +27,6 @@ import edu.uci.ics.hyracks.dataflow.common.data.accessors.ArrayBackedValueStorag
 import edu.uci.ics.hyracks.dataflow.common.data.accessors.FrameTupleReference;
 import edu.uci.ics.hyracks.dataflow.std.group.IAccumulatingAggregator;
 import edu.uci.ics.hyracks.dataflow.std.group.IAccumulatingAggregatorFactory;
-import edu.uci.ics.hyracks.dataflow.std.group.ISpillableAccumulatingAggregator;
 
 public class SimpleAlgebricksAccumulatingAggregatorFactory implements IAccumulatingAggregatorFactory {
 
@@ -42,12 +40,6 @@ public class SimpleAlgebricksAccumulatingAggregatorFactory implements IAccumulat
         this.aggFactories = aggFactories;
         this.keys = keys;
         this.fdColumns = fdColumns;
-    }
-
-    @Override
-    public ISpillableAccumulatingAggregator createSpillableAggregator(IHyracksStageletContext ctx,
-            RecordDescriptor inRecordDesc, RecordDescriptor outRecordDescriptor) throws HyracksDataException {
-        throw new NotImplementedException();
     }
 
     @Override

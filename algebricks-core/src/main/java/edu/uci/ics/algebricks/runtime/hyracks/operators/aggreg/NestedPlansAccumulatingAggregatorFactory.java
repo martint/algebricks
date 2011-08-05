@@ -33,7 +33,6 @@ import edu.uci.ics.hyracks.dataflow.common.comm.io.FrameTupleAccessor;
 import edu.uci.ics.hyracks.dataflow.common.comm.io.FrameTupleAppender;
 import edu.uci.ics.hyracks.dataflow.std.group.IAccumulatingAggregator;
 import edu.uci.ics.hyracks.dataflow.std.group.IAccumulatingAggregatorFactory;
-import edu.uci.ics.hyracks.dataflow.std.group.ISpillableAccumulatingAggregator;
 
 public class NestedPlansAccumulatingAggregatorFactory implements IAccumulatingAggregatorFactory {
 
@@ -47,12 +46,6 @@ public class NestedPlansAccumulatingAggregatorFactory implements IAccumulatingAg
         this.subplans = subplans;
         this.keyFieldIdx = keyFieldIdx;
         this.decorFieldIdx = decorFieldIdx;
-    }
-
-    @Override
-    public ISpillableAccumulatingAggregator createSpillableAggregator(IHyracksStageletContext ctx,
-            RecordDescriptor inRecordDesc, RecordDescriptor outRecordDescriptor) throws HyracksDataException {
-        throw new NotImplementedException();
     }
 
     @Override
