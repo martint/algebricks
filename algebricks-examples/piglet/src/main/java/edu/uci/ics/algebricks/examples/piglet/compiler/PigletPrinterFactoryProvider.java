@@ -7,8 +7,8 @@ import edu.uci.ics.algebricks.api.data.IPrinterFactory;
 import edu.uci.ics.algebricks.api.data.IPrinterFactoryProvider;
 import edu.uci.ics.algebricks.api.exceptions.AlgebricksException;
 import edu.uci.ics.algebricks.examples.piglet.types.Type;
+import edu.uci.ics.algebricks.runtime.hyracks.jobgen.data.IntegerPrinterFactory;
 import edu.uci.ics.hyracks.dataflow.common.data.marshalling.FloatSerializerDeserializer;
-import edu.uci.ics.hyracks.dataflow.common.data.marshalling.IntegerSerializerDeserializer;
 import edu.uci.ics.hyracks.dataflow.common.data.util.StringUtils;
 
 public class PigletPrinterFactoryProvider implements IPrinterFactoryProvider {
@@ -32,31 +32,6 @@ public class PigletPrinterFactoryProvider implements IPrinterFactoryProvider {
                 throw new UnsupportedOperationException();
 
         }
-    }
-
-    public static class IntegerPrinterFactory implements IPrinterFactory {
-
-        private static final long serialVersionUID = 1L;
-
-        public static final IntegerPrinterFactory INSTANCE = new IntegerPrinterFactory();
-
-        private IntegerPrinterFactory() {
-        }
-
-        @Override
-        public IPrinter createPrinter() {
-            return new IPrinter() {
-                @Override
-                public void init() throws AlgebricksException {
-                }
-
-                @Override
-                public void print(byte[] b, int s, int l, PrintStream ps) throws AlgebricksException {
-                    ps.print(IntegerSerializerDeserializer.getInt(b, s));
-                }
-            };
-        }
-
     }
 
     public static class CharArrayPrinterFactory implements IPrinterFactory {

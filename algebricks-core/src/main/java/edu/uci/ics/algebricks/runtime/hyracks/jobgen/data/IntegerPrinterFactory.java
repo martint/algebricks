@@ -14,11 +14,13 @@
  */
 package edu.uci.ics.algebricks.runtime.hyracks.jobgen.data;
 
+import java.io.IOException;
 import java.io.PrintStream;
 
 import edu.uci.ics.algebricks.api.data.IPrinter;
 import edu.uci.ics.algebricks.api.data.IPrinterFactory;
 import edu.uci.ics.algebricks.api.exceptions.AlgebricksException;
+import edu.uci.ics.algebricks.utils.WriteValueTools;
 import edu.uci.ics.hyracks.dataflow.common.data.marshalling.IntegerSerializerDeserializer;
 
 public class IntegerPrinterFactory implements IPrinterFactory {
@@ -36,7 +38,11 @@ public class IntegerPrinterFactory implements IPrinterFactory {
             @Override
             public void print(byte[] b, int s, int l, PrintStream ps) throws AlgebricksException {
                 int d = IntegerSerializerDeserializer.getInt(b, s);
-                ps.print(d);
+                try {
+                    WriteValueTools.writeInt(d, ps);
+                } catch (IOException e) {
+                    throw new AlgebricksException(e);
+                }
             }
 
             @Override
