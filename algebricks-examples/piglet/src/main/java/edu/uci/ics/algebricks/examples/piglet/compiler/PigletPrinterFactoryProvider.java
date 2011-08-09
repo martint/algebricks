@@ -1,5 +1,6 @@
 package edu.uci.ics.algebricks.examples.piglet.compiler;
 
+import java.io.IOException;
 import java.io.PrintStream;
 
 import edu.uci.ics.algebricks.api.data.IPrinter;
@@ -8,8 +9,8 @@ import edu.uci.ics.algebricks.api.data.IPrinterFactoryProvider;
 import edu.uci.ics.algebricks.api.exceptions.AlgebricksException;
 import edu.uci.ics.algebricks.examples.piglet.types.Type;
 import edu.uci.ics.algebricks.runtime.hyracks.jobgen.data.IntegerPrinterFactory;
+import edu.uci.ics.algebricks.utils.WriteValueTools;
 import edu.uci.ics.hyracks.dataflow.common.data.marshalling.FloatSerializerDeserializer;
-import edu.uci.ics.hyracks.dataflow.common.data.util.StringUtils;
 
 public class PigletPrinterFactoryProvider implements IPrinterFactoryProvider {
 
@@ -52,22 +53,11 @@ public class PigletPrinterFactoryProvider implements IPrinterFactoryProvider {
 
                 @Override
                 public void print(byte[] b, int s, int l, PrintStream ps) throws AlgebricksException {
-                    int stringLength = StringUtils.getUTFLen(b, s);
-                    int position = s + 3;
-                    int maxPosition = position + stringLength;
-                    ps.print("\"");
-                    while (position < maxPosition) {
-                        char c = StringUtils.charAt(b, position);
-                        switch (c) {
-                            case '\\':
-                            case '"':
-                                ps.print('\\');
-                                break;
-                        }
-                        ps.print(c);
-                        position += StringUtils.charSize(b, position);
+                    try {
+                        WriteValueTools.writeUTF8String(b, s, l, ps);
+                    } catch (IOException e) {
+                        throw new AlgebricksException(e);
                     }
-                    ps.print("\"");
                 }
             };
         }

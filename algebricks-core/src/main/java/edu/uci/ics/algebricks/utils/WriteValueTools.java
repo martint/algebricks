@@ -3,7 +3,9 @@ package edu.uci.ics.algebricks.utils;
 import java.io.IOException;
 import java.io.OutputStream;
 
-public class WriteValueTools {
+import edu.uci.ics.hyracks.dataflow.common.data.util.StringUtils;
+
+public final class WriteValueTools {
 
     private final static int[] INT_INTERVALS = { 9, 99, 999, 9999, 99999, 999999, 9999999, 99999999, 999999999,
             Integer.MAX_VALUE };
@@ -34,24 +36,71 @@ public class WriteValueTools {
         os.write(DIGITS[i % 10]);
     }
 
-    public static void main(String[] args) throws IOException {
-        writeInt(1000, System.out);
-        System.out.println();
-        writeInt(-1000, System.out);
-        System.out.println();
-        writeInt(Integer.MAX_VALUE, System.out);
-        System.out.println();
-        System.out.println(Integer.MAX_VALUE);
-        writeInt(Integer.MIN_VALUE, System.out);
-        System.out.println();
-        System.out.println(Integer.MIN_VALUE);
-        writeInt(Integer.MIN_VALUE + 1, System.out);
-        System.out.println();
-        System.out.println(Integer.MIN_VALUE + 1);
-        writeInt(-204050, System.out);
-        System.out.println();
-        System.out.println(-204050);
-        System.out.flush();
+    public static void writeLong(long d, OutputStream os) throws IOException {
+        // now, print the units
+        if (d < 0) {
+            if (d == Long.MIN_VALUE) {
+                os.write("-9223372036854775808".getBytes());
+                return;
+            }
+            os.write('-');
+            d = -d;
+        }
+        long divisor = 1000000000000000000L;
+        while (divisor > d) {
+            divisor = divisor / 10;
+        }
+        while (divisor > 1) {
+            os.write(DIGITS[(int) ((d / divisor) % 10)]);
+            divisor = divisor / 10;
+        }
+        os.write(DIGITS[(int) (d % 10)]);
+    }
+
+    public static void writeUTF8String(byte[] b, int s, int l, OutputStream os) throws IOException {
+        int stringLength = StringUtils.getUTFLen(b, s);
+        int position = s + 2;
+        int maxPosition = position + stringLength;
+        os.write('\"');
+        while (position < maxPosition) {
+            char c = StringUtils.charAt(b, position);
+            switch (c) {
+                // escape
+                case '\\':
+                case '"':
+                    os.write('\\');
+                    break;
+            }
+            int sz = StringUtils.charSize(b, position);
+            while (sz > 0) {
+                os.write(b[position]);
+                position++;
+                sz--;
+            }
+        }
+        os.write('\"');
+    }
+
+    public static void writeUTF8StringNoQuotes(byte[] b, int s, int l, OutputStream os) throws IOException {
+        int stringLength = StringUtils.getUTFLen(b, s);
+        int position = s + 2;
+        int maxPosition = position + stringLength;
+        while (position < maxPosition) {
+            char c = StringUtils.charAt(b, position);
+            switch (c) {
+                // escape
+                case '\\':
+                case '"':
+                    os.write('\\');
+                    break;
+            }
+            int sz = StringUtils.charSize(b, position);
+            while (sz > 0) {
+                os.write(b[position]);
+                position++;
+                sz--;
+            }
+        }
     }
 
 }
