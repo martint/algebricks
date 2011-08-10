@@ -336,6 +336,9 @@ public class IsomorphismOperatorVisitor implements ILogicalOperatorVisitor<Boole
         AbstractLogicalOperator aop = (AbstractLogicalOperator) arg;
         if (aop.getOperatorTag() != LogicalOperatorTag.DATASOURCESCAN)
             return Boolean.FALSE;
+        DataSourceScanOperator argScan = (DataSourceScanOperator) arg;
+        if (!argScan.getDataSource().toString().equals(op.getDataSource().toString()))
+            return Boolean.FALSE;
         DataSourceScanOperator scanOpArg = (DataSourceScanOperator) copyAndSubstituteVar(op, arg);
         boolean isomorphic = VariableUtilities.varListEqualUnordered(op.getVariables(), scanOpArg.getVariables())
                 && op.getDataSource().toString().equals(scanOpArg.getDataSource().toString());

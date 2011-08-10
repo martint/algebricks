@@ -53,14 +53,6 @@ public class JoinUtils {
     private final static int MAX_LEFT_INPUT_SIZE_HYBRID_HASH = (int) (140L * 1024 * MB / DEFAULT_FRAME_SIZE);
     private final static int DEFAULT_MEMORY_SIZE_HYBRID_HASH = (int) (256L * MB / DEFAULT_FRAME_SIZE);
 
-    // private static final int DEFAULT_TABLE_SIZE_IN_MEM_HASH = 26843549;
-
-    public final static String DEFAULT_SIM_FUNCTION = "jaccard";
-    public final static float DEFAULT_SIM_THRESHOLD = .8f;
-
-    public final static String SIM_FUNCTION_PROP_NAME = "simfunction";
-    public final static String SIM_THRESHOLD_PROP_NAME = "simthreshold";
-
     public static void setJoinAlgorithmAndExchangeAlgo(AbstractBinaryJoin op, IOptimizationContext context)
             throws AlgebricksException {
         List<LogicalVariable> sideLeft = new LinkedList<LogicalVariable>();

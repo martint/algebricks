@@ -262,8 +262,8 @@ public class IsomorphismVariableMappingVisitor implements ILogicalOperatorVisito
         List<LogicalVariable> producedVarRight = new ArrayList<LogicalVariable>();
         VariableUtilities.getProducedVariables(left, producedVarLeft);
         VariableUtilities.getProducedVariables(right, producedVarRight);
-        mapVariablesForAbstractAssign(producedVarLeft, leftOp.getExpressions(), producedVarRight, rightOp
-                .getExpressions());
+        mapVariablesForAbstractAssign(producedVarLeft, leftOp.getExpressions(), producedVarRight,
+                rightOp.getExpressions());
     }
 
     private void mapVariablesForGroupBy(ILogicalOperator left, ILogicalOperator right) throws AlgebricksException {

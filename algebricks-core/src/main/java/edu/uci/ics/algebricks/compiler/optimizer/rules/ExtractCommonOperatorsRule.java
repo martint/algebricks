@@ -15,6 +15,7 @@
 package edu.uci.ics.algebricks.compiler.optimizer.rules;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -43,11 +44,10 @@ import edu.uci.ics.algebricks.compiler.optimizer.base.IOptimizationContext;
 
 public class ExtractCommonOperatorsRule implements IAlgebraicRewriteRule {
 
-    private List<LogicalOperatorReference> previousCandidates = new ArrayList<LogicalOperatorReference>();
-    private List<LogicalOperatorReference> candidates = new ArrayList<LogicalOperatorReference>();
     private HashMap<LogicalOperatorReference, List<LogicalOperatorReference>> childrenToParents = new HashMap<LogicalOperatorReference, List<LogicalOperatorReference>>();
     private List<LogicalOperatorReference> roots = new ArrayList<LogicalOperatorReference>();
     private List<LogicalOperatorReference> joins = new ArrayList<LogicalOperatorReference>();
+    private List<List<LogicalOperatorReference>> equivalenceClasses = new ArrayList<List<LogicalOperatorReference>>();
 
     @Override
     public boolean rewritePre(LogicalOperatorReference opRef, IOptimizationContext context) throws AlgebricksException {
@@ -77,12 +77,11 @@ public class ExtractCommonOperatorsRule implements IAlgebraicRewriteRule {
                 genCandidates();
                 removeTrivialShare();
                 removeNonJoinBuildBranchCandidates();
-                if (candidates.size() > 0)
+                if (equivalenceClasses.size() > 0)
                     changed = rewrite();
                 if (!rewritten)
                     rewritten = changed;
-                previousCandidates.clear();
-                candidates.clear();
+                equivalenceClasses.clear();
                 childrenToParents.clear();
                 joins.clear();
             } while (changed);
@@ -92,27 +91,37 @@ public class ExtractCommonOperatorsRule implements IAlgebraicRewriteRule {
     }
 
     private void removeTrivialShare() {
-        for (int i = candidates.size() - 1; i >= 0; i--) {
-            LogicalOperatorReference opRef = candidates.get(i);
-            AbstractLogicalOperator aop = (AbstractLogicalOperator) opRef.getOperator();
-            if (aop.getOperatorTag() == LogicalOperatorTag.EXCHANGE)
-                aop = (AbstractLogicalOperator) aop.getInputs().get(0).getOperator();
-            if (aop.getOperatorTag() == LogicalOperatorTag.EMPTYTUPLESOURCE)
-                candidates.remove(i);
+        for (List<LogicalOperatorReference> candidates : equivalenceClasses) {
+            for (int i = candidates.size() - 1; i >= 0; i--) {
+                LogicalOperatorReference opRef = candidates.get(i);
+                AbstractLogicalOperator aop = (AbstractLogicalOperator) opRef.getOperator();
+                if (aop.getOperatorTag() == LogicalOperatorTag.EXCHANGE)
+                    aop = (AbstractLogicalOperator) aop.getInputs().get(0).getOperator();
+                if (aop.getOperatorTag() == LogicalOperatorTag.EMPTYTUPLESOURCE)
+                    candidates.remove(i);
+            }
         }
+        for (int i = equivalenceClasses.size() - 1; i >= 0; i--)
+            if (equivalenceClasses.get(i).size() < 2)
+                equivalenceClasses.remove(i);
     }
 
     private void removeNonJoinBuildBranchCandidates() {
-        for (int i = candidates.size() - 1; i >= 0; i--) {
-            LogicalOperatorReference opRef = candidates.get(i);
-            boolean reserve = false;
-            for (LogicalOperatorReference join : joins)
-                if (isInJoinBuildBranch(join, opRef)) {
-                    reserve = true;
-                }
-            if (!reserve)
-                candidates.remove(i);
+        for (List<LogicalOperatorReference> candidates : equivalenceClasses) {
+            for (int i = candidates.size() - 1; i >= 0; i--) {
+                LogicalOperatorReference opRef = candidates.get(i);
+                boolean reserve = false;
+                for (LogicalOperatorReference join : joins)
+                    if (isInJoinBuildBranch(join, opRef)) {
+                        reserve = true;
+                    }
+                if (!reserve)
+                    candidates.remove(i);
+            }
         }
+        for (int i = equivalenceClasses.size() - 1; i >= 0; i--)
+            if (equivalenceClasses.get(i).size() < 2)
+                equivalenceClasses.remove(i);
     }
 
     private boolean isInJoinBuildBranch(LogicalOperatorReference joinRef, LogicalOperatorReference opRef) {
@@ -133,17 +142,26 @@ public class ExtractCommonOperatorsRule implements IAlgebraicRewriteRule {
     }
 
     private boolean rewrite() throws AlgebricksException {
+        boolean changed = false;
+        for (List<LogicalOperatorReference> members : equivalenceClasses) {
+            if (rewriteForOneEquivalentClass(members))
+                changed = true;
+        }
+        return changed;
+    }
+
+    private boolean rewriteForOneEquivalentClass(List<LogicalOperatorReference> members) throws AlgebricksException {
         List<LogicalOperatorReference> group = new ArrayList<LogicalOperatorReference>();
         boolean rewritten = false;
-        while (candidates.size() > 0) {
+        while (members.size() > 0) {
             group.clear();
-            LogicalOperatorReference candidate = candidates.remove(candidates.size() - 1);
+            LogicalOperatorReference candidate = members.remove(members.size() - 1);
             group.add(candidate);
-            for (int i = candidates.size() - 1; i >= 0; i--) {
-                LogicalOperatorReference peer = candidates.get(i);
+            for (int i = members.size() - 1; i >= 0; i--) {
+                LogicalOperatorReference peer = members.get(i);
                 if (IsomorphismUtilities.isOperatorIsomorphic(candidate.getOperator(), peer.getOperator())) {
                     group.add(peer);
-                    candidates.remove(i);
+                    members.remove(i);
                 }
             }
             AbstractLogicalOperator rop = new ReplicateOperator(group.size());
@@ -234,24 +252,39 @@ public class ExtractCommonOperatorsRule implements IAlgebraicRewriteRule {
     }
 
     private void genCandidates() throws AlgebricksException {
-        List<LogicalOperatorReference> currentLevelOpRefs = new ArrayList<LogicalOperatorReference>();
-        prune();
-        while (candidates.size() > 0) {
-            for (LogicalOperatorReference opRef : candidates) {
-                List<LogicalOperatorReference> refs = childrenToParents.get(opRef);
-                if (refs != null)
-                    currentLevelOpRefs.addAll(refs);
+        List<List<LogicalOperatorReference>> previousEquivalenceClasses = new ArrayList<List<LogicalOperatorReference>>();
+        while (equivalenceClasses.size() > 0) {
+            previousEquivalenceClasses.clear();
+            for (List<LogicalOperatorReference> candidates : equivalenceClasses) {
+                List<LogicalOperatorReference> candidatesCopy = new ArrayList<LogicalOperatorReference>();
+                candidatesCopy.addAll(candidates);
+                previousEquivalenceClasses.add(candidatesCopy);
+            }
+            List<LogicalOperatorReference> currentLevelOpRefs = new ArrayList<LogicalOperatorReference>();
+            for (List<LogicalOperatorReference> candidates : equivalenceClasses) {
+                if (candidates.size() > 0) {
+                    for (LogicalOperatorReference opRef : candidates) {
+                        List<LogicalOperatorReference> refs = childrenToParents.get(opRef);
+                        if (refs != null)
+                            currentLevelOpRefs.addAll(refs);
+                    }
+                }
+                if (currentLevelOpRefs.size() == 0)
+                    continue;
+                candidatesGrow(currentLevelOpRefs, candidates);
             }
             if (currentLevelOpRefs.size() == 0)
                 break;
-            candidatesGrow(currentLevelOpRefs);
             prune();
         }
-        if (candidates.size() == 0)
-            candidates.addAll(previousCandidates);
+        if (equivalenceClasses.size() < 1 && previousEquivalenceClasses.size() > 0) {
+            equivalenceClasses.addAll(previousEquivalenceClasses);
+            prune();
+        }
     }
 
     private void topDownMaterialization(List<LogicalOperatorReference> tops) {
+        List<LogicalOperatorReference> candidates = new ArrayList<LogicalOperatorReference>();
         List<LogicalOperatorReference> nextLevel = new ArrayList<LogicalOperatorReference>();
         for (LogicalOperatorReference op : tops) {
             AbstractLogicalOperator aop = (AbstractLogicalOperator) op.getOperator();
@@ -271,13 +304,18 @@ public class ExtractCommonOperatorsRule implements IAlgebraicRewriteRule {
             if (op.getOperator().getInputs().size() == 0)
                 candidates.add(op);
         }
+        if (equivalenceClasses.size() > 0) {
+            equivalenceClasses.get(0).addAll(candidates);
+        } else {
+            equivalenceClasses.add(candidates);
+        }
         if (nextLevel.size() > 0) {
             topDownMaterialization(nextLevel);
         }
     }
 
-    private void candidatesGrow(List<LogicalOperatorReference> opList) {
-        previousCandidates.clear();
+    private void candidatesGrow(List<LogicalOperatorReference> opList, List<LogicalOperatorReference> candidates) {
+        List<LogicalOperatorReference> previousCandidates = new ArrayList<LogicalOperatorReference>();
         previousCandidates.addAll(candidates);
         candidates.clear();
         boolean validCandidate = false;
@@ -299,22 +337,40 @@ public class ExtractCommonOperatorsRule implements IAlgebraicRewriteRule {
     }
 
     private void prune() throws AlgebricksException {
-        boolean[] reserved = new boolean[candidates.size()];
-        for (int i = 0; i < reserved.length; i++)
-            reserved[i] = false;
-        for (int i = candidates.size() - 1; i >= 0; i--) {
-            ILogicalOperator candidate = candidates.get(i).getOperator();
-            for (int j = i - 1; j >= 0; j--) {
-                ILogicalOperator peer = candidates.get(j).getOperator();
-                if (IsomorphismUtilities.isOperatorIsomorphic(candidate, peer)) {
-                    reserved[i] = true;
-                    reserved[j] = true;
+        List<List<LogicalOperatorReference>> previousEquivalenceClasses = new ArrayList<List<LogicalOperatorReference>>();
+        for (List<LogicalOperatorReference> candidates : equivalenceClasses) {
+            List<LogicalOperatorReference> candidatesCopy = new ArrayList<LogicalOperatorReference>();
+            candidatesCopy.addAll(candidates);
+            previousEquivalenceClasses.add(candidatesCopy);
+        }
+        equivalenceClasses.clear();
+        for (List<LogicalOperatorReference> candidates : previousEquivalenceClasses) {
+            boolean[] reserved = new boolean[candidates.size()];
+            for (int i = 0; i < reserved.length; i++)
+                reserved[i] = false;
+            for (int i = candidates.size() - 1; i >= 0; i--) {
+                if (reserved[i] == false) {
+                    List<LogicalOperatorReference> equivalentClass = new ArrayList<LogicalOperatorReference>();
+                    ILogicalOperator candidate = candidates.get(i).getOperator();
+                    equivalentClass.add(candidates.get(i));
+                    for (int j = i - 1; j >= 0; j--) {
+                        ILogicalOperator peer = candidates.get(j).getOperator();
+                        if (IsomorphismUtilities.isOperatorIsomorphic(candidate, peer)) {
+                            reserved[i] = true;
+                            reserved[j] = true;
+                            equivalentClass.add(candidates.get(j));
+                        }
+                    }
+                    if (equivalentClass.size() > 1) {
+                        equivalenceClasses.add(equivalentClass);
+                        Collections.reverse(equivalentClass);
+                    }
                 }
             }
-        }
-        for (int i = candidates.size() - 1; i >= 0; i--) {
-            if (!reserved[i]) {
-                candidates.remove(i);
+            for (int i = candidates.size() - 1; i >= 0; i--) {
+                if (!reserved[i]) {
+                    candidates.remove(i);
+                }
             }
         }
     }
