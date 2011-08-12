@@ -14,8 +14,10 @@
  */
 package edu.uci.ics.algebricks.runtime.hyracks.operators.std;
 
+import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.PrintStream;
 
 import edu.uci.ics.algebricks.api.data.IPrinter;
@@ -61,7 +63,7 @@ public class SinkWriterRuntimeFactory implements IPushRuntimeFactory {
     public IPushRuntime createPushRuntime(RuntimeContext context) throws AlgebricksException {
         PrintStream filePrintStream = null;
         try {
-            filePrintStream = new PrintStream(outputFile);
+            filePrintStream = new PrintStream(new BufferedOutputStream(new FileOutputStream(outputFile)));
         } catch (FileNotFoundException e) {
             throw new AlgebricksException(e);
         }
