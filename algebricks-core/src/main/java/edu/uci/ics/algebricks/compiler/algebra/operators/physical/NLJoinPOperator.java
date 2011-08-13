@@ -24,9 +24,9 @@ import edu.uci.ics.algebricks.api.expr.ILogicalExpressionJobGen;
 import edu.uci.ics.algebricks.compiler.algebra.base.ILogicalOperator;
 import edu.uci.ics.algebricks.compiler.algebra.base.PhysicalOperatorTag;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.AbstractBinaryJoin;
+import edu.uci.ics.algebricks.compiler.algebra.operators.logical.AbstractBinaryJoin.JoinKind;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.AbstractLogicalOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.IOperatorSchema;
-import edu.uci.ics.algebricks.compiler.algebra.operators.logical.AbstractBinaryJoin.JoinKind;
 import edu.uci.ics.algebricks.compiler.algebra.properties.BroadcastPartitioningProperty;
 import edu.uci.ics.algebricks.compiler.algebra.properties.ILocalStructuralProperty;
 import edu.uci.ics.algebricks.compiler.algebra.properties.IPartitioningProperty;
@@ -73,13 +73,11 @@ public class NLJoinPOperator extends AbstractJoinPOperator {
         return PhysicalOperatorTag.NESTED_LOOP;
     }
 
-
     @Override
     public boolean isMicroOperator() {
         return false;
     }
 
-    
     @Override
     public void computeDeliveredProperties(ILogicalOperator iop, IOptimizationContext context) {
         if (partitioningType != JoinPartitioningType.BROADCAST) {
@@ -103,15 +101,6 @@ public class NLJoinPOperator extends AbstractJoinPOperator {
         }
 
         List<ILocalStructuralProperty> localProps = new LinkedList<ILocalStructuralProperty>();
-        // Whether any properties are preserved depends on what type of NL is
-        // performed.
-
-        // PhysicalPropertiesVector pv0 =
-        // op.getInputs().get(0).getOperator().getPhysicalOperator()
-        // .getDeliveredProperties();
-        // if (pv0 != null) {
-        // localProps.addAll(pv0.getLocalProperties());
-        // }
         this.deliveredProperties = new StructuralPropertiesVector(pp, localProps);
     }
 
@@ -133,13 +122,14 @@ public class NLJoinPOperator extends AbstractJoinPOperator {
             IOperatorSchema propagatedSchema, IOperatorSchema[] inputSchemas, IOperatorSchema outerPlanSchema)
             throws AlgebricksException {
         AbstractBinaryJoin join = (AbstractBinaryJoin) op;
+        RecordDescriptor recDescriptor = JobGenHelper.mkRecordDescriptor(propagatedSchema, context);
+        IOperatorSchema[] conditionInputSchemas = new IOperatorSchema[1];
+        conditionInputSchemas[0] = propagatedSchema;
         ILogicalExpressionJobGen exprJobGen = context.getExpressionJobGen();
-
-        IEvaluatorFactory cond = exprJobGen.createEvaluatorFactory(join.getCondition().getExpression(), inputSchemas,
-                context);
+        IEvaluatorFactory cond = exprJobGen.createEvaluatorFactory(join.getCondition().getExpression(),
+                conditionInputSchemas, context);
         ITuplePairComparatorFactory comparatorFactory = new TuplePairEvaluatorFactory(cond,
                 context.getBinaryBooleanInspector());
-        RecordDescriptor recDescriptor = JobGenHelper.mkRecordDescriptor(propagatedSchema, context);
         JobSpecification spec = builder.getJobSpec();
         IOperatorDescriptor opDesc = null;
 
@@ -181,7 +171,6 @@ public class NLJoinPOperator extends AbstractJoinPOperator {
 
     public static class TuplePairEvaluator implements ITuplePairComparator {
 
-        private static final long serialVersionUID = 1L;
         private IEvaluator condEvaluator;
         private final IEvaluatorFactory condFactory;
         private final CompositeFrameTupleReference compositeTupleRef;
