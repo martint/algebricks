@@ -146,8 +146,9 @@ public class PushSelectIntoJoinRule implements IAlgebraicRewriteRule {
             }
             i++;
         }
-
-        boolean intersectsNone = !intersectsBranch[0] && !intersectsBranch[1];
+        if (!intersectsBranch[0] && !intersectsBranch[1]) {
+            return false;
+        }
         if (intersectsAllBranches) {
             if (needToPushOps) {
                 pushOps(pushedOnLeft, joinBranchLeftRef);
@@ -159,7 +160,7 @@ public class PushSelectIntoJoinRule implements IAlgebraicRewriteRule {
 
             for (int j = 0; j < intersectsBranch.length; j++) {
                 LogicalOperatorReference branch = branchIter.next();
-                boolean inter = intersectsBranch[j] || intersectsNone;
+                boolean inter = intersectsBranch[j];
                 if (inter) {
 
                     if (needToPushOps) {
@@ -177,7 +178,7 @@ public class PushSelectIntoJoinRule implements IAlgebraicRewriteRule {
                 // outer branch.
                 if (j == 0 && isLoj) {
                     // stop at this branch
-                    return inter;
+                    break;
                 }
             }
         }
