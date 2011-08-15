@@ -37,15 +37,26 @@ import edu.uci.ics.hyracks.storage.am.btree.frames.BTreeNSMInteriorFrameFactory;
 import edu.uci.ics.hyracks.storage.am.btree.frames.BTreeNSMLeafFrameFactory;
 import edu.uci.ics.hyracks.storage.am.common.api.ITreeIndexFrameFactory;
 import edu.uci.ics.hyracks.storage.am.common.tuples.TypeAwareTupleWriterFactory;
+import edu.uci.ics.hyracks.storage.am.rtree.frames.RTreeNSMInteriorFrameFactory;
+import edu.uci.ics.hyracks.storage.am.rtree.frames.RTreeNSMLeafFrameFactory;
+import edu.uci.ics.hyracks.storage.am.rtree.tuples.RTreeTypeAwareTupleWriterFactory;
 
 public final class JobGenHelper {
 
-    public static ITreeIndexFrameFactory createNSMInteriorFrameFactory(ITypeTrait[] typeTraits) {
+    public static ITreeIndexFrameFactory createBTreeNSMInteriorFrameFactory(ITypeTrait[] typeTraits) {
         return new BTreeNSMInteriorFrameFactory(new TypeAwareTupleWriterFactory(typeTraits));
     }
 
-    public static ITreeIndexFrameFactory createNSMLeafFrameFactory(ITypeTrait[] typeTraits) {
+    public static ITreeIndexFrameFactory createBTreeNSMLeafFrameFactory(ITypeTrait[] typeTraits) {
         return new BTreeNSMLeafFrameFactory(new TypeAwareTupleWriterFactory(typeTraits));
+    }
+
+    public static ITreeIndexFrameFactory createRTreeNSMInteriorFrameFactory(ITypeTrait[] typeTraits, int keyFields) {
+        return new RTreeNSMInteriorFrameFactory(new RTreeTypeAwareTupleWriterFactory(typeTraits), keyFields);
+    }
+
+    public static ITreeIndexFrameFactory createRTreeNSMLeafFrameFactory(ITypeTrait[] typeTraits, int keyFields) {
+        return new RTreeNSMLeafFrameFactory(new RTreeTypeAwareTupleWriterFactory(typeTraits), keyFields);
     }
 
     @SuppressWarnings("unchecked")
