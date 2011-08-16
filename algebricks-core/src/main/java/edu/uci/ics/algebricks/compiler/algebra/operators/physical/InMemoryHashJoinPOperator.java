@@ -82,7 +82,8 @@ public class InMemoryHashJoinPOperator extends AbstractHashJoinPOperator {
         int i = 0;
         IBinaryComparatorFactoryProvider bcfp = context.getBinaryComparatorFactoryProvider();
         for (LogicalVariable v : keysLeftBranch) {
-            comparatorFactories[i++] = bcfp.getBinaryComparatorFactory(v, OrderKind.ASC);
+            Object t = context.getVarType(v);
+            comparatorFactories[i++] = bcfp.getBinaryComparatorFactory(t, OrderKind.ASC);
         }
         RecordDescriptor recDescriptor = JobGenHelper.mkRecordDescriptor(propagatedSchema, context);
         JobSpecification spec = builder.getJobSpec();
