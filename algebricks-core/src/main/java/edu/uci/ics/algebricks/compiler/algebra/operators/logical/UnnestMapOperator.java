@@ -17,16 +17,27 @@ package edu.uci.ics.algebricks.compiler.algebra.operators.logical;
 import java.util.List;
 
 import edu.uci.ics.algebricks.api.exceptions.AlgebricksException;
+import edu.uci.ics.algebricks.api.expr.IVariableTypeEnvironment;
 import edu.uci.ics.algebricks.compiler.algebra.base.LogicalExpressionReference;
 import edu.uci.ics.algebricks.compiler.algebra.base.LogicalOperatorTag;
 import edu.uci.ics.algebricks.compiler.algebra.base.LogicalVariable;
 import edu.uci.ics.algebricks.compiler.algebra.properties.VariablePropagationPolicy;
+import edu.uci.ics.algebricks.compiler.algebra.typing.ITypingContext;
+import edu.uci.ics.algebricks.compiler.algebra.typing.NonPropagatingTypeEnvironment;
 import edu.uci.ics.algebricks.compiler.algebra.visitors.ILogicalOperatorVisitor;
 
+/**
+ * This operator may go away after we add indexes to Algebricks.
+ * 
+ */
 public class UnnestMapOperator extends AbstractUnnestOperator {
 
-    public UnnestMapOperator(List<LogicalVariable> variables, LogicalExpressionReference expression) {
+    private final List<Object> variableTypes; // temporary solution
+
+    public UnnestMapOperator(List<LogicalVariable> variables, LogicalExpressionReference expression,
+            List<Object> variableTypes) {
         super(variables, expression);
+        this.variableTypes = variableTypes;
     }
 
     @Override
@@ -58,6 +69,20 @@ public class UnnestMapOperator extends AbstractUnnestOperator {
                 }
             }
         };
+    }
+
+    public List<Object> getVariableTypes() {
+        return variableTypes;
+    }
+
+    @Override
+    public IVariableTypeEnvironment computeTypeEnvironment(ITypingContext ctx) throws AlgebricksException {
+        IVariableTypeEnvironment env = new NonPropagatingTypeEnvironment(ctx.getExpressionTypeComputer());
+        int n = variables.size();
+        for (int i = 0; i < n; i++) {
+            env.setVarType(variables.get(i), variableTypes.get(i));
+        }
+        return env;
     }
 
 }

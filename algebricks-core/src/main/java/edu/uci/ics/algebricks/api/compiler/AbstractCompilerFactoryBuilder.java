@@ -29,6 +29,7 @@ import edu.uci.ics.algebricks.api.expr.IExpressionEvalSizeComputer;
 import edu.uci.ics.algebricks.api.expr.IExpressionTypeComputer;
 import edu.uci.ics.algebricks.api.expr.ILogicalExpressionJobGen;
 import edu.uci.ics.algebricks.api.expr.IMergeAggregationExpressionFactory;
+import edu.uci.ics.algebricks.api.expr.INullableTypeComputer;
 import edu.uci.ics.algebricks.api.expr.IPartialAggregationTypeComputer;
 import edu.uci.ics.algebricks.compiler.optimizer.base.AbstractRuleController;
 import edu.uci.ics.algebricks.compiler.optimizer.base.IAlgebraicRewriteRule;
@@ -49,6 +50,7 @@ public abstract class AbstractCompilerFactoryBuilder {
     protected IPrinterFactoryProvider printerProvider;
     protected ILogicalExpressionJobGen exprJobGen;
     protected IExpressionTypeComputer expressionTypeComputer;
+    protected INullableTypeComputer nullableTypeComputer;
     protected IExpressionEvalSizeComputer expressionEvalSizeComputer;
     protected INullWriterFactory nullWriterFactory;
     protected INormalizedKeyComputerFactoryProvider normalizedKeyComputerFactoryProvider;
@@ -204,6 +206,14 @@ public abstract class AbstractCompilerFactoryBuilder {
 
     public void setPhysicalOptimizationConfig(PhysicalOptimizationConfig physicalOptimizationConfig) {
         this.physicalOptimizationConfig = physicalOptimizationConfig;
+    }
+
+    public void setNullableTypeComputer(INullableTypeComputer nullableTypeComputer) {
+        this.nullableTypeComputer = nullableTypeComputer;
+    }
+
+    public INullableTypeComputer getNullableTypeComputer() {
+        return nullableTypeComputer;
     }
 
 }

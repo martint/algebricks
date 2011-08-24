@@ -17,9 +17,11 @@ package edu.uci.ics.algebricks.compiler.algebra.operators.logical;
 import java.util.ArrayList;
 
 import edu.uci.ics.algebricks.api.exceptions.AlgebricksException;
+import edu.uci.ics.algebricks.api.expr.IVariableTypeEnvironment;
 import edu.uci.ics.algebricks.compiler.algebra.base.LogicalOperatorTag;
 import edu.uci.ics.algebricks.compiler.algebra.base.LogicalVariable;
 import edu.uci.ics.algebricks.compiler.algebra.properties.VariablePropagationPolicy;
+import edu.uci.ics.algebricks.compiler.algebra.typing.ITypingContext;
 import edu.uci.ics.algebricks.compiler.algebra.visitors.ILogicalExpressionReferenceTransform;
 import edu.uci.ics.algebricks.compiler.algebra.visitors.ILogicalOperatorVisitor;
 
@@ -67,6 +69,11 @@ public class ReplicateOperator extends AbstractLogicalOperator {
 
     public int getOutputArity() {
         return outputArity;
+    }
+
+    @Override
+    public IVariableTypeEnvironment computeTypeEnvironment(ITypingContext ctx) throws AlgebricksException {
+        return createPropagatingAllTypeEnvironment(ctx);
     }
 
 }

@@ -19,14 +19,22 @@ import java.util.Collection;
 import java.util.List;
 
 import edu.uci.ics.algebricks.api.exceptions.AlgebricksException;
+import edu.uci.ics.algebricks.api.expr.IVariableTypeEnvironment;
 import edu.uci.ics.algebricks.compiler.algebra.base.ILogicalExpression;
+import edu.uci.ics.algebricks.compiler.algebra.base.ILogicalOperator;
 import edu.uci.ics.algebricks.compiler.algebra.base.ILogicalPlan;
 import edu.uci.ics.algebricks.compiler.algebra.base.LogicalExpressionReference;
 import edu.uci.ics.algebricks.compiler.algebra.base.LogicalExpressionTag;
+import edu.uci.ics.algebricks.compiler.algebra.base.LogicalOperatorReference;
 import edu.uci.ics.algebricks.compiler.algebra.base.LogicalOperatorTag;
 import edu.uci.ics.algebricks.compiler.algebra.base.LogicalVariable;
 import edu.uci.ics.algebricks.compiler.algebra.expressions.VariableReferenceExpression;
+import edu.uci.ics.algebricks.compiler.algebra.properties.TypePropagationPolicy;
 import edu.uci.ics.algebricks.compiler.algebra.properties.VariablePropagationPolicy;
+import edu.uci.ics.algebricks.compiler.algebra.typing.ITypeEnvPointer;
+import edu.uci.ics.algebricks.compiler.algebra.typing.ITypingContext;
+import edu.uci.ics.algebricks.compiler.algebra.typing.OpRefTypeEnvPointer;
+import edu.uci.ics.algebricks.compiler.algebra.typing.PropagatingTypeEnvironment;
 import edu.uci.ics.algebricks.compiler.algebra.visitors.ILogicalExpressionReferenceTransform;
 import edu.uci.ics.algebricks.compiler.algebra.visitors.ILogicalOperatorVisitor;
 import edu.uci.ics.algebricks.utils.Pair;
@@ -218,6 +226,37 @@ public class GroupByOperator extends AbstractOperatorWithNestedPlans {
 
     public List<Pair<LogicalVariable, LogicalExpressionReference>> getDecorList() {
         return decorList;
+    }
+
+    @Override
+    public IVariableTypeEnvironment computeTypeEnvironment(ITypingContext ctx) throws AlgebricksException {
+        int n = 0;
+        for (ILogicalPlan p : nestedPlans) {
+            n += p.getRoots().size();
+        }
+        ITypeEnvPointer[] envPointers = new ITypeEnvPointer[n];
+        int i = 0;
+        for (ILogicalPlan p : nestedPlans) {
+            for (LogicalOperatorReference r : p.getRoots()) {
+                envPointers[i] = new OpRefTypeEnvPointer(r, ctx);
+                i++;
+            }
+        }
+        IVariableTypeEnvironment env = new PropagatingTypeEnvironment(ctx.getExpressionTypeComputer(), ctx
+                .getNullableTypeComputer(), TypePropagationPolicy.ALL, envPointers);
+        ILogicalOperator child = inputs.get(0).getOperator();
+        for (Pair<LogicalVariable, LogicalExpressionReference> p : getGroupByList()) {
+            ILogicalExpression expr = p.second.getExpression();
+            IVariableTypeEnvironment env2 = ctx.getTypeEnvironment(child);
+            if (p.first != null) {
+                env.setVarType(p.first, env2.getType(expr));
+            } else {
+                VariableReferenceExpression vre = (VariableReferenceExpression) p.second.getExpression();
+                LogicalVariable v2 = vre.getVariableReference();
+                env.setVarType(v2, env2.getVarType(v2));
+            }
+        }
+        return env;
     }
 
 }

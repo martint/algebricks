@@ -97,6 +97,11 @@ public class SetAlgebricksPhysicalOperatorsRule implements IAlgebraicRewriteRule
                     op.setPhysicalOperator(new AssignPOperator());
                     break;
                 }
+                case DISTINCT: {
+                    DistinctOperator distinct = (DistinctOperator) op;
+                    distinct.setPhysicalOperator(new PreSortedDistinctByPOperator(distinct.getDistinctByVarList()));
+                    break;
+                }
                 case EMPTYTUPLESOURCE: {
                     op.setPhysicalOperator(new EmptyTupleSourcePOperator());
                     break;
@@ -120,8 +125,8 @@ public class SetAlgebricksPhysicalOperatorsRule implements IAlgebraicRewriteRule
                                     throw new NotImplementedException(
                                             "External hash group-by for nested grouping is not implemented.");
                                 }
-                                ExternalGroupByPOperator externalGby = new ExternalGroupByPOperator(
-                                        gby.getGroupByList(), physicalOptimizationConfig.getMaxFramesExternalGroupBy(),
+                                ExternalGroupByPOperator externalGby = new ExternalGroupByPOperator(gby
+                                        .getGroupByList(), physicalOptimizationConfig.getMaxFramesExternalGroupBy(),
                                         physicalOptimizationConfig.getExternalGroupByTableSize());
                                 op.setPhysicalOperator(externalGby);
                                 generateMergeAggregationExpressions(gby, context);
@@ -225,11 +230,6 @@ public class SetAlgebricksPhysicalOperatorsRule implements IAlgebraicRewriteRule
                 }
                 case WRITE: {
                     op.setPhysicalOperator(new SinkWritePOperator());
-                    break;
-                }
-                case DISTINCT: {
-                    DistinctOperator distinct = (DistinctOperator) op;
-                    distinct.setPhysicalOperator(new PreSortedDistinctByPOperator(distinct.getDistinctByVarList()));
                     break;
                 }
             }

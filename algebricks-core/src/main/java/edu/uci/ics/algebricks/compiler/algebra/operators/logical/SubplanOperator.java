@@ -19,20 +19,22 @@ import java.util.Collection;
 import java.util.List;
 
 import edu.uci.ics.algebricks.api.exceptions.AlgebricksException;
+import edu.uci.ics.algebricks.api.expr.IVariableTypeEnvironment;
 import edu.uci.ics.algebricks.compiler.algebra.base.ILogicalOperator;
 import edu.uci.ics.algebricks.compiler.algebra.base.ILogicalPlan;
 import edu.uci.ics.algebricks.compiler.algebra.base.LogicalOperatorReference;
 import edu.uci.ics.algebricks.compiler.algebra.base.LogicalOperatorTag;
 import edu.uci.ics.algebricks.compiler.algebra.base.LogicalVariable;
 import edu.uci.ics.algebricks.compiler.algebra.plan.ALogicalPlanImpl;
+import edu.uci.ics.algebricks.compiler.algebra.properties.TypePropagationPolicy;
 import edu.uci.ics.algebricks.compiler.algebra.properties.VariablePropagationPolicy;
+import edu.uci.ics.algebricks.compiler.algebra.typing.ITypeEnvPointer;
+import edu.uci.ics.algebricks.compiler.algebra.typing.ITypingContext;
+import edu.uci.ics.algebricks.compiler.algebra.typing.OpRefTypeEnvPointer;
+import edu.uci.ics.algebricks.compiler.algebra.typing.PropagatingTypeEnvironment;
 import edu.uci.ics.algebricks.compiler.algebra.visitors.ILogicalExpressionReferenceTransform;
 import edu.uci.ics.algebricks.compiler.algebra.visitors.ILogicalOperatorVisitor;
 
-/*
- * Author: Guangqiang Li
- * Created on Jul 31, 2009 
- */
 public class SubplanOperator extends AbstractOperatorWithNestedPlans {
 
     public SubplanOperator() {
@@ -84,4 +86,24 @@ public class SubplanOperator extends AbstractOperatorWithNestedPlans {
     public void getUsedVariablesExceptNestedPlans(Collection<LogicalVariable> vars) {
         // do nothing
     }
+
+    @Override
+    public IVariableTypeEnvironment computeTypeEnvironment(ITypingContext ctx) throws AlgebricksException {
+        int n = 0;
+        for (ILogicalPlan p : nestedPlans) {
+            n += p.getRoots().size();
+        }
+        ITypeEnvPointer[] envPointers = new ITypeEnvPointer[n + 1];
+        envPointers[0] = new OpRefTypeEnvPointer(inputs.get(0), ctx);
+        int i = 1;
+        for (ILogicalPlan p : nestedPlans) {
+            for (LogicalOperatorReference r : p.getRoots()) {
+                envPointers[i] = new OpRefTypeEnvPointer(r, ctx);
+                i++;
+            }
+        }
+        return new PropagatingTypeEnvironment(ctx.getExpressionTypeComputer(), ctx.getNullableTypeComputer(),
+                TypePropagationPolicy.LEFT_OUTER, envPointers);
+    }
+
 }

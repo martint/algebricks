@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.Map;
 
 import edu.uci.ics.algebricks.api.exceptions.AlgebricksException;
+import edu.uci.ics.algebricks.api.expr.IVariableTypeEnvironment;
 import edu.uci.ics.algebricks.compiler.algebra.base.ILogicalOperator;
 import edu.uci.ics.algebricks.compiler.algebra.base.IPhysicalOperator;
 import edu.uci.ics.algebricks.compiler.algebra.base.LogicalOperatorReference;
@@ -27,6 +28,11 @@ import edu.uci.ics.algebricks.compiler.algebra.base.LogicalOperatorTag;
 import edu.uci.ics.algebricks.compiler.algebra.base.LogicalVariable;
 import edu.uci.ics.algebricks.compiler.algebra.properties.IPhysicalPropertiesVector;
 import edu.uci.ics.algebricks.compiler.algebra.properties.PhysicalRequirements;
+import edu.uci.ics.algebricks.compiler.algebra.properties.TypePropagationPolicy;
+import edu.uci.ics.algebricks.compiler.algebra.typing.ITypeEnvPointer;
+import edu.uci.ics.algebricks.compiler.algebra.typing.ITypingContext;
+import edu.uci.ics.algebricks.compiler.algebra.typing.OpRefTypeEnvPointer;
+import edu.uci.ics.algebricks.compiler.algebra.typing.PropagatingTypeEnvironment;
 import edu.uci.ics.algebricks.compiler.optimizer.base.IOptimizationContext;
 import edu.uci.ics.algebricks.runtime.hyracks.jobgen.base.IHyracksJobBuilder;
 import edu.uci.ics.algebricks.runtime.hyracks.jobgen.impl.JobGenContext;
@@ -161,5 +167,15 @@ public abstract class AbstractLogicalOperator implements ILogicalOperator {
 
     public boolean isJobGenEnabled() {
         return bJobGenEnabled;
+    }
+
+    protected IVariableTypeEnvironment createPropagatingAllTypeEnvironment(ITypingContext ctx) {
+        int n = inputs.size();
+        ITypeEnvPointer[] envPointers = new ITypeEnvPointer[n];
+        for (int i = 0; i < n; i++) {
+            envPointers[i] = new OpRefTypeEnvPointer(inputs.get(i), ctx);
+        }
+        return new PropagatingTypeEnvironment(ctx.getExpressionTypeComputer(), ctx.getNullableTypeComputer(),
+                TypePropagationPolicy.ALL, envPointers);
     }
 }

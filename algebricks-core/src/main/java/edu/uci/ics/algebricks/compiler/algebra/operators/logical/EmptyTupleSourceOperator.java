@@ -17,9 +17,12 @@ package edu.uci.ics.algebricks.compiler.algebra.operators.logical;
 import java.util.ArrayList;
 
 import edu.uci.ics.algebricks.api.exceptions.AlgebricksException;
+import edu.uci.ics.algebricks.api.expr.IVariableTypeEnvironment;
+import edu.uci.ics.algebricks.compiler.algebra.base.ILogicalExpression;
 import edu.uci.ics.algebricks.compiler.algebra.base.LogicalOperatorTag;
 import edu.uci.ics.algebricks.compiler.algebra.base.LogicalVariable;
 import edu.uci.ics.algebricks.compiler.algebra.properties.VariablePropagationPolicy;
+import edu.uci.ics.algebricks.compiler.algebra.typing.ITypingContext;
 import edu.uci.ics.algebricks.compiler.algebra.visitors.ILogicalExpressionReferenceTransform;
 import edu.uci.ics.algebricks.compiler.algebra.visitors.ILogicalOperatorVisitor;
 
@@ -65,6 +68,27 @@ public class EmptyTupleSourceOperator extends AbstractLogicalOperator {
     @Override
     public boolean isMap() {
         return false;
+    }
+
+    @Override
+    public IVariableTypeEnvironment computeTypeEnvironment(final ITypingContext ctx) throws AlgebricksException {
+        return new IVariableTypeEnvironment() {
+
+            @Override
+            public void setVarType(LogicalVariable var, Object type) {
+                throw new IllegalStateException();
+            }
+
+            @Override
+            public Object getVarType(LogicalVariable var) throws AlgebricksException {
+                return null;
+            }
+
+            @Override
+            public Object getType(ILogicalExpression expr) throws AlgebricksException {
+                return ctx.getExpressionTypeComputer().getType(expr, this);
+            }
+        };
     }
 
 }

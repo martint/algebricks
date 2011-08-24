@@ -20,8 +20,11 @@ import java.util.List;
 import java.util.Map;
 
 import edu.uci.ics.algebricks.api.expr.IExpressionEvalSizeComputer;
+import edu.uci.ics.algebricks.api.expr.IExpressionTypeComputer;
 import edu.uci.ics.algebricks.api.expr.IMergeAggregationExpressionFactory;
+import edu.uci.ics.algebricks.api.expr.INullableTypeComputer;
 import edu.uci.ics.algebricks.api.expr.IVariableEvalSizeEnvironment;
+import edu.uci.ics.algebricks.api.expr.IVariableTypeEnvironment;
 import edu.uci.ics.algebricks.compiler.algebra.base.EquivalenceClass;
 import edu.uci.ics.algebricks.compiler.algebra.base.ILogicalOperator;
 import edu.uci.ics.algebricks.compiler.algebra.base.LogicalVariable;
@@ -50,9 +53,11 @@ public class AlgebricksOptimizationContext implements IOptimizationContext {
         }
     };
 
-    private Map<ILogicalOperator, HashSet<ILogicalOperator>> alreadyCompared;
-    private Map<IAlgebraicRewriteRule, HashSet<ILogicalOperator>> dontApply;
-    private Map<LogicalVariable, FunctionalDependency> recordToPrimaryKey;
+    private Map<ILogicalOperator, IVariableTypeEnvironment> typeEnvMap = new HashMap<ILogicalOperator, IVariableTypeEnvironment>();
+
+    private Map<ILogicalOperator, HashSet<ILogicalOperator>> alreadyCompared = new HashMap<ILogicalOperator, HashSet<ILogicalOperator>>();
+    private Map<IAlgebraicRewriteRule, HashSet<ILogicalOperator>> dontApply = new HashMap<IAlgebraicRewriteRule, HashSet<ILogicalOperator>>();
+    private Map<LogicalVariable, FunctionalDependency> recordToPrimaryKey = new HashMap<LogicalVariable, FunctionalDependency>();
 
     @SuppressWarnings("unchecked")
     private IMetadataProvider metadataProvider;
@@ -63,19 +68,21 @@ public class AlgebricksOptimizationContext implements IOptimizationContext {
 
     protected final Map<ILogicalOperator, ILogicalPropertiesVector> logicalProps = new HashMap<ILogicalOperator, ILogicalPropertiesVector>();
     private final int frameSize;
+    private final IExpressionTypeComputer expressionTypeComputer;
+    private final INullableTypeComputer nullableTypeComputer;
 
     public AlgebricksOptimizationContext(int varCounter, int frameSize,
             IExpressionEvalSizeComputer expressionEvalSizeComputer,
             IMergeAggregationExpressionFactory mergeAggregationExpressionFactory,
+            IExpressionTypeComputer expressionTypeComputer, INullableTypeComputer nullableTypeComputer,
             PhysicalOptimizationConfig physicalOptimizationConfig) {
         this.varCounter = varCounter;
         this.frameSize = frameSize;
         this.expressionEvalSizeComputer = expressionEvalSizeComputer;
         this.mergeAggregationExpressionFactory = mergeAggregationExpressionFactory;
+        this.expressionTypeComputer = expressionTypeComputer;
+        this.nullableTypeComputer = nullableTypeComputer;
         this.physicalOptimizationConfig = physicalOptimizationConfig;
-        alreadyCompared = new HashMap<ILogicalOperator, HashSet<ILogicalOperator>>();
-        dontApply = new HashMap<IAlgebraicRewriteRule, HashSet<ILogicalOperator>>();
-        recordToPrimaryKey = new HashMap<LogicalVariable, FunctionalDependency>();
     }
 
     public int getVarCounter() {
@@ -215,5 +222,25 @@ public class AlgebricksOptimizationContext implements IOptimizationContext {
 
     public PhysicalOptimizationConfig getPhysicalOptimizationConfig() {
         return physicalOptimizationConfig;
+    }
+
+    @Override
+    public IVariableTypeEnvironment getTypeEnvironment(ILogicalOperator op) {
+        return typeEnvMap.get(op);
+    }
+
+    @Override
+    public void setTypeEnvironment(ILogicalOperator op, IVariableTypeEnvironment env) {
+        typeEnvMap.put(op, env);
+    }
+
+    @Override
+    public IExpressionTypeComputer getExpressionTypeComputer() {
+        return expressionTypeComputer;
+    }
+
+    @Override
+    public INullableTypeComputer getNullableTypeComputer() {
+        return nullableTypeComputer;
     }
 }

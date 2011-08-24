@@ -26,8 +26,9 @@ import edu.uci.ics.algebricks.compiler.algebra.base.LogicalVariable;
 import edu.uci.ics.algebricks.compiler.algebra.metadata.IMetadataProvider;
 import edu.uci.ics.algebricks.compiler.algebra.properties.FunctionalDependency;
 import edu.uci.ics.algebricks.compiler.algebra.properties.ILogicalPropertiesVector;
+import edu.uci.ics.algebricks.compiler.algebra.typing.ITypingContext;
 
-public interface IOptimizationContext {
+public interface IOptimizationContext extends ITypingContext {
 
     public abstract int getVarCounter();
 
@@ -78,4 +79,5 @@ public interface IOptimizationContext {
     public abstract IMergeAggregationExpressionFactory getMergeAggregationExpressionFactory();
 
     public abstract PhysicalOptimizationConfig getPhysicalOptimizationConfig();
+
 }

@@ -142,7 +142,6 @@ public class IntroduceCombinerRule implements IAlgebraicRewriteRule {
             boolean see1 = true;
             int sz1 = newOpGbyList.size();
             int i = 0;
-            // Iterator<LogicalVariable> iter1 = newOpGbyList.iterator();
             for (LogicalVariable v : varList) {
                 if (see1) {
                     if (i < sz1) {

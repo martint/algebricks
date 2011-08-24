@@ -96,10 +96,12 @@ public abstract class AbstractRuleController {
                 for (LogicalOperatorReference r : p.getRoots()) {
                     if (rewriteOperatorRef(r, rule, enterGbys, fullDFS)) {
                         rewritten = true;
-                        break;
+                        if (!fullDFS) {
+                            break;
+                        }
                     }
                 }
-                if (rewritten) {
+                if (rewritten && !fullDFS) {
                     break;
                 }
             }

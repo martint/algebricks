@@ -16,7 +16,9 @@ package edu.uci.ics.algebricks.api.compiler;
 
 import edu.uci.ics.algebricks.api.exceptions.AlgebricksException;
 import edu.uci.ics.algebricks.api.expr.IExpressionEvalSizeComputer;
+import edu.uci.ics.algebricks.api.expr.IExpressionTypeComputer;
 import edu.uci.ics.algebricks.api.expr.IMergeAggregationExpressionFactory;
+import edu.uci.ics.algebricks.api.expr.INullableTypeComputer;
 import edu.uci.ics.algebricks.compiler.algebra.base.ILogicalPlan;
 import edu.uci.ics.algebricks.compiler.algebra.metadata.IMetadataProvider;
 import edu.uci.ics.algebricks.compiler.optimizer.base.AlgebricksOptimizationContext;
@@ -42,9 +44,11 @@ public class HeuristicCompilerFactoryBuilder extends AbstractCompilerFactoryBuil
         public IOptimizationContext createOptimizationContext(int varCounter, int frameSize,
                 IExpressionEvalSizeComputer expressionEvalSizeComputer,
                 IMergeAggregationExpressionFactory mergeAggregationExpressionFactory,
+                IExpressionTypeComputer expressionTypeComputer, INullableTypeComputer nullableTypeComputer,
                 PhysicalOptimizationConfig physicalOptimizationConfig) {
             return new AlgebricksOptimizationContext(varCounter, frameSize, expressionEvalSizeComputer,
-                    mergeAggregationExpressionFactory, physicalOptimizationConfig);
+                    mergeAggregationExpressionFactory, expressionTypeComputer, nullableTypeComputer,
+                    physicalOptimizationConfig);
         }
     }
 
@@ -65,7 +69,8 @@ public class HeuristicCompilerFactoryBuilder extends AbstractCompilerFactoryBuil
             public ICompiler createCompiler(final ILogicalPlan plan, final IMetadataProvider<?, ?> metadata,
                     int varCounter) {
                 IOptimizationContext oc = optCtxFactory.createOptimizationContext(varCounter, frameSize,
-                        expressionEvalSizeComputer, mergeAggregationExpressionFactory, physicalOptimizationConfig);
+                        expressionEvalSizeComputer, mergeAggregationExpressionFactory, expressionTypeComputer,
+                        nullableTypeComputer, physicalOptimizationConfig);
                 oc.setMetadataDeclarations(metadata);
                 final HeuristicOptimizer opt = new HeuristicOptimizer(plan, logicalRewrites, physicalRewrites, oc);
                 return new ICompiler() {

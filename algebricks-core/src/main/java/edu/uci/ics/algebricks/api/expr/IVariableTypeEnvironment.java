@@ -17,14 +17,11 @@ package edu.uci.ics.algebricks.api.expr;
 import edu.uci.ics.algebricks.api.exceptions.AlgebricksException;
 import edu.uci.ics.algebricks.compiler.algebra.base.ILogicalExpression;
 import edu.uci.ics.algebricks.compiler.algebra.base.LogicalVariable;
-import edu.uci.ics.algebricks.compiler.algebra.metadata.IMetadataProvider;
 
 public interface IVariableTypeEnvironment {
-    public Object getVarType(LogicalVariable var);
+    public Object getVarType(LogicalVariable var) throws AlgebricksException;
 
     public void setVarType(LogicalVariable var, Object type);
-
-    public IMetadataProvider<?, ?> getMetadataProvider();
 
     public Object getType(ILogicalExpression expr) throws AlgebricksException;
 }

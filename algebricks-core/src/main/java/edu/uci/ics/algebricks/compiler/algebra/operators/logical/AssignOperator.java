@@ -17,10 +17,12 @@ package edu.uci.ics.algebricks.compiler.algebra.operators.logical;
 import java.util.List;
 
 import edu.uci.ics.algebricks.api.exceptions.AlgebricksException;
+import edu.uci.ics.algebricks.api.expr.IVariableTypeEnvironment;
 import edu.uci.ics.algebricks.compiler.algebra.base.LogicalExpressionReference;
 import edu.uci.ics.algebricks.compiler.algebra.base.LogicalOperatorTag;
 import edu.uci.ics.algebricks.compiler.algebra.base.LogicalVariable;
 import edu.uci.ics.algebricks.compiler.algebra.properties.VariablePropagationPolicy;
+import edu.uci.ics.algebricks.compiler.algebra.typing.ITypingContext;
 import edu.uci.ics.algebricks.compiler.algebra.visitors.ILogicalOperatorVisitor;
 
 /**
@@ -72,6 +74,17 @@ public class AssignOperator extends AbstractAssignOperator {
     @Override
     public boolean isMap() {
         return true;
+    }
+
+    @Override
+    public IVariableTypeEnvironment computeTypeEnvironment(ITypingContext ctx) throws AlgebricksException {
+        IVariableTypeEnvironment env = createPropagatingAllTypeEnvironment(ctx);
+        int n = variables.size();
+        for (int i = 0; i < n; i++) {
+            env.setVarType(variables.get(i), ctx.getExpressionTypeComputer().getType(
+                    expressions.get(i).getExpression(), env));
+        }
+        return env;
     }
 
 }

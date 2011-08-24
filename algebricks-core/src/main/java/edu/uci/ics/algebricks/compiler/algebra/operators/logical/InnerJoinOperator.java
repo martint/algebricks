@@ -15,9 +15,11 @@
 package edu.uci.ics.algebricks.compiler.algebra.operators.logical;
 
 import edu.uci.ics.algebricks.api.exceptions.AlgebricksException;
+import edu.uci.ics.algebricks.api.expr.IVariableTypeEnvironment;
 import edu.uci.ics.algebricks.compiler.algebra.base.LogicalExpressionReference;
 import edu.uci.ics.algebricks.compiler.algebra.base.LogicalOperatorReference;
 import edu.uci.ics.algebricks.compiler.algebra.base.LogicalOperatorTag;
+import edu.uci.ics.algebricks.compiler.algebra.typing.ITypingContext;
 import edu.uci.ics.algebricks.compiler.algebra.visitors.ILogicalOperatorVisitor;
 
 public class InnerJoinOperator extends AbstractBinaryJoin {
@@ -39,6 +41,11 @@ public class InnerJoinOperator extends AbstractBinaryJoin {
     @Override
     public <R, T> R accept(ILogicalOperatorVisitor<R, T> visitor, T arg) throws AlgebricksException {
         return visitor.visitInnerJoinOperator(this, arg);
+    }
+
+    @Override
+    public IVariableTypeEnvironment computeTypeEnvironment(ITypingContext ctx) throws AlgebricksException {
+        return createPropagatingAllTypeEnvironment(ctx);
     }
 
 }

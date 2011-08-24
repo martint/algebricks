@@ -15,9 +15,15 @@
 package edu.uci.ics.algebricks.compiler.algebra.operators.logical;
 
 import edu.uci.ics.algebricks.api.exceptions.AlgebricksException;
+import edu.uci.ics.algebricks.api.expr.IVariableTypeEnvironment;
 import edu.uci.ics.algebricks.compiler.algebra.base.LogicalExpressionReference;
 import edu.uci.ics.algebricks.compiler.algebra.base.LogicalOperatorReference;
 import edu.uci.ics.algebricks.compiler.algebra.base.LogicalOperatorTag;
+import edu.uci.ics.algebricks.compiler.algebra.properties.TypePropagationPolicy;
+import edu.uci.ics.algebricks.compiler.algebra.typing.ITypeEnvPointer;
+import edu.uci.ics.algebricks.compiler.algebra.typing.ITypingContext;
+import edu.uci.ics.algebricks.compiler.algebra.typing.OpRefTypeEnvPointer;
+import edu.uci.ics.algebricks.compiler.algebra.typing.PropagatingTypeEnvironment;
 import edu.uci.ics.algebricks.compiler.algebra.visitors.ILogicalOperatorVisitor;
 
 public class LeftOuterJoinOperator extends AbstractBinaryJoin {
@@ -39,6 +45,17 @@ public class LeftOuterJoinOperator extends AbstractBinaryJoin {
     @Override
     public <R, T> R accept(ILogicalOperatorVisitor<R, T> visitor, T arg) throws AlgebricksException {
         return visitor.visitLeftOuterJoinOperator(this, arg);
+    }
+
+    @Override
+    public IVariableTypeEnvironment computeTypeEnvironment(ITypingContext ctx) throws AlgebricksException {
+        int n = inputs.size();
+        ITypeEnvPointer[] envPointers = new ITypeEnvPointer[n];
+        for (int i = 0; i < n; i++) {
+            envPointers[i] = new OpRefTypeEnvPointer(inputs.get(i), ctx);
+        }
+        return new PropagatingTypeEnvironment(ctx.getExpressionTypeComputer(), ctx.getNullableTypeComputer(),
+                TypePropagationPolicy.LEFT_OUTER, envPointers);
     }
 
 }

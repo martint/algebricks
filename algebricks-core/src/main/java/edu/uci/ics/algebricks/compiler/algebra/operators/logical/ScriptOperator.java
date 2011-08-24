@@ -17,12 +17,16 @@ package edu.uci.ics.algebricks.compiler.algebra.operators.logical;
 import java.util.ArrayList;
 
 import edu.uci.ics.algebricks.api.exceptions.AlgebricksException;
+import edu.uci.ics.algebricks.api.expr.IVariableTypeEnvironment;
 import edu.uci.ics.algebricks.compiler.algebra.base.LogicalOperatorTag;
 import edu.uci.ics.algebricks.compiler.algebra.base.LogicalVariable;
 import edu.uci.ics.algebricks.compiler.algebra.properties.VariablePropagationPolicy;
 import edu.uci.ics.algebricks.compiler.algebra.scripting.IScriptDescription;
+import edu.uci.ics.algebricks.compiler.algebra.typing.ITypingContext;
+import edu.uci.ics.algebricks.compiler.algebra.typing.NonPropagatingTypeEnvironment;
 import edu.uci.ics.algebricks.compiler.algebra.visitors.ILogicalExpressionReferenceTransform;
 import edu.uci.ics.algebricks.compiler.algebra.visitors.ILogicalOperatorVisitor;
+import edu.uci.ics.algebricks.utils.Pair;
 
 public class ScriptOperator extends AbstractLogicalOperator {
 
@@ -87,6 +91,15 @@ public class ScriptOperator extends AbstractLogicalOperator {
     @Override
     public void recomputeSchema() {
         this.schema = outputVariables;
+    }
+
+    @Override
+    public IVariableTypeEnvironment computeTypeEnvironment(ITypingContext ctx) throws AlgebricksException {
+        IVariableTypeEnvironment env = new NonPropagatingTypeEnvironment(ctx.getExpressionTypeComputer());
+        for (Pair<LogicalVariable, Object> p : scriptDesc.getVarTypePairs()) {
+            env.setVarType(p.first, p.second);
+        }
+        return env;
     }
 
 }

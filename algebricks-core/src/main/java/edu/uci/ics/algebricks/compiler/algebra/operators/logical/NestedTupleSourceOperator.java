@@ -17,11 +17,17 @@ package edu.uci.ics.algebricks.compiler.algebra.operators.logical;
 import java.util.ArrayList;
 
 import edu.uci.ics.algebricks.api.exceptions.AlgebricksException;
+import edu.uci.ics.algebricks.api.expr.IVariableTypeEnvironment;
 import edu.uci.ics.algebricks.compiler.algebra.base.ILogicalOperator;
 import edu.uci.ics.algebricks.compiler.algebra.base.LogicalOperatorReference;
 import edu.uci.ics.algebricks.compiler.algebra.base.LogicalOperatorTag;
 import edu.uci.ics.algebricks.compiler.algebra.base.LogicalVariable;
+import edu.uci.ics.algebricks.compiler.algebra.properties.TypePropagationPolicy;
 import edu.uci.ics.algebricks.compiler.algebra.properties.VariablePropagationPolicy;
+import edu.uci.ics.algebricks.compiler.algebra.typing.ITypeEnvPointer;
+import edu.uci.ics.algebricks.compiler.algebra.typing.ITypingContext;
+import edu.uci.ics.algebricks.compiler.algebra.typing.OpRefTypeEnvPointer;
+import edu.uci.ics.algebricks.compiler.algebra.typing.PropagatingTypeEnvironment;
 import edu.uci.ics.algebricks.compiler.algebra.visitors.ILogicalExpressionReferenceTransform;
 import edu.uci.ics.algebricks.compiler.algebra.visitors.ILogicalOperatorVisitor;
 
@@ -33,6 +39,10 @@ public class NestedTupleSourceOperator extends AbstractLogicalOperator {
 
     public NestedTupleSourceOperator(LogicalOperatorReference dataSourceReference) {
         this.dataSourceReference = dataSourceReference;
+    }
+
+    public ILogicalOperator getSourceOperator() {
+        return dataSourceReference.getOperator().getInputs().get(0).getOperator();
     }
 
     @Override
@@ -73,18 +83,17 @@ public class NestedTupleSourceOperator extends AbstractLogicalOperator {
         return visitor.visitNestedTupleSourceOperator(this, arg);
     }
 
-    // @Override
-    // public void computeConstraintsAndEquivClasses() {
-    // AbstractLogicalOperator inp1 = (AbstractLogicalOperator)
-    // nestedPlanCreator.getOperator().getInputs().get(0)
-    // .getOperator();
-    // equivalenceClasses = inp1.getEquivalenceClasses();
-    // functionalDependencies = inp1.getFDs();
-    // }
-
     @Override
     public boolean isMap() {
         return false;
+    }
+
+    @Override
+    public IVariableTypeEnvironment computeTypeEnvironment(ITypingContext ctx) throws AlgebricksException {
+        ITypeEnvPointer[] p = new ITypeEnvPointer[1];
+        p[0] = new OpRefTypeEnvPointer(dataSourceReference.getOperator().getInputs().get(0), ctx);
+        return new PropagatingTypeEnvironment(ctx.getExpressionTypeComputer(), ctx.getNullableTypeComputer(),
+                TypePropagationPolicy.ALL, p);
     }
 
 }

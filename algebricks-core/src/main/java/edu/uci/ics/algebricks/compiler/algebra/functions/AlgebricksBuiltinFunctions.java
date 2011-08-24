@@ -72,7 +72,6 @@ public class AlgebricksBuiltinFunctions {
     }
 
     private static void add(FunctionIdentifier fi) {
-        fi.setIsBuiltin(true);
         algebricksBuiltinFunctions.put(fi, fi);
     }
 

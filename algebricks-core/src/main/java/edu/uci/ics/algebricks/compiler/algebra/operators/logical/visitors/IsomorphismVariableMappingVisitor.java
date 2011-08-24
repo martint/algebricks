@@ -116,9 +116,9 @@ public class IsomorphismVariableMappingVisitor implements ILogicalOperatorVisito
     @Override
     public Void visitNestedTupleSourceOperator(NestedTupleSourceOperator op, ILogicalOperator arg)
             throws AlgebricksException {
-        ILogicalOperator inputToCreator1 = op.getDataSourceReference().getOperator().getInputs().get(0).getOperator();
+        ILogicalOperator inputToCreator1 = op.getSourceOperator();
         NestedTupleSourceOperator nts = (NestedTupleSourceOperator) arg;
-        ILogicalOperator inputToCreator2 = nts.getDataSourceReference().getOperator().getInputs().get(0).getOperator();
+        ILogicalOperator inputToCreator2 = nts.getSourceOperator();
         inputToCreator1.accept(this, inputToCreator2);
         return null;
     }
@@ -262,8 +262,8 @@ public class IsomorphismVariableMappingVisitor implements ILogicalOperatorVisito
         List<LogicalVariable> producedVarRight = new ArrayList<LogicalVariable>();
         VariableUtilities.getProducedVariables(left, producedVarLeft);
         VariableUtilities.getProducedVariables(right, producedVarRight);
-        mapVariablesForAbstractAssign(producedVarLeft, leftOp.getExpressions(), producedVarRight,
-                rightOp.getExpressions());
+        mapVariablesForAbstractAssign(producedVarLeft, leftOp.getExpressions(), producedVarRight, rightOp
+                .getExpressions());
     }
 
     private void mapVariablesForGroupBy(ILogicalOperator left, ILogicalOperator right) throws AlgebricksException {

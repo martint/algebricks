@@ -17,11 +17,13 @@ package edu.uci.ics.algebricks.compiler.algebra.operators.logical;
 import java.util.ArrayList;
 
 import edu.uci.ics.algebricks.api.exceptions.AlgebricksException;
+import edu.uci.ics.algebricks.api.expr.IVariableTypeEnvironment;
 import edu.uci.ics.algebricks.compiler.algebra.base.ILogicalExpression;
 import edu.uci.ics.algebricks.compiler.algebra.base.LogicalExpressionReference;
 import edu.uci.ics.algebricks.compiler.algebra.base.LogicalOperatorTag;
 import edu.uci.ics.algebricks.compiler.algebra.base.LogicalVariable;
 import edu.uci.ics.algebricks.compiler.algebra.properties.VariablePropagationPolicy;
+import edu.uci.ics.algebricks.compiler.algebra.typing.ITypingContext;
 import edu.uci.ics.algebricks.compiler.algebra.visitors.ILogicalExpressionReferenceTransform;
 import edu.uci.ics.algebricks.compiler.algebra.visitors.ILogicalOperatorVisitor;
 
@@ -96,17 +98,14 @@ public class LimitOperator extends AbstractLogicalOperator {
         return VariablePropagationPolicy.ALL;
     }
 
-    // @Override
-    // public void computeConstraintsAndEquivClasses() {
-    // AbstractLogicalOperator inp1 = (AbstractLogicalOperator)
-    // inputs.get(0).getOperator();
-    // equivalenceClasses = inp1.getEquivalenceClasses();
-    // functionalDependencies = inp1.getFDs();
-    // }
-
     @Override
     public boolean isMap() {
         return true;
+    }
+
+    @Override
+    public IVariableTypeEnvironment computeTypeEnvironment(ITypingContext ctx) throws AlgebricksException {
+        return createPropagatingAllTypeEnvironment(ctx);
     }
 
 }

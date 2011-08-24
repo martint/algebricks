@@ -18,9 +18,12 @@ import java.util.ArrayList;
 import java.util.List;
 
 import edu.uci.ics.algebricks.api.exceptions.AlgebricksException;
+import edu.uci.ics.algebricks.api.expr.IVariableTypeEnvironment;
 import edu.uci.ics.algebricks.compiler.algebra.base.LogicalOperatorTag;
 import edu.uci.ics.algebricks.compiler.algebra.base.LogicalVariable;
 import edu.uci.ics.algebricks.compiler.algebra.properties.VariablePropagationPolicy;
+import edu.uci.ics.algebricks.compiler.algebra.typing.ITypingContext;
+import edu.uci.ics.algebricks.compiler.algebra.typing.NonPropagatingTypeEnvironment;
 import edu.uci.ics.algebricks.compiler.algebra.visitors.ILogicalExpressionReferenceTransform;
 import edu.uci.ics.algebricks.compiler.algebra.visitors.ILogicalOperatorVisitor;
 import edu.uci.ics.algebricks.utils.Triple;
@@ -50,7 +53,6 @@ public class UnionAllOperator extends AbstractLogicalOperator {
             @Override
             public void propagateVariables(IOperatorSchema target, IOperatorSchema... sources)
                     throws AlgebricksException {
-                // TODO Auto-generated method stub
                 for (Triple<LogicalVariable, LogicalVariable, LogicalVariable> t : varMap) {
                     target.addVariable(t.third);
                 }
@@ -95,6 +97,23 @@ public class UnionAllOperator extends AbstractLogicalOperator {
     @Override
     public boolean isMap() {
         return false;
+    }
+
+    @Override
+    public IVariableTypeEnvironment computeTypeEnvironment(ITypingContext ctx) throws AlgebricksException {
+        IVariableTypeEnvironment env = new NonPropagatingTypeEnvironment(ctx.getExpressionTypeComputer());
+        IVariableTypeEnvironment envLeft = ctx.getTypeEnvironment(inputs.get(0).getOperator());
+        if (envLeft == null) {
+            throw new AlgebricksException("Left input types for union operator are not computed.");
+        }
+        for (Triple<LogicalVariable, LogicalVariable, LogicalVariable> t : varMap) {
+            Object t1 = envLeft.getVarType(t.first);
+            if (t1 == null) {
+                throw new AlgebricksException("Failed typing union operator: no type for variable " + t.first);
+            }
+            env.setVarType(t.third, t1);
+        }
+        return env;
     }
 
 }

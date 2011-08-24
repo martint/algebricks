@@ -19,10 +19,12 @@ import java.util.Collection;
 import java.util.List;
 
 import edu.uci.ics.algebricks.api.exceptions.AlgebricksException;
+import edu.uci.ics.algebricks.api.expr.IVariableTypeEnvironment;
 import edu.uci.ics.algebricks.compiler.algebra.base.LogicalOperatorTag;
 import edu.uci.ics.algebricks.compiler.algebra.base.LogicalVariable;
 import edu.uci.ics.algebricks.compiler.algebra.metadata.IDataSource;
 import edu.uci.ics.algebricks.compiler.algebra.properties.VariablePropagationPolicy;
+import edu.uci.ics.algebricks.compiler.algebra.typing.ITypingContext;
 import edu.uci.ics.algebricks.compiler.algebra.visitors.ILogicalExpressionReferenceTransform;
 import edu.uci.ics.algebricks.compiler.algebra.visitors.ILogicalOperatorVisitor;
 
@@ -91,6 +93,18 @@ public class DataSourceScanOperator extends AbstractScanOperator {
                 }
             }
         };
+    }
+
+    @Override
+    public IVariableTypeEnvironment computeTypeEnvironment(ITypingContext ctx) throws AlgebricksException {
+        IVariableTypeEnvironment env = createPropagatingAllTypeEnvironment(ctx);
+        Object[] types = dataSource.getSchemaTypes();
+        int i = 0;
+        for (LogicalVariable v : variables) {
+            env.setVarType(v, types[i]);
+            ++i;
+        }
+        return env;
     }
 
 }

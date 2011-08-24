@@ -15,43 +15,33 @@
 package edu.uci.ics.algebricks.compiler.algebra.functions;
 
 public final class FunctionIdentifier {
-    private String namespace;
-    private String name;
-    private boolean isBuiltin;
-    private int arity;
+    final private String namespace;
+    final private String name;
+    final private boolean isBuiltin;
+    final private int arity;
 
     public final static int VARARGS = -1;
 
-    public FunctionIdentifier(String namespace, String name) {
-        this.setNamespace(namespace);
+    public FunctionIdentifier(String namespace, String name, boolean isBuiltin) {
+        this.namespace = namespace;
         this.name = name;
         this.arity = VARARGS;
-    }
-
-    public FunctionIdentifier(String namespace, String name, boolean isBuiltin) {
-        this(namespace, name);
         this.isBuiltin = isBuiltin;
     }
 
     public FunctionIdentifier(String namespace, String name, int arity, boolean isBuiltin) {
-        this(namespace, name, isBuiltin);
-        this.setArity(arity);
+        this.namespace = namespace;
+        this.name = name;
+        this.arity = arity;
+        this.isBuiltin = isBuiltin;
     }
 
     public String getName() {
         return name;
     }
 
-    public void setName(String name) {
-        this.name = name;
-    }
-
     public boolean isBuiltin() {
         return isBuiltin;
-    }
-
-    public void setIsBuiltin(boolean isBuiltin) {
-        this.isBuiltin = isBuiltin;
     }
 
     @Override
@@ -75,16 +65,8 @@ public final class FunctionIdentifier {
         return getNamespace() + ":" + name;
     }
 
-    public void setArity(int arity) {
-        this.arity = arity;
-    }
-
     public int getArity() {
         return arity;
-    }
-
-    public void setNamespace(String namespace) {
-        this.namespace = namespace;
     }
 
     public String getNamespace() {

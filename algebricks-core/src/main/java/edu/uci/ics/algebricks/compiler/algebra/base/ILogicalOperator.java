@@ -18,10 +18,12 @@ import java.util.List;
 import java.util.Map;
 
 import edu.uci.ics.algebricks.api.exceptions.AlgebricksException;
+import edu.uci.ics.algebricks.api.expr.IVariableTypeEnvironment;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.IOperatorSchema;
 import edu.uci.ics.algebricks.compiler.algebra.properties.IPhysicalPropertiesVector;
 import edu.uci.ics.algebricks.compiler.algebra.properties.PhysicalRequirements;
 import edu.uci.ics.algebricks.compiler.algebra.properties.VariablePropagationPolicy;
+import edu.uci.ics.algebricks.compiler.algebra.typing.ITypingContext;
 import edu.uci.ics.algebricks.compiler.algebra.visitors.ILogicalExpressionReferenceTransform;
 import edu.uci.ics.algebricks.compiler.algebra.visitors.ILogicalOperatorVisitor;
 import edu.uci.ics.algebricks.compiler.optimizer.base.IOptimizationContext;
@@ -66,6 +68,8 @@ public interface ILogicalOperator {
      * @return The VariablePropogationPolicy.
      */
     public VariablePropagationPolicy getVariablePropagationPolicy();
+
+    public IVariableTypeEnvironment computeTypeEnvironment(ITypingContext ctx) throws AlgebricksException;
 
     // structural properties
 
