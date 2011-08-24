@@ -32,10 +32,7 @@ import edu.uci.ics.algebricks.compiler.algebra.visitors.ILogicalExpressionRefere
 import edu.uci.ics.algebricks.compiler.algebra.visitors.ILogicalOperatorVisitor;
 
 public class NestedTupleSourceOperator extends AbstractLogicalOperator {
-    private LogicalOperatorReference dataSourceReference;
-
-    public NestedTupleSourceOperator() {
-    }
+    private final LogicalOperatorReference dataSourceReference;
 
     public NestedTupleSourceOperator(LogicalOperatorReference dataSourceReference) {
         this.dataSourceReference = dataSourceReference;
@@ -52,10 +49,6 @@ public class NestedTupleSourceOperator extends AbstractLogicalOperator {
 
     public LogicalOperatorReference getDataSourceReference() {
         return dataSourceReference;
-    }
-
-    public void setDataSourceReference(LogicalOperatorReference dataSourceReference) {
-        this.dataSourceReference = dataSourceReference;
     }
 
     @Override

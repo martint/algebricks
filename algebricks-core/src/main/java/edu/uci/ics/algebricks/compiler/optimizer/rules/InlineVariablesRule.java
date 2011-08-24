@@ -14,7 +14,6 @@
  */
 package edu.uci.ics.algebricks.compiler.optimizer.rules;
 
-import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -205,15 +204,15 @@ public class InlineVariablesRule implements IAlgebraicRewriteRule {
     // complex project push down.
     private void assignVarsNeededByProject(ProjectOperator op, List<EquivalenceClass> equivClasses,
             IOptimizationContext context) {
-        ArrayList<LogicalVariable> prVars = op.getVariables();
+        List<LogicalVariable> prVars = op.getVariables();
         int sz = prVars.size();
         for (int i = 0; i < sz; i++) {
             EquivalenceClass ec = findEquivClass(prVars.get(i), equivClasses);
             if (ec != null) {
                 if (ec.representativeIsConst()) {
                     LogicalOperatorReference opRef = op.getInputs().get(0);
-                    AssignOperator a = new AssignOperator(prVars.get(i), new LogicalExpressionReference(
-                            ec.getConstRepresentative()));
+                    AssignOperator a = new AssignOperator(prVars.get(i), new LogicalExpressionReference(ec
+                            .getConstRepresentative()));
                     a.getInputs().add(new LogicalOperatorReference(opRef.getOperator()));
                     opRef.setOperator(a);
                     // context.addToDontApplySet(this, a);

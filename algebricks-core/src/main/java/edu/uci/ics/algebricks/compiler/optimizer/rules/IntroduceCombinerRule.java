@@ -283,7 +283,7 @@ public class IntroduceCombinerRule implements IAlgebraicRewriteRule {
         if (!pushedVars.isEmpty()) {
             AggregateOperator pushedAgg = new AggregateOperator(pushedVars, pushedExprs);
             pushedAgg.setExecutionMode(ExecutionMode.LOCAL);
-            NestedTupleSourceOperator nts = new NestedTupleSourceOperator(newGbyOp.getInputs().get(0));
+            NestedTupleSourceOperator nts = new NestedTupleSourceOperator(new LogicalOperatorReference(newGbyOp));
             nts.setExecutionMode(ExecutionMode.LOCAL);
             pushedAgg.getInputs().add(new LogicalOperatorReference(nts));
             return new Pair<Boolean, LogicalOperatorReference>(true, new LogicalOperatorReference(pushedAgg));

@@ -587,7 +587,7 @@ public class IsomorphismOperatorVisitor implements ILogicalOperatorVisitor<Boole
         @Override
         public ILogicalOperator visitNestedTupleSourceOperator(NestedTupleSourceOperator op, Void arg)
                 throws AlgebricksException {
-            return new NestedTupleSourceOperator();
+            return new NestedTupleSourceOperator(null);
         }
 
         @Override

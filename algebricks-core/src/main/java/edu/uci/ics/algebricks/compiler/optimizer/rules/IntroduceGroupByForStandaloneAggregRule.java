@@ -79,7 +79,7 @@ public class IntroduceGroupByForStandaloneAggregRule implements IAlgebraicRewrit
             ILogicalExpression constOne = new ConstantExpression(new IntegerLiteral(new Integer(1)));
             groupByList.add(new Pair<LogicalVariable, LogicalExpressionReference>(gbyVar,
                     new LogicalExpressionReference(constOne)));
-            NestedTupleSourceOperator nts = new NestedTupleSourceOperator();
+            NestedTupleSourceOperator nts = new NestedTupleSourceOperator(new LogicalOperatorReference());
             List<LogicalOperatorReference> aggInpList = agg.getInputs();
             aggInpList.clear();
             aggInpList.add(new LogicalOperatorReference(nts));
@@ -89,7 +89,7 @@ public class IntroduceGroupByForStandaloneAggregRule implements IAlgebraicRewrit
             GroupByOperator gbyOp = new GroupByOperator(groupByList,
                     new ArrayList<Pair<LogicalVariable, LogicalExpressionReference>>(), nestedPlans);
             LogicalOperatorReference opRefGby = new LogicalOperatorReference(gbyOp);
-            nts.setDataSourceReference(opRefGby);
+            nts.getDataSourceReference().setOperator(gbyOp);
             gbyOp.getInputs().add(opRef3);
             List<LogicalOperatorReference> asgnInpList = assign.getInputs();
             asgnInpList.clear();

@@ -15,6 +15,7 @@
 package edu.uci.ics.algebricks.compiler.algebra.operators.logical;
 
 import java.util.ArrayList;
+import java.util.List;
 
 import edu.uci.ics.algebricks.api.exceptions.AlgebricksException;
 import edu.uci.ics.algebricks.api.expr.IVariableTypeEnvironment;
@@ -28,9 +29,9 @@ import edu.uci.ics.algebricks.compiler.algebra.visitors.ILogicalOperatorVisitor;
 
 public class ProjectOperator extends AbstractLogicalOperator {
 
-    private final ArrayList<LogicalVariable> variables;
+    private final List<LogicalVariable> variables;
 
-    public ProjectOperator(ArrayList<LogicalVariable> variables) {
+    public ProjectOperator(List<LogicalVariable> variables) {
         this.variables = variables;
     }
 
@@ -70,7 +71,7 @@ public class ProjectOperator extends AbstractLogicalOperator {
         return true;
     }
 
-    public ArrayList<LogicalVariable> getVariables() {
+    public List<LogicalVariable> getVariables() {
         return variables;
     }
 
