@@ -53,7 +53,7 @@ public class OneToOneExchangePOperator extends AbstractExchangePOperator {
 
     @Override
     public Pair<IConnectorDescriptor, TargetConstraint> createConnectorDescriptor(JobSpecification spec,
-            IOperatorSchema opSchema, JobGenContext context) {
+            ILogicalOperator op, IOperatorSchema opSchema, JobGenContext context) {
         IConnectorDescriptor conn = new OneToOneConnectorDescriptor(spec);
         return new Pair<IConnectorDescriptor, TargetConstraint>(conn, TargetConstraint.SAME_COUNT);
     }

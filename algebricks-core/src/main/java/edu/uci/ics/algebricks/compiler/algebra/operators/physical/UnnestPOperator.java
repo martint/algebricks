@@ -77,15 +77,11 @@ public class UnnestPOperator extends AbstractScanPOperator {
             throw new AlgebricksException("Unnest expression " + unnestExpr + " is not an unnesting function call.");
         }
         UnnestingFunctionCallExpression agg = (UnnestingFunctionCallExpression) unnestExpr;
-        IUnnestingFunctionFactory unnestingFactory = exprJobGen.createUnnestingFunctionFactory(agg, inputSchemas,
-                context);
-
-        Object t = context.getType(unnestExpr);
-        context.setVarType(unnest.getVariable(), t);
-
+        IUnnestingFunctionFactory unnestingFactory = exprJobGen.createUnnestingFunctionFactory(agg, context
+                .getTypeEnvironment(op.getInputs().get(0).getOperator()), inputSchemas, context);
         int[] projectionList = JobGenHelper.projectAllVariables(opSchema);
         UnnestRuntimeFactory unnestRuntime = new UnnestRuntimeFactory(outCol, unnestingFactory, projectionList);
-        RecordDescriptor recDesc = JobGenHelper.mkRecordDescriptor(opSchema, context);
+        RecordDescriptor recDesc = JobGenHelper.mkRecordDescriptor(op, opSchema, context);
         builder.contributeMicroOperator(unnest, unnestRuntime, recDesc);
         ILogicalOperator src = unnest.getInputs().get(0).getOperator();
         builder.contributeGraphEdge(src, 0, unnest, 0);

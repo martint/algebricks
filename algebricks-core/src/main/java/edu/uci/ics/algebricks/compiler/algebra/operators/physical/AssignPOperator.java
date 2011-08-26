@@ -67,18 +67,17 @@ public class AssignPOperator extends AbstractPhysicalOperator {
         IEvaluatorFactory[] evalFactories = new IEvaluatorFactory[expressions.size()];
         ILogicalExpressionJobGen exprJobGen = context.getExpressionJobGen();
         for (int i = 0; i < evalFactories.length; i++) {
-            evalFactories[i] = exprJobGen.createEvaluatorFactory(expressions.get(i).getExpression(), inputSchemas,
-                    context);
+            evalFactories[i] = exprJobGen.createEvaluatorFactory(expressions.get(i).getExpression(), context
+                    .getTypeEnvironment(op.getInputs().get(0).getOperator()), inputSchemas, context);
         }
 
         // TODO push projections into the operator
         int[] projectionList = JobGenHelper.projectAllVariables(opSchema);
 
         AssignRuntimeFactory runtime = new AssignRuntimeFactory(outColumns, evalFactories, projectionList);
-        setVarTypes(variables, expressions, context);
 
         // contribute one Asterix framewriter
-        RecordDescriptor recDesc = JobGenHelper.mkRecordDescriptor(opSchema, context);
+        RecordDescriptor recDesc = JobGenHelper.mkRecordDescriptor(op, opSchema, context);
         builder.contributeMicroOperator(assign, runtime, recDesc);
         // and contribute one edge from its child
         ILogicalOperator src = assign.getInputs().get(0).getOperator();
@@ -89,14 +88,6 @@ public class AssignPOperator extends AbstractPhysicalOperator {
     @Override
     public boolean isMicroOperator() {
         return true;
-    }
-
-    private void setVarTypes(List<LogicalVariable> vars, List<LogicalExpressionReference> exprs, JobGenContext context)
-            throws AlgebricksException {
-        int n = vars.size();
-        for (int i = 0; i < n; i++) {
-            context.setVarType(vars.get(i), context.getType(exprs.get(i).getExpression()));
-        }
     }
 
 }

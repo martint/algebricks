@@ -15,6 +15,7 @@
 package edu.uci.ics.algebricks.compiler.algebra.operators.logical;
 
 import java.util.ArrayList;
+import java.util.List;
 
 import edu.uci.ics.algebricks.api.exceptions.AlgebricksException;
 import edu.uci.ics.algebricks.api.expr.IVariableTypeEnvironment;
@@ -87,6 +88,12 @@ public class EmptyTupleSourceOperator extends AbstractLogicalOperator {
             @Override
             public Object getType(ILogicalExpression expr) throws AlgebricksException {
                 return ctx.getExpressionTypeComputer().getType(expr, this);
+            }
+
+            @Override
+            public Object getVarType(LogicalVariable var, List<LogicalVariable> nonNullVariables)
+                    throws AlgebricksException {
+                return null;
             }
         };
     }

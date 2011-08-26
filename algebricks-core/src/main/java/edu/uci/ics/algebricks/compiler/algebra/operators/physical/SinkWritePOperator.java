@@ -86,10 +86,12 @@ public class SinkWritePOperator extends AbstractPhysicalOperator {
             LogicalVariable v = varRef.getVariableReference();
             printColumns[i++] = inputSchemas[0].findVariable(v);
         }
-        RecordDescriptor recDesc = JobGenHelper.mkRecordDescriptor(propagatedSchema, context);
-        RecordDescriptor inputDesc = JobGenHelper.mkRecordDescriptor(inputSchemas[0], context);
+        RecordDescriptor recDesc = JobGenHelper.mkRecordDescriptor(op, propagatedSchema, context);
+        RecordDescriptor inputDesc = JobGenHelper.mkRecordDescriptor(op.getInputs().get(0).getOperator(),
+                inputSchemas[0], context);
 
-        IPrinterFactory[] pf = JobGenHelper.mkPrinterFactories(inputSchemas[0], context, printColumns);
+        IPrinterFactory[] pf = JobGenHelper.mkPrinterFactories(inputSchemas[0], context.getTypeEnvironment(op),
+                context, printColumns);
 
         IMetadataProvider<?, ?> mp = context.getMetadataProvider();
 

@@ -60,12 +60,12 @@ public class StreamSelectPOperator extends AbstractPhysicalOperator {
             throws AlgebricksException {
         SelectOperator select = (SelectOperator) op;
         ILogicalExpressionJobGen exprJobGen = context.getExpressionJobGen();
-        IEvaluatorFactory cond = exprJobGen.createEvaluatorFactory(select.getCondition().getExpression(), inputSchemas,
-                context);
+        IEvaluatorFactory cond = exprJobGen.createEvaluatorFactory(select.getCondition().getExpression(), context
+                .getTypeEnvironment(op), inputSchemas, context);
         StreamSelectRuntimeFactory runtime = new StreamSelectRuntimeFactory(cond, null, context
                 .getBinaryBooleanInspector());
         // contribute one Asterix framewriter
-        RecordDescriptor recDesc = JobGenHelper.mkRecordDescriptor(opSchema, context);
+        RecordDescriptor recDesc = JobGenHelper.mkRecordDescriptor(op, opSchema, context);
         builder.contributeMicroOperator(select, runtime, recDesc);
         // and contribute one edge from its child
         ILogicalOperator src = select.getInputs().get(0).getOperator();

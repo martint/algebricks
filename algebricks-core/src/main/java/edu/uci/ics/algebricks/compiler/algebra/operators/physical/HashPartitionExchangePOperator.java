@@ -19,6 +19,7 @@ import java.util.List;
 
 import edu.uci.ics.algebricks.api.data.IBinaryHashFunctionFactoryProvider;
 import edu.uci.ics.algebricks.api.exceptions.AlgebricksException;
+import edu.uci.ics.algebricks.api.expr.IVariableTypeEnvironment;
 import edu.uci.ics.algebricks.compiler.algebra.base.ILogicalOperator;
 import edu.uci.ics.algebricks.compiler.algebra.base.LogicalVariable;
 import edu.uci.ics.algebricks.compiler.algebra.base.PhysicalOperatorTag;
@@ -82,14 +83,15 @@ public class HashPartitionExchangePOperator extends AbstractExchangePOperator {
 
     @Override
     public Pair<IConnectorDescriptor, TargetConstraint> createConnectorDescriptor(JobSpecification spec,
-            IOperatorSchema opSchema, JobGenContext context) throws AlgebricksException {
+            ILogicalOperator op, IOperatorSchema opSchema, JobGenContext context) throws AlgebricksException {
         int[] keys = new int[hashFields.size()];
         IBinaryHashFunctionFactory[] hashFunctionFactories = new IBinaryHashFunctionFactory[hashFields.size()];
         int i = 0;
         IBinaryHashFunctionFactoryProvider hashFunProvider = context.getBinaryHashFunctionFactoryProvider();
+        IVariableTypeEnvironment env = context.getTypeEnvironment(op);
         for (LogicalVariable v : hashFields) {
             keys[i] = opSchema.findVariable(v);
-            hashFunctionFactories[i] = hashFunProvider.getBinaryHashFunctionFactory(context.getVarType(v));
+            hashFunctionFactories[i] = hashFunProvider.getBinaryHashFunctionFactory(env.getVarType(v));
             ++i;
         }
         ITuplePartitionComputerFactory tpcf = new FieldHashPartitionComputerFactory(keys, hashFunctionFactories);

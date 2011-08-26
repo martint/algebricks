@@ -61,12 +61,6 @@ public class PreclusteredGroupByPOperator extends AbstractPreclusteredGroupByPOp
             throws AlgebricksException {
         int keys[] = JobGenHelper.variablesToFieldIndexes(columnList, inputSchemas[0]);
         GroupByOperator gby = (GroupByOperator) op;
-        for (Pair<LogicalVariable, LogicalExpressionReference> p : gby.getGroupByList()) {
-            ILogicalExpression expr = p.second.getExpression();
-            if (p.first != null) {
-                context.setVarType(p.first, context.getType(expr));
-            }
-        }
         int numFds = gby.getDecorList().size();
         int fdColumns[] = new int[numFds];
         int j = 0;
@@ -74,9 +68,6 @@ public class PreclusteredGroupByPOperator extends AbstractPreclusteredGroupByPOp
             ILogicalExpression expr = p.second.getExpression();
             if (expr.getExpressionTag() != LogicalExpressionTag.VARIABLE) {
                 throw new AlgebricksException("pre-sorted group-by expects variable references.");
-            }
-            if (p.first != null) {
-                context.setVarType(p.first, context.getType(expr));
             }
             VariableReferenceExpression v = (VariableReferenceExpression) expr;
             LogicalVariable decor = v.getVariableReference();
@@ -89,8 +80,8 @@ public class PreclusteredGroupByPOperator extends AbstractPreclusteredGroupByPOp
 
         JobSpecification spec = builder.getJobSpec();
         IBinaryComparatorFactory[] comparatorFactories = JobGenHelper.variablesToAscBinaryComparatorFactories(
-                columnList, context);
-        RecordDescriptor recordDescriptor = JobGenHelper.mkRecordDescriptor(opSchema, context);
+                columnList, context.getTypeEnvironment(op), context);
+        RecordDescriptor recordDescriptor = JobGenHelper.mkRecordDescriptor(op, opSchema, context);
 
         PreclusteredGroupOperatorDescriptor opDesc = new PreclusteredGroupOperatorDescriptor(spec, keys,
                 comparatorFactories, aggregatorFactory, recordDescriptor);

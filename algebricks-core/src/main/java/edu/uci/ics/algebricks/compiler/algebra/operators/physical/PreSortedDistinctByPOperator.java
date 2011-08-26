@@ -106,12 +106,12 @@ public class PreSortedDistinctByPOperator extends AbstractPhysicalOperator {
             }
         }
         IBinaryComparatorFactory[] comparatorFactories = JobGenHelper.variablesToAscBinaryComparatorFactories(
-                columnList, context);
+                columnList, context.getTypeEnvironment(op), context);
         IAggregateFunctionFactory[] aggFactories = new IAggregateFunctionFactory[] {};
         IAccumulatingAggregatorFactory aggregatorFactory = new SimpleAlgebricksAccumulatingAggregatorFactory(
                 aggFactories, keys, fdColumns);
 
-        RecordDescriptor recordDescriptor = JobGenHelper.mkRecordDescriptor(opSchema, context);
+        RecordDescriptor recordDescriptor = JobGenHelper.mkRecordDescriptor(op, opSchema, context);
         PreclusteredGroupOperatorDescriptor opDesc = new PreclusteredGroupOperatorDescriptor(spec, keys,
                 comparatorFactories, aggregatorFactory, recordDescriptor);
 

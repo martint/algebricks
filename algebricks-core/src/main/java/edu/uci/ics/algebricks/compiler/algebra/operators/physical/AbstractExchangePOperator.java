@@ -28,7 +28,7 @@ public abstract class AbstractExchangePOperator extends AbstractPhysicalOperator
     public void contributeRuntimeOperator(IHyracksJobBuilder builder, JobGenContext context, ILogicalOperator op,
             IOperatorSchema opSchema, IOperatorSchema[] inputSchemas, IOperatorSchema outerPlanSchema)
             throws AlgebricksException {
-        Pair<IConnectorDescriptor, TargetConstraint> connPair = createConnectorDescriptor(builder.getJobSpec(),
+        Pair<IConnectorDescriptor, TargetConstraint> connPair = createConnectorDescriptor(builder.getJobSpec(), op,
                 opSchema, context);
         builder.contributeConnectorWithTargetConstraint(op, connPair.first, connPair.second);
         ILogicalOperator src = op.getInputs().get(0).getOperator();
@@ -41,5 +41,5 @@ public abstract class AbstractExchangePOperator extends AbstractPhysicalOperator
     }
 
     public abstract Pair<IConnectorDescriptor, TargetConstraint> createConnectorDescriptor(JobSpecification spec,
-            IOperatorSchema opSchema, JobGenContext context) throws AlgebricksException;
+            ILogicalOperator op, IOperatorSchema opSchema, JobGenContext context) throws AlgebricksException;
 }

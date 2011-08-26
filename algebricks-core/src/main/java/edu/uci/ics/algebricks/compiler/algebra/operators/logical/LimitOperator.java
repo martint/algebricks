@@ -105,7 +105,7 @@ public class LimitOperator extends AbstractLogicalOperator {
 
     @Override
     public IVariableTypeEnvironment computeTypeEnvironment(ITypingContext ctx) throws AlgebricksException {
-        return createPropagatingAllTypeEnvironment(ctx);
+        return createPropagatingAllInputsTypeEnvironment(ctx);
     }
 
 }

@@ -89,7 +89,7 @@ public class PigletCompiler {
         DEFAULT_PHYSICAL_REWRITES.add(new Pair<AbstractRuleController, List<IAlgebraicRewriteRule>>(seqOnceCtrl,
                 PigletRewriteRuleset.PHYSICAL_PLAN_REWRITES));
         DEFAULT_PHYSICAL_REWRITES.add(new Pair<AbstractRuleController, List<IAlgebraicRewriteRule>>(seqOnceCtrl,
-                PigletRewriteRuleset.ISOLATE_HYRAX_OPS));
+                PigletRewriteRuleset.PREPARE_FOR_JOBGEN));
     }
 
     private final ICompilerFactory cFactory;

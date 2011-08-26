@@ -29,20 +29,23 @@ import edu.uci.ics.algebricks.runtime.hyracks.jobgen.impl.JobGenContext;
 
 public interface ILogicalExpressionJobGen {
 
-    public IEvaluatorFactory createEvaluatorFactory(ILogicalExpression expr, IOperatorSchema[] inputSchemas,
-            JobGenContext context) throws AlgebricksException;
+    public IEvaluatorFactory createEvaluatorFactory(ILogicalExpression expr, IVariableTypeEnvironment env,
+            IOperatorSchema[] inputSchemas, JobGenContext context) throws AlgebricksException;
 
     public IAggregateFunctionFactory createAggregateFunctionFactory(AggregateFunctionCallExpression expr,
-            IOperatorSchema[] inputSchemas, JobGenContext context) throws AlgebricksException;
-
-    public ISerializableAggregateFunctionFactory createSerializableAggregateFunctionFactory(
-            AggregateFunctionCallExpression expr, IOperatorSchema[] inputSchemas, JobGenContext context)
+            IVariableTypeEnvironment env, IOperatorSchema[] inputSchemas, JobGenContext context)
             throws AlgebricksException;
 
+    public ISerializableAggregateFunctionFactory createSerializableAggregateFunctionFactory(
+            AggregateFunctionCallExpression expr, IVariableTypeEnvironment env, IOperatorSchema[] inputSchemas,
+            JobGenContext context) throws AlgebricksException;
+
     public IRunningAggregateFunctionFactory createRunningAggregateFunctionFactory(StatefulFunctionCallExpression expr,
-            IOperatorSchema[] inputSchemas, JobGenContext context) throws AlgebricksException;
+            IVariableTypeEnvironment env, IOperatorSchema[] inputSchemas, JobGenContext context)
+            throws AlgebricksException;
 
     public IUnnestingFunctionFactory createUnnestingFunctionFactory(UnnestingFunctionCallExpression expr,
-            IOperatorSchema[] inputSchemas, JobGenContext context) throws AlgebricksException;
+            IVariableTypeEnvironment env, IOperatorSchema[] inputSchemas, JobGenContext context)
+            throws AlgebricksException;
 
 }

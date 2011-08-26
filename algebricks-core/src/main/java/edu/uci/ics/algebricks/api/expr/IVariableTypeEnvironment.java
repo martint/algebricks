@@ -14,12 +14,16 @@
  */
 package edu.uci.ics.algebricks.api.expr;
 
+import java.util.List;
+
 import edu.uci.ics.algebricks.api.exceptions.AlgebricksException;
 import edu.uci.ics.algebricks.compiler.algebra.base.ILogicalExpression;
 import edu.uci.ics.algebricks.compiler.algebra.base.LogicalVariable;
 
 public interface IVariableTypeEnvironment {
     public Object getVarType(LogicalVariable var) throws AlgebricksException;
+
+    public Object getVarType(LogicalVariable var, List<LogicalVariable> nonNullVariables) throws AlgebricksException;
 
     public void setVarType(LogicalVariable var, Object type);
 

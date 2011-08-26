@@ -97,7 +97,7 @@ public class DataSourceScanOperator extends AbstractScanOperator {
 
     @Override
     public IVariableTypeEnvironment computeTypeEnvironment(ITypingContext ctx) throws AlgebricksException {
-        IVariableTypeEnvironment env = createPropagatingAllTypeEnvironment(ctx);
+        IVariableTypeEnvironment env = createPropagatingAllInputsTypeEnvironment(ctx);
         Object[] types = dataSource.getSchemaTypes();
         int i = 0;
         for (LogicalVariable v : variables) {

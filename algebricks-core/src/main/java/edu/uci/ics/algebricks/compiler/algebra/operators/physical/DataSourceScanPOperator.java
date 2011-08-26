@@ -66,14 +66,7 @@ public class DataSourceScanPOperator extends AbstractScanPOperator {
         DataSourceScanOperator scan = (DataSourceScanOperator) op;
         IMetadataProvider mp = context.getMetadataProvider();
 
-        Object[] types = dataSource.getSchemaTypes();
         List<LogicalVariable> vars = scan.getVariables();
-        int i = 0;
-        for (LogicalVariable v : vars) {
-            context.setVarType(v, types[i]);
-            ++i;
-        }
-
         List<LogicalVariable> projectVars = scan.getProjectVariables();
         Pair<IOperatorDescriptor, AlgebricksPartitionConstraint> p = mp.getScannerRuntime(dataSource, vars,
                 projectVars, scan.isProjectPushed(), context, builder.getJobSpec());

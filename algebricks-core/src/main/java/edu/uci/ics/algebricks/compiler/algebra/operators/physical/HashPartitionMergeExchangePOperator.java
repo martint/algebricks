@@ -22,6 +22,7 @@ import java.util.List;
 import edu.uci.ics.algebricks.api.data.IBinaryComparatorFactoryProvider;
 import edu.uci.ics.algebricks.api.data.IBinaryHashFunctionFactoryProvider;
 import edu.uci.ics.algebricks.api.exceptions.AlgebricksException;
+import edu.uci.ics.algebricks.api.expr.IVariableTypeEnvironment;
 import edu.uci.ics.algebricks.compiler.algebra.base.ILogicalOperator;
 import edu.uci.ics.algebricks.compiler.algebra.base.LogicalVariable;
 import edu.uci.ics.algebricks.compiler.algebra.base.PhysicalOperatorTag;
@@ -123,15 +124,16 @@ public class HashPartitionMergeExchangePOperator extends AbstractExchangePOperat
 
     @Override
     public Pair<IConnectorDescriptor, TargetConstraint> createConnectorDescriptor(JobSpecification spec,
-            IOperatorSchema opSchema, JobGenContext context) throws AlgebricksException {
+            ILogicalOperator op, IOperatorSchema opSchema, JobGenContext context) throws AlgebricksException {
         int[] keys = new int[partitionFields.size()];
         IBinaryHashFunctionFactory[] hashFunctionFactories = new IBinaryHashFunctionFactory[partitionFields.size()];
+        IVariableTypeEnvironment env = context.getTypeEnvironment(op);
         {
             int i = 0;
             IBinaryHashFunctionFactoryProvider hashFunProvider = context.getBinaryHashFunctionFactoryProvider();
             for (LogicalVariable v : partitionFields) {
                 keys[i] = opSchema.findVariable(v);
-                hashFunctionFactories[i] = hashFunProvider.getBinaryHashFunctionFactory(context.getVarType(v));
+                hashFunctionFactories[i] = hashFunProvider.getBinaryHashFunctionFactory(env.getVarType(v));
                 ++i;
             }
         }
@@ -145,7 +147,7 @@ public class HashPartitionMergeExchangePOperator extends AbstractExchangePOperat
             for (OrderColumn oc : orderColumns) {
                 LogicalVariable var = oc.getColumn();
                 sortFields[j] = opSchema.findVariable(var);
-                Object type = context.getVarType(var);
+                Object type = env.getVarType(var);
                 IBinaryComparatorFactoryProvider bcfp = context.getBinaryComparatorFactoryProvider();
                 comparatorFactories[j] = bcfp.getBinaryComparatorFactory(type, oc.getOrder());
                 j++;

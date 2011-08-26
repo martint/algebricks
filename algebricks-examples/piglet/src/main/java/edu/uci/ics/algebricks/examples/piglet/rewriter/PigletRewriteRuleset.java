@@ -13,6 +13,7 @@ import edu.uci.ics.algebricks.compiler.optimizer.rules.EnforceStructuralProperti
 import edu.uci.ics.algebricks.compiler.optimizer.rules.ExtractCommonOperatorsRule;
 import edu.uci.ics.algebricks.compiler.optimizer.rules.ExtractGbyExpressionsRule;
 import edu.uci.ics.algebricks.compiler.optimizer.rules.FactorRedundantGroupAndDecorVarsRule;
+import edu.uci.ics.algebricks.compiler.optimizer.rules.InferTypesRule;
 import edu.uci.ics.algebricks.compiler.optimizer.rules.InlineVariablesRule;
 import edu.uci.ics.algebricks.compiler.optimizer.rules.IntroduceGroupByForStandaloneAggregRule;
 import edu.uci.ics.algebricks.compiler.optimizer.rules.IsolateHyracksOperatorsRule;
@@ -84,12 +85,13 @@ public class PigletRewriteRuleset {
         PHYSICAL_PLAN_REWRITES.add(new PushLimitDownRule());
     }
 
-    public final static LinkedList<IAlgebraicRewriteRule> ISOLATE_HYRAX_OPS = new LinkedList<IAlgebraicRewriteRule>();
+    public final static LinkedList<IAlgebraicRewriteRule> PREPARE_FOR_JOBGEN = new LinkedList<IAlgebraicRewriteRule>();
     static {
-        ISOLATE_HYRAX_OPS.add(new IsolateHyracksOperatorsRule(
+        PREPARE_FOR_JOBGEN.add(new IsolateHyracksOperatorsRule(
                 HeuristicOptimizer.hyraxOperatorsBelowWhichJobGenIsDisabled));
-        ISOLATE_HYRAX_OPS.add(new ExtractCommonOperatorsRule());
-        ISOLATE_HYRAX_OPS.add(new PushProjectIntoDataSourceScanRule());
+        PREPARE_FOR_JOBGEN.add(new ExtractCommonOperatorsRule());
+        PREPARE_FOR_JOBGEN.add(new PushProjectIntoDataSourceScanRule());
+        PREPARE_FOR_JOBGEN.add(new InferTypesRule());
     }
 
 }

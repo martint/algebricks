@@ -19,7 +19,6 @@ import java.util.List;
 
 import edu.uci.ics.algebricks.api.exceptions.AlgebricksException;
 import edu.uci.ics.algebricks.api.expr.ILogicalExpressionJobGen;
-import edu.uci.ics.algebricks.compiler.algebra.base.ILogicalExpression;
 import edu.uci.ics.algebricks.compiler.algebra.base.ILogicalOperator;
 import edu.uci.ics.algebricks.compiler.algebra.base.LogicalExpressionReference;
 import edu.uci.ics.algebricks.compiler.algebra.base.LogicalVariable;
@@ -80,14 +79,14 @@ public class AggregatePOperator extends AbstractPhysicalOperator {
         for (int i = 0; i < aggFactories.length; i++) {
             AggregateFunctionCallExpression aggFun = (AggregateFunctionCallExpression) expressions.get(i)
                     .getExpression();
-            aggFactories[i] = exprJobGen.createAggregateFunctionFactory(aggFun, inputSchemas, context);
+            aggFactories[i] = exprJobGen.createAggregateFunctionFactory(aggFun, context.getTypeEnvironment(op
+                    .getInputs().get(0).getOperator()), inputSchemas, context);
         }
 
         AggregateRuntimeFactory runtime = new AggregateRuntimeFactory(aggFactories);
-        setVarTypes(variables, expressions, context);
 
         // contribute one Asterix framewriter
-        RecordDescriptor recDesc = JobGenHelper.mkRecordDescriptor(opSchema, context);
+        RecordDescriptor recDesc = JobGenHelper.mkRecordDescriptor(op, opSchema, context);
         builder.contributeMicroOperator(aggOp, runtime, recDesc);
         // and contribute one edge from its child
         ILogicalOperator src = aggOp.getInputs().get(0).getOperator();
@@ -97,16 +96,6 @@ public class AggregatePOperator extends AbstractPhysicalOperator {
     @Override
     public boolean isMicroOperator() {
         return true;
-    }
-
-    private void setVarTypes(List<LogicalVariable> vars, List<LogicalExpressionReference> exprs, JobGenContext context)
-            throws AlgebricksException {
-        int n = vars.size();
-        for (int i = 0; i < n; i++) {
-            ILogicalExpression expr = exprs.get(i).getExpression();
-            Object t = context.getType(expr);
-            context.setVarType(vars.get(i), t);
-        }
     }
 
 }

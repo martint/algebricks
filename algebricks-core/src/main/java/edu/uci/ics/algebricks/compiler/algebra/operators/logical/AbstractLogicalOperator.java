@@ -20,7 +20,6 @@ import java.util.List;
 import java.util.Map;
 
 import edu.uci.ics.algebricks.api.exceptions.AlgebricksException;
-import edu.uci.ics.algebricks.api.expr.IVariableTypeEnvironment;
 import edu.uci.ics.algebricks.compiler.algebra.base.ILogicalOperator;
 import edu.uci.ics.algebricks.compiler.algebra.base.IPhysicalOperator;
 import edu.uci.ics.algebricks.compiler.algebra.base.LogicalOperatorReference;
@@ -169,7 +168,7 @@ public abstract class AbstractLogicalOperator implements ILogicalOperator {
         return bJobGenEnabled;
     }
 
-    protected IVariableTypeEnvironment createPropagatingAllTypeEnvironment(ITypingContext ctx) {
+    protected PropagatingTypeEnvironment createPropagatingAllInputsTypeEnvironment(ITypingContext ctx) {
         int n = inputs.size();
         ITypeEnvPointer[] envPointers = new ITypeEnvPointer[n];
         for (int i = 0; i < n; i++) {

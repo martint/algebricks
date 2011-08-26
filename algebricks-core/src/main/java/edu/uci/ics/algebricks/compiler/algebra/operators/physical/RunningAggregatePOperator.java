@@ -93,7 +93,8 @@ public class RunningAggregatePOperator extends AbstractPhysicalOperator {
         ILogicalExpressionJobGen exprJobGen = context.getExpressionJobGen();
         for (int i = 0; i < runningAggFuns.length; i++) {
             StatefulFunctionCallExpression expr = (StatefulFunctionCallExpression) expressions.get(i).getExpression();
-            runningAggFuns[i] = exprJobGen.createRunningAggregateFunctionFactory(expr, inputSchemas, context);
+            runningAggFuns[i] = exprJobGen.createRunningAggregateFunctionFactory(expr, context.getTypeEnvironment(op
+                    .getInputs().get(0).getOperator()), inputSchemas, context);
         }
 
         // TODO push projections into the operator
@@ -101,10 +102,9 @@ public class RunningAggregatePOperator extends AbstractPhysicalOperator {
 
         RunningAggregateRuntimeFactory runtime = new RunningAggregateRuntimeFactory(outColumns, runningAggFuns,
                 projectionList);
-        setVarTypes(variables, expressions, context);
 
         // contribute one Asterix framewriter
-        RecordDescriptor recDesc = JobGenHelper.mkRecordDescriptor(opSchema, context);
+        RecordDescriptor recDesc = JobGenHelper.mkRecordDescriptor(op, opSchema, context);
         builder.contributeMicroOperator(ragg, runtime, recDesc);
         // and contribute one edge from its child
         ILogicalOperator src = ragg.getInputs().get(0).getOperator();
@@ -112,11 +112,4 @@ public class RunningAggregatePOperator extends AbstractPhysicalOperator {
 
     }
 
-    private void setVarTypes(List<LogicalVariable> vars, List<LogicalExpressionReference> exprs, JobGenContext context)
-            throws AlgebricksException {
-        int n = vars.size();
-        for (int i = 0; i < n; i++) {
-            context.setVarType(vars.get(i), context.getType(exprs.get(i).getExpression()));
-        }
-    }
 }

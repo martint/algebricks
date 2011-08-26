@@ -18,11 +18,17 @@ import java.util.ArrayList;
 
 import edu.uci.ics.algebricks.api.exceptions.AlgebricksException;
 import edu.uci.ics.algebricks.api.expr.IVariableTypeEnvironment;
+import edu.uci.ics.algebricks.compiler.algebra.base.ILogicalExpression;
 import edu.uci.ics.algebricks.compiler.algebra.base.LogicalExpressionReference;
+import edu.uci.ics.algebricks.compiler.algebra.base.LogicalExpressionTag;
 import edu.uci.ics.algebricks.compiler.algebra.base.LogicalOperatorTag;
 import edu.uci.ics.algebricks.compiler.algebra.base.LogicalVariable;
+import edu.uci.ics.algebricks.compiler.algebra.expressions.AbstractFunctionCallExpression;
+import edu.uci.ics.algebricks.compiler.algebra.expressions.VariableReferenceExpression;
+import edu.uci.ics.algebricks.compiler.algebra.functions.AlgebricksBuiltinFunctions;
 import edu.uci.ics.algebricks.compiler.algebra.properties.VariablePropagationPolicy;
 import edu.uci.ics.algebricks.compiler.algebra.typing.ITypingContext;
+import edu.uci.ics.algebricks.compiler.algebra.typing.PropagatingTypeEnvironment;
 import edu.uci.ics.algebricks.compiler.algebra.visitors.ILogicalExpressionReferenceTransform;
 import edu.uci.ics.algebricks.compiler.algebra.visitors.ILogicalOperatorVisitor;
 
@@ -69,7 +75,24 @@ public class SelectOperator extends AbstractLogicalOperator {
 
     @Override
     public IVariableTypeEnvironment computeTypeEnvironment(ITypingContext ctx) throws AlgebricksException {
-        return createPropagatingAllTypeEnvironment(ctx);
+        PropagatingTypeEnvironment env = createPropagatingAllInputsTypeEnvironment(ctx);
+        if (condition.getExpression().getExpressionTag() == LogicalExpressionTag.FUNCTION_CALL) {
+            AbstractFunctionCallExpression f1 = (AbstractFunctionCallExpression) condition.getExpression();
+            if (f1.getFunctionIdentifier() == AlgebricksBuiltinFunctions.NOT) {
+                ILogicalExpression a1 = f1.getArguments().get(0).getExpression();
+                if (a1.getExpressionTag() == LogicalExpressionTag.FUNCTION_CALL) {
+                    AbstractFunctionCallExpression f2 = (AbstractFunctionCallExpression) a1;
+                    if (f2.getFunctionIdentifier() == AlgebricksBuiltinFunctions.IS_NULL) {
+                        ILogicalExpression a2 = f2.getArguments().get(0).getExpression();
+                        if (a2.getExpressionTag() == LogicalExpressionTag.VARIABLE) {
+                            LogicalVariable var = ((VariableReferenceExpression) a2).getVariableReference();
+                            env.getNonNullVariables().add(var);
+                        }
+                    }
+                }
+            }
+        }
+        return env;
     }
 
 }

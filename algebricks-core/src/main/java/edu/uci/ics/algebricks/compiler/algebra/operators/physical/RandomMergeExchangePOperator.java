@@ -53,7 +53,7 @@ public class RandomMergeExchangePOperator extends AbstractExchangePOperator {
 
     @Override
     public Pair<IConnectorDescriptor, TargetConstraint> createConnectorDescriptor(JobSpecification spec,
-            IOperatorSchema opSchema, JobGenContext context) {
+            ILogicalOperator op, IOperatorSchema opSchema, JobGenContext context) {
         IConnectorDescriptor conn = new MToNReplicatingConnectorDescriptor(spec);
         return new Pair<IConnectorDescriptor, TargetConstraint>(conn, TargetConstraint.ONE);
     }

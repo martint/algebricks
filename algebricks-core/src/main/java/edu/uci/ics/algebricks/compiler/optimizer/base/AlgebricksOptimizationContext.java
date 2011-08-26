@@ -243,4 +243,5 @@ public class AlgebricksOptimizationContext implements IOptimizationContext {
     public INullableTypeComputer getNullableTypeComputer() {
         return nullableTypeComputer;
     }
+
 }

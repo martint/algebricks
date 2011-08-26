@@ -78,7 +78,7 @@ public class AssignOperator extends AbstractAssignOperator {
 
     @Override
     public IVariableTypeEnvironment computeTypeEnvironment(ITypingContext ctx) throws AlgebricksException {
-        IVariableTypeEnvironment env = createPropagatingAllTypeEnvironment(ctx);
+        IVariableTypeEnvironment env = createPropagatingAllInputsTypeEnvironment(ctx);
         int n = variables.size();
         for (int i = 0; i < n; i++) {
             env.setVarType(variables.get(i), ctx.getExpressionTypeComputer().getType(

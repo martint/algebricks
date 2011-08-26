@@ -3,6 +3,7 @@ package edu.uci.ics.algebricks.compiler.algebra.operators.physical;
 import java.util.List;
 
 import edu.uci.ics.algebricks.api.exceptions.AlgebricksException;
+import edu.uci.ics.algebricks.api.expr.IVariableTypeEnvironment;
 import edu.uci.ics.algebricks.compiler.algebra.base.ILogicalExpression;
 import edu.uci.ics.algebricks.compiler.algebra.base.ILogicalOperator;
 import edu.uci.ics.algebricks.compiler.algebra.base.LogicalExpressionReference;
@@ -45,22 +46,14 @@ public class MicroPreclusteredGroupByPOperator extends AbstractPreclusteredGroup
             throws AlgebricksException {
         int keys[] = JobGenHelper.variablesToFieldIndexes(columnList, inputSchemas[0]);
         GroupByOperator gby = (GroupByOperator) op;
-        for (Pair<LogicalVariable, LogicalExpressionReference> p : gby.getGroupByList()) {
-            ILogicalExpression expr = p.second.getExpression();
-            if (p.first != null) {
-                context.setVarType(p.first, context.getType(expr));
-            }
-        }
         int numFds = gby.getDecorList().size();
         int fdColumns[] = new int[numFds];
+        IVariableTypeEnvironment env = context.getTypeEnvironment(op);
         int j = 0;
         for (Pair<LogicalVariable, LogicalExpressionReference> p : gby.getDecorList()) {
             ILogicalExpression expr = p.second.getExpression();
             if (expr.getExpressionTag() != LogicalExpressionTag.VARIABLE) {
                 throw new AlgebricksException("pre-sorted group-by expects variable references.");
-            }
-            if (p.first != null) {
-                context.setVarType(p.first, context.getType(expr));
             }
             VariableReferenceExpression v = (VariableReferenceExpression) expr;
             LogicalVariable decor = v.getVariableReference();
@@ -72,9 +65,10 @@ public class MicroPreclusteredGroupByPOperator extends AbstractPreclusteredGroup
                 fdColumns);
 
         IBinaryComparatorFactory[] comparatorFactories = JobGenHelper.variablesToAscBinaryComparatorFactories(
-                columnList, context);
-        RecordDescriptor recordDescriptor = JobGenHelper.mkRecordDescriptor(opSchema, context);
-        RecordDescriptor inputRecordDesc = JobGenHelper.mkRecordDescriptor(inputSchemas[0], context);
+                columnList, env, context);
+        RecordDescriptor recordDescriptor = JobGenHelper.mkRecordDescriptor(op, opSchema, context);
+        RecordDescriptor inputRecordDesc = JobGenHelper.mkRecordDescriptor(op.getInputs().get(0).getOperator(),
+                inputSchemas[0], context);
         MicroPreClusteredGroupRuntimeFactory runtime = new MicroPreClusteredGroupRuntimeFactory(keys,
                 comparatorFactories, aggregatorFactory, inputRecordDesc, recordDescriptor, null);
         builder.contributeMicroOperator(gby, runtime, recordDescriptor);

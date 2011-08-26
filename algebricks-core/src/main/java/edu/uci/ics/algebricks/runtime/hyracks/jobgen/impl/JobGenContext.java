@@ -30,6 +30,7 @@ import edu.uci.ics.algebricks.api.exceptions.AlgebricksException;
 import edu.uci.ics.algebricks.api.expr.IExpressionEvalSizeComputer;
 import edu.uci.ics.algebricks.api.expr.IExpressionTypeComputer;
 import edu.uci.ics.algebricks.api.expr.ILogicalExpressionJobGen;
+import edu.uci.ics.algebricks.api.expr.INullableTypeComputer;
 import edu.uci.ics.algebricks.api.expr.IPartialAggregationTypeComputer;
 import edu.uci.ics.algebricks.api.expr.IVariableTypeEnvironment;
 import edu.uci.ics.algebricks.compiler.algebra.base.ILogicalExpression;
@@ -37,12 +38,12 @@ import edu.uci.ics.algebricks.compiler.algebra.base.ILogicalOperator;
 import edu.uci.ics.algebricks.compiler.algebra.base.LogicalVariable;
 import edu.uci.ics.algebricks.compiler.algebra.metadata.IMetadataProvider;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.IOperatorSchema;
+import edu.uci.ics.algebricks.compiler.algebra.typing.ITypingContext;
 import edu.uci.ics.hyracks.api.dataflow.value.INullWriterFactory;
 
-public class JobGenContext implements IVariableTypeEnvironment {
+public class JobGenContext {
     private final IOperatorSchema outerFlowSchema;
     private final Map<ILogicalOperator, IOperatorSchema> schemaMap = new HashMap<ILogicalOperator, IOperatorSchema>();
-    private final Map<LogicalVariable, Object> varTypeMap = new HashMap<LogicalVariable, Object>();
     private final ISerializerDeserializerProvider serializerDeserializerProvider;
     private final IBinaryHashFunctionFactoryProvider hashFunctionFactoryProvider;
     private final IBinaryComparatorFactoryProvider comparatorFactoryProvider;
@@ -61,6 +62,7 @@ public class JobGenContext implements IVariableTypeEnvironment {
     private final int frameSize;
     private AlgebricksPartitionConstraint clusterLocations;
     private int varCounter;
+    private final ITypingContext typingContext;
 
     public JobGenContext(IOperatorSchema outerFlowSchema, IMetadataProvider<?, ?> metadataProvider, Object appContext,
             ISerializerDeserializerProvider serializerDeserializerProvider,
@@ -70,6 +72,7 @@ public class JobGenContext implements IVariableTypeEnvironment {
             IPrinterFactoryProvider printerFactoryProvider, INullWriterFactory nullWriterFactory,
             INormalizedKeyComputerFactoryProvider normalizedKeyComputerFactoryProvider,
             ILogicalExpressionJobGen exprJobGen, IExpressionTypeComputer expressionTypeComputer,
+            INullableTypeComputer nullableTypeComputer, ITypingContext typingContext,
             IExpressionEvalSizeComputer expressionEvalSizeComputer,
             IPartialAggregationTypeComputer partialAggregationTypeComputer, int frameSize,
             AlgebricksPartitionConstraint clusterLocations) {
@@ -88,6 +91,7 @@ public class JobGenContext implements IVariableTypeEnvironment {
         this.nullWriterFactory = nullWriterFactory;
         this.exprJobGen = exprJobGen;
         this.expressionTypeComputer = expressionTypeComputer;
+        this.typingContext = typingContext;
         this.expressionEvalSizeComputer = expressionEvalSizeComputer;
         this.partialAggregationTypeComputer = partialAggregationTypeComputer;
         this.frameSize = frameSize;
@@ -150,25 +154,14 @@ public class JobGenContext implements IVariableTypeEnvironment {
         schemaMap.put(op, schema);
     }
 
-    @Override
-    public Object getVarType(LogicalVariable var) {
-        return varTypeMap.get(var);
-    }
-
-    @Override
-    public void setVarType(LogicalVariable var, Object type) {
-        varTypeMap.put(var, type);
-    }
-
     public LogicalVariable createNewVar() {
         varCounter++;
         LogicalVariable var = new LogicalVariable(-varCounter);
         return var;
     }
 
-    @Override
-    public Object getType(ILogicalExpression expr) throws AlgebricksException {
-        return expressionTypeComputer.getType(expr, this);
+    public Object getType(ILogicalExpression expr, IVariableTypeEnvironment env) throws AlgebricksException {
+        return expressionTypeComputer.getType(expr, env);
     }
 
     public INullWriterFactory getNullWriterFactory() {
@@ -189,6 +182,10 @@ public class JobGenContext implements IVariableTypeEnvironment {
 
     public IPartialAggregationTypeComputer getPartialAggregationTypeComputer() {
         return partialAggregationTypeComputer;
+    }
+
+    public IVariableTypeEnvironment getTypeEnvironment(ILogicalOperator op) {
+        return typingContext.getTypeEnvironment(op);
     }
 
 }

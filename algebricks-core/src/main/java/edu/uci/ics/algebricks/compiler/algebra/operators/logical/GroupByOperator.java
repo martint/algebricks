@@ -245,9 +245,23 @@ public class GroupByOperator extends AbstractOperatorWithNestedPlans {
         IVariableTypeEnvironment env = new PropagatingTypeEnvironment(ctx.getExpressionTypeComputer(), ctx
                 .getNullableTypeComputer(), TypePropagationPolicy.ALL, envPointers);
         ILogicalOperator child = inputs.get(0).getOperator();
+        IVariableTypeEnvironment env2 = ctx.getTypeEnvironment(child);
         for (Pair<LogicalVariable, LogicalExpressionReference> p : getGroupByList()) {
             ILogicalExpression expr = p.second.getExpression();
-            IVariableTypeEnvironment env2 = ctx.getTypeEnvironment(child);
+            if (p.first != null) {
+                env.setVarType(p.first, env2.getType(expr));
+                if (expr.getExpressionTag() == LogicalExpressionTag.VARIABLE) {
+                    LogicalVariable v1 = ((VariableReferenceExpression) expr).getVariableReference();
+                    env.setVarType(v1, env2.getVarType(v1));
+                }
+            } else {
+                VariableReferenceExpression vre = (VariableReferenceExpression) p.second.getExpression();
+                LogicalVariable v2 = vre.getVariableReference();
+                env.setVarType(v2, env2.getVarType(v2));
+            }
+        }
+        for (Pair<LogicalVariable, LogicalExpressionReference> p : getDecorList()) {
+            ILogicalExpression expr = p.second.getExpression();
             if (p.first != null) {
                 env.setVarType(p.first, env2.getType(expr));
             } else {

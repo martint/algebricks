@@ -68,7 +68,7 @@ public class HeuristicCompilerFactoryBuilder extends AbstractCompilerFactoryBuil
             @Override
             public ICompiler createCompiler(final ILogicalPlan plan, final IMetadataProvider<?, ?> metadata,
                     int varCounter) {
-                IOptimizationContext oc = optCtxFactory.createOptimizationContext(varCounter, frameSize,
+                final IOptimizationContext oc = optCtxFactory.createOptimizationContext(varCounter, frameSize,
                         expressionEvalSizeComputer, mergeAggregationExpressionFactory, expressionTypeComputer,
                         nullableTypeComputer, physicalOptimizationConfig);
                 oc.setMetadataDeclarations(metadata);
@@ -87,8 +87,8 @@ public class HeuristicCompilerFactoryBuilder extends AbstractCompilerFactoryBuil
                                 serializerDeserializerProvider, hashFunctionFactoryProvider, comparatorFactoryProvider,
                                 typeTraitProvider, binaryBooleanInspector, binaryIntegerInspector, printerProvider,
                                 nullWriterFactory, normalizedKeyComputerFactoryProvider, exprJobGen,
-                                expressionTypeComputer, expressionEvalSizeComputer, partialAggregationTypeComputer,
-                                frameSize, clusterLocations);
+                                expressionTypeComputer, nullableTypeComputer, oc, expressionEvalSizeComputer,
+                                partialAggregationTypeComputer, frameSize, clusterLocations);
                         PlanCompiler pc = new PlanCompiler(context);
                         return pc.compilePlan(plan, null);
                     }

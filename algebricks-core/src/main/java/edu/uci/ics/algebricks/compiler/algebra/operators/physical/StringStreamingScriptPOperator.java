@@ -16,7 +16,6 @@ package edu.uci.ics.algebricks.compiler.algebra.operators.physical;
 
 import edu.uci.ics.algebricks.api.exceptions.AlgebricksException;
 import edu.uci.ics.algebricks.compiler.algebra.base.ILogicalOperator;
-import edu.uci.ics.algebricks.compiler.algebra.base.LogicalVariable;
 import edu.uci.ics.algebricks.compiler.algebra.base.PhysicalOperatorTag;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.IOperatorSchema;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.ScriptOperator;
@@ -30,7 +29,6 @@ import edu.uci.ics.algebricks.runtime.hyracks.jobgen.base.IHyracksJobBuilder;
 import edu.uci.ics.algebricks.runtime.hyracks.jobgen.impl.JobGenContext;
 import edu.uci.ics.algebricks.runtime.hyracks.jobgen.impl.JobGenHelper;
 import edu.uci.ics.algebricks.runtime.hyracks.operators.std.StringStreamingRuntimeFactory;
-import edu.uci.ics.algebricks.utils.Pair;
 import edu.uci.ics.hyracks.api.dataflow.value.RecordDescriptor;
 
 public class StringStreamingScriptPOperator extends AbstractPropagatePropertiesForUsedVariablesPOperator {
@@ -61,12 +59,9 @@ public class StringStreamingScriptPOperator extends AbstractPropagatePropertiesF
             throw new IllegalStateException();
         }
         StringStreamingScriptDescription sssd = (StringStreamingScriptDescription) scriptDesc;
-        for (Pair<LogicalVariable, Object> p : scriptDesc.getVarTypePairs()) {
-            context.setVarType(p.first, p.second);
-        }
         StringStreamingRuntimeFactory runtime = new StringStreamingRuntimeFactory(sssd.getCommand(), sssd
                 .getPrinterFactories(), sssd.getFieldDelimiter(), sssd.getParserFactory());
-        RecordDescriptor recDesc = JobGenHelper.mkRecordDescriptor(propagatedSchema, context);
+        RecordDescriptor recDesc = JobGenHelper.mkRecordDescriptor(op, propagatedSchema, context);
         builder.contributeMicroOperator(scriptOp, runtime, recDesc);
         // and contribute one edge from its child
         ILogicalOperator src = scriptOp.getInputs().get(0).getOperator();

@@ -15,13 +15,11 @@
 package edu.uci.ics.algebricks.compiler.algebra.operators.physical;
 
 import java.util.ArrayList;
-import java.util.List;
 
 import edu.uci.ics.algebricks.api.exceptions.AlgebricksException;
 import edu.uci.ics.algebricks.compiler.algebra.base.ILogicalOperator;
 import edu.uci.ics.algebricks.compiler.algebra.base.LogicalVariable;
 import edu.uci.ics.algebricks.compiler.algebra.base.PhysicalOperatorTag;
-import edu.uci.ics.algebricks.compiler.algebra.expressions.VariableReferenceExpression;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.AbstractLogicalOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.IOperatorSchema;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.UnionAllOperator;
@@ -74,7 +72,6 @@ public class UnionAllPOperator extends AbstractPhysicalOperator {
             IOperatorSchema opSchema, IOperatorSchema[] inputSchemas, IOperatorSchema outerPlanSchema)
             throws AlgebricksException {
         UnionAllOperator unionOp = (UnionAllOperator) op;
-        setVarTypes(unionOp.getVariableMappings(), context);
         int n = unionOp.getVariableMappings().size();
         int[] leftColumns = new int[n];
         int[] rightColumns = new int[n];
@@ -88,7 +85,7 @@ public class UnionAllPOperator extends AbstractPhysicalOperator {
         }
 
         JobSpecification spec = builder.getJobSpec();
-        RecordDescriptor recordDescriptor = JobGenHelper.mkRecordDescriptor(opSchema, context);
+        RecordDescriptor recordDescriptor = JobGenHelper.mkRecordDescriptor(op, opSchema, context);
 
         // at algebricks level, union all only accepts two inputs, although at
         // hyracks
@@ -99,15 +96,6 @@ public class UnionAllPOperator extends AbstractPhysicalOperator {
         builder.contributeGraphEdge(src1, 0, op, 0);
         ILogicalOperator src2 = op.getInputs().get(1).getOperator();
         builder.contributeGraphEdge(src2, 0, op, 1);
-    }
-
-    private void setVarTypes(List<Triple<LogicalVariable, LogicalVariable, LogicalVariable>> varMap,
-            JobGenContext context) throws AlgebricksException {
-        int n = varMap.size();
-        for (int i = 0; i < n; i++) {
-            context.setVarType(varMap.get(i).third, context
-                    .getType(new VariableReferenceExpression(varMap.get(i).first)));
-        }
     }
 
 }

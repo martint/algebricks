@@ -20,6 +20,7 @@ import java.util.List;
 import edu.uci.ics.algebricks.api.data.IBinaryComparatorFactoryProvider;
 import edu.uci.ics.algebricks.api.data.IBinaryHashFunctionFactoryProvider;
 import edu.uci.ics.algebricks.api.exceptions.AlgebricksException;
+import edu.uci.ics.algebricks.api.expr.IVariableTypeEnvironment;
 import edu.uci.ics.algebricks.compiler.algebra.base.ILogicalOperator;
 import edu.uci.ics.algebricks.compiler.algebra.base.PhysicalOperatorTag;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.AbstractLogicalOperator;
@@ -120,14 +121,15 @@ public class SortMergeExchangePOperator extends AbstractExchangePOperator {
 
     @Override
     public Pair<IConnectorDescriptor, TargetConstraint> createConnectorDescriptor(JobSpecification spec,
-            IOperatorSchema opSchema, JobGenContext context) throws AlgebricksException {
+            ILogicalOperator op, IOperatorSchema opSchema, JobGenContext context) throws AlgebricksException {
         int n = sortColumns.length;
         int[] sortFields = new int[n];
         IBinaryComparatorFactory[] comps = new IBinaryComparatorFactory[n];
         IBinaryHashFunctionFactory[] hashFuns = new IBinaryHashFunctionFactory[n];
+        IVariableTypeEnvironment env = context.getTypeEnvironment(op);
         for (int i = 0; i < n; i++) {
             sortFields[i] = opSchema.findVariable(sortColumns[i].getColumn());
-            Object type = context.getVarType(sortColumns[i].getColumn());
+            Object type = env.getVarType(sortColumns[i].getColumn());
             IBinaryComparatorFactoryProvider bcfp = context.getBinaryComparatorFactoryProvider();
             comps[i] = bcfp.getBinaryComparatorFactory(type, sortColumns[i].getOrder());
             IBinaryHashFunctionFactoryProvider bhffp = context.getBinaryHashFunctionFactoryProvider();

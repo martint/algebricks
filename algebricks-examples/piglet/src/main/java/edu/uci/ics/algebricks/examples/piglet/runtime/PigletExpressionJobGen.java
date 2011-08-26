@@ -6,6 +6,7 @@ import java.util.List;
 
 import edu.uci.ics.algebricks.api.exceptions.AlgebricksException;
 import edu.uci.ics.algebricks.api.expr.ILogicalExpressionJobGen;
+import edu.uci.ics.algebricks.api.expr.IVariableTypeEnvironment;
 import edu.uci.ics.algebricks.compiler.algebra.base.ILogicalExpression;
 import edu.uci.ics.algebricks.compiler.algebra.base.LogicalExpressionReference;
 import edu.uci.ics.algebricks.compiler.algebra.base.LogicalVariable;
@@ -34,8 +35,8 @@ import edu.uci.ics.hyracks.dataflow.common.data.marshalling.UTF8StringSerializer
 
 public class PigletExpressionJobGen implements ILogicalExpressionJobGen {
     @Override
-    public IEvaluatorFactory createEvaluatorFactory(ILogicalExpression expr, IOperatorSchema[] inputSchemas,
-            JobGenContext context) throws AlgebricksException {
+    public IEvaluatorFactory createEvaluatorFactory(ILogicalExpression expr, IVariableTypeEnvironment env,
+            IOperatorSchema[] inputSchemas, JobGenContext context) throws AlgebricksException {
         switch (expr.getExpressionTag()) {
             case CONSTANT: {
                 ConstantValue cv = (ConstantValue) ((ConstantExpression) expr).getValue();
@@ -73,12 +74,12 @@ public class PigletExpressionJobGen implements ILogicalExpressionJobGen {
                 IEvaluatorFactory argEvalFactories[] = new IEvaluatorFactory[argExprs.size()];
                 for (int i = 0; i < argEvalFactories.length; ++i) {
                     LogicalExpressionReference er = argExprs.get(i);
-                    argEvalFactories[i] = createEvaluatorFactory(er.getExpression(), inputSchemas, context);
+                    argEvalFactories[i] = createEvaluatorFactory(er.getExpression(), env, inputSchemas, context);
                 }
                 IEvaluatorFactory funcEvalFactory;
                 try {
-                    funcEvalFactory = PigletFunctionRegistry.createFunctionEvaluatorFactory(
-                            sfce.getFunctionIdentifier(), argEvalFactories);
+                    funcEvalFactory = PigletFunctionRegistry.createFunctionEvaluatorFactory(sfce
+                            .getFunctionIdentifier(), argEvalFactories);
                 } catch (PigletException e) {
                     throw new AlgebricksException(e);
                 }
@@ -96,26 +97,29 @@ public class PigletExpressionJobGen implements ILogicalExpressionJobGen {
 
     @Override
     public IAggregateFunctionFactory createAggregateFunctionFactory(AggregateFunctionCallExpression expr,
-            IOperatorSchema[] inputSchemas, JobGenContext context) throws AlgebricksException {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public ISerializableAggregateFunctionFactory createSerializableAggregateFunctionFactory(
-            AggregateFunctionCallExpression expr, IOperatorSchema[] inputSchemas, JobGenContext context)
+            IVariableTypeEnvironment env, IOperatorSchema[] inputSchemas, JobGenContext context)
             throws AlgebricksException {
         throw new UnsupportedOperationException();
     }
 
     @Override
+    public ISerializableAggregateFunctionFactory createSerializableAggregateFunctionFactory(
+            AggregateFunctionCallExpression expr, IVariableTypeEnvironment env, IOperatorSchema[] inputSchemas,
+            JobGenContext context) throws AlgebricksException {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     public IRunningAggregateFunctionFactory createRunningAggregateFunctionFactory(StatefulFunctionCallExpression expr,
-            IOperatorSchema[] inputSchemas, JobGenContext context) throws AlgebricksException {
+            IVariableTypeEnvironment env, IOperatorSchema[] inputSchemas, JobGenContext context)
+            throws AlgebricksException {
         throw new UnsupportedOperationException();
     }
 
     @Override
     public IUnnestingFunctionFactory createUnnestingFunctionFactory(UnnestingFunctionCallExpression expr,
-            IOperatorSchema[] inputSchemas, JobGenContext context) throws AlgebricksException {
+            IVariableTypeEnvironment env, IOperatorSchema[] inputSchemas, JobGenContext context)
+            throws AlgebricksException {
         throw new UnsupportedOperationException();
     }
 }

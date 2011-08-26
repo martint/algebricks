@@ -16,6 +16,7 @@ package edu.uci.ics.algebricks.compiler.algebra.operators.physical;
 
 import edu.uci.ics.algebricks.api.exceptions.AlgebricksException;
 import edu.uci.ics.algebricks.api.expr.ILogicalExpressionJobGen;
+import edu.uci.ics.algebricks.api.expr.IVariableTypeEnvironment;
 import edu.uci.ics.algebricks.compiler.algebra.base.ILogicalExpression;
 import edu.uci.ics.algebricks.compiler.algebra.base.ILogicalOperator;
 import edu.uci.ics.algebricks.compiler.algebra.base.PhysicalOperatorTag;
@@ -76,12 +77,13 @@ public class StreamLimitPOperator extends AbstractPhysicalOperator {
             throws AlgebricksException {
         LimitOperator limit = (LimitOperator) op;
         ILogicalExpressionJobGen exprJobGen = context.getExpressionJobGen();
+        IVariableTypeEnvironment env = context.getTypeEnvironment(op);
         IEvaluatorFactory maxObjectsFact = exprJobGen.createEvaluatorFactory(limit.getMaxObjects().getExpression(),
-                inputSchemas, context);
+                env, inputSchemas, context);
         ILogicalExpression offsetExpr = limit.getOffset().getExpression();
-        IEvaluatorFactory offsetFact = (offsetExpr == null) ? null : exprJobGen.createEvaluatorFactory(offsetExpr,
+        IEvaluatorFactory offsetFact = (offsetExpr == null) ? null : exprJobGen.createEvaluatorFactory(offsetExpr, env,
                 inputSchemas, context);
-        RecordDescriptor recDesc = JobGenHelper.mkRecordDescriptor(propagatedSchema, context);
+        RecordDescriptor recDesc = JobGenHelper.mkRecordDescriptor(op, propagatedSchema, context);
         StreamLimitRuntimeFactory runtime = new StreamLimitRuntimeFactory(maxObjectsFact, offsetFact, null, context
                 .getBinaryIntegerInspector());
         builder.contributeMicroOperator(limit, runtime, recDesc);

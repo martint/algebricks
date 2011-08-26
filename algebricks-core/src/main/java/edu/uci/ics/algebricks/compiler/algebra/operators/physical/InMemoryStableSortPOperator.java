@@ -17,6 +17,7 @@ package edu.uci.ics.algebricks.compiler.algebra.operators.physical;
 import edu.uci.ics.algebricks.api.data.IBinaryComparatorFactoryProvider;
 import edu.uci.ics.algebricks.api.data.INormalizedKeyComputerFactoryProvider;
 import edu.uci.ics.algebricks.api.exceptions.AlgebricksException;
+import edu.uci.ics.algebricks.api.expr.IVariableTypeEnvironment;
 import edu.uci.ics.algebricks.compiler.algebra.base.ILogicalOperator;
 import edu.uci.ics.algebricks.compiler.algebra.base.LogicalVariable;
 import edu.uci.ics.algebricks.compiler.algebra.base.PhysicalOperatorTag;
@@ -51,17 +52,18 @@ public class InMemoryStableSortPOperator extends AbstractStableSortPOperator {
     public void contributeRuntimeOperator(IHyracksJobBuilder builder, JobGenContext context, ILogicalOperator op,
             IOperatorSchema opSchema, IOperatorSchema[] inputSchemas, IOperatorSchema outerPlanSchema)
             throws AlgebricksException {
-        RecordDescriptor recDescriptor = JobGenHelper.mkRecordDescriptor(opSchema, context);
+        RecordDescriptor recDescriptor = JobGenHelper.mkRecordDescriptor(op, opSchema, context);
         int n = sortColumns.length;
         int[] sortFields = new int[n];
         IBinaryComparatorFactory[] comps = new IBinaryComparatorFactory[n];
         int i = 0;
         INormalizedKeyComputerFactoryProvider nkcfProvider = context.getNormalizedKeyComputerFactoryProvider();
         INormalizedKeyComputerFactory nkcf = null;
+        IVariableTypeEnvironment env = context.getTypeEnvironment(op);
         for (OrderColumn oc : sortColumns) {
             LogicalVariable var = oc.getColumn();
             sortFields[i] = opSchema.findVariable(var);
-            Object type = context.getVarType(var);
+            Object type = env.getVarType(var);
             OrderKind order = oc.getOrder();
             if (i == 0 && nkcfProvider != null && type != null) {
                 nkcf = nkcfProvider.getNormalizedKeyComputerFactory(type, order);

@@ -78,7 +78,7 @@ public class UnnestOperator extends AbstractUnnestOperator {
 
     @Override
     public IVariableTypeEnvironment computeTypeEnvironment(ITypingContext ctx) throws AlgebricksException {
-        IVariableTypeEnvironment env = createPropagatingAllTypeEnvironment(ctx);
+        IVariableTypeEnvironment env = createPropagatingAllInputsTypeEnvironment(ctx);
         Object t = env.getType(expression.getExpression());
         env.setVarType(variables.get(0), t);
         env.setVarType(positionalVariable, positionalVariableType);
