@@ -20,10 +20,10 @@ import edu.uci.ics.algebricks.compiler.algebra.base.PhysicalOperatorTag;
 import edu.uci.ics.algebricks.compiler.algebra.expressions.AggregateFunctionCallExpression;
 import edu.uci.ics.algebricks.compiler.algebra.expressions.VariableReferenceExpression;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.AbstractLogicalOperator;
+import edu.uci.ics.algebricks.compiler.algebra.operators.logical.AbstractLogicalOperator.ExecutionMode;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.AggregateOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.GroupByOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.IOperatorSchema;
-import edu.uci.ics.algebricks.compiler.algebra.operators.logical.AbstractLogicalOperator.ExecutionMode;
 import edu.uci.ics.algebricks.compiler.algebra.properties.ILocalStructuralProperty;
 import edu.uci.ics.algebricks.compiler.algebra.properties.IPartitioningRequirementsCoordinator;
 import edu.uci.ics.algebricks.compiler.algebra.properties.IPhysicalPropertiesVector;
@@ -136,7 +136,6 @@ public class ExternalGroupByPOperator extends AbstractPhysicalOperator {
         List<LogicalVariable> gbyCols = getGbyColumns();
         int keys[] = JobGenHelper.variablesToFieldIndexes(gbyCols, inputSchemas[0]);
         GroupByOperator gby = (GroupByOperator) op;
-        IVariableTypeEnvironment env = context.getTypeEnvironment(op);
         int numFds = gby.getDecorList().size();
         int fdColumns[] = new int[numFds];
         int j = 0;
@@ -171,11 +170,12 @@ public class ExternalGroupByPOperator extends AbstractPhysicalOperator {
         int i = 0;
         ILogicalExpressionJobGen exprJobGen = context.getExpressionJobGen();
         IVariableTypeEnvironment aggOpInputEnv = context.getTypeEnvironment(aggOp.getInputs().get(0).getOperator());
+        IVariableTypeEnvironment outputEnv = context.getTypeEnvironment(op);
         for (LogicalExpressionReference exprRef : aggOp.getExpressions()) {
             AggregateFunctionCallExpression aggFun = (AggregateFunctionCallExpression) exprRef.getExpression();
             aff[i++] = exprJobGen.createSerializableAggregateFunctionFactory(aggFun, aggOpInputEnv, inputSchemas,
                     context);
-            intermediateTypes.add(partialAggregationTypeComputer.getType(aggFun, env));
+            intermediateTypes.add(partialAggregationTypeComputer.getType(aggFun, aggOpInputEnv));
         }
 
         int[] keyAndDecFields = new int[keys.length + fdColumns.length];
@@ -192,26 +192,29 @@ public class ExternalGroupByPOperator extends AbstractPhysicalOperator {
         for (Pair<LogicalVariable, LogicalExpressionReference> p : gby.getDecorList())
             keyAndDecVariables.add(GroupByOperator.getDecorVariable(p));
 
+        for (LogicalVariable var : keyAndDecVariables)
+            aggOpInputEnv.setVarType(var, outputEnv.getVarType(var));
+
         compileSubplans(inputSchemas[0], gby, opSchema, context);
         JobSpecification spec = builder.getJobSpec();
         IBinaryComparatorFactory[] comparatorFactories = JobGenHelper.variablesToAscBinaryComparatorFactories(gbyCols,
-                env, context);
+                aggOpInputEnv, context);
         RecordDescriptor recordDescriptor = JobGenHelper.mkRecordDescriptor(op, opSchema, context);
         IBinaryHashFunctionFactory[] hashFunctionFactories = JobGenHelper.variablesToBinaryHashFunctionFactories(
-                gbyCols, env, context);
+                gbyCols, aggOpInputEnv, context);
 
         ISerializableAggregateFunctionFactory[] merges = new ISerializableAggregateFunctionFactory[n];
         List<LogicalVariable> usedVars = new ArrayList<LogicalVariable>();
         IOperatorSchema[] localInputSchemas = new IOperatorSchema[1];
         localInputSchemas[0] = new OperatorSchemaImpl();
         for (i = 0; i < n; i++) {
-            AggregateFunctionCallExpression aggFun = (AggregateFunctionCallExpression) aggOp.getMergeExpressions().get(
-                    i).getExpression();
+            AggregateFunctionCallExpression aggFun = (AggregateFunctionCallExpression) aggOp.getMergeExpressions()
+                    .get(i).getExpression();
             aggFun.getUsedVariables(usedVars);
         }
         i = 0;
         for (Object type : intermediateTypes) {
-            env.setVarType(usedVars.get(i++), type);
+            aggOpInputEnv.setVarType(usedVars.get(i++), type);
         }
         for (LogicalVariable keyVar : keyAndDecVariables)
             localInputSchemas[0].addVariable(keyVar);
@@ -228,7 +231,7 @@ public class ExternalGroupByPOperator extends AbstractPhysicalOperator {
 
         ITuplePartitionComputerFactory tpcf = new FieldHashPartitionComputerFactory(keys, hashFunctionFactories);
         INormalizedKeyComputerFactory normalizedKeyFactory = JobGenHelper.variablesToAscNormalizedKeyComputerFactory(
-                gbyCols, env, context);
+                gbyCols, aggOpInputEnv, context);
         ExternalGroupOperatorDescriptor gbyOpDesc = new ExternalGroupOperatorDescriptor(spec, keyAndDecFields,
                 frameLimit, comparatorFactories, normalizedKeyFactory, aggregatorFactory, mergeFactory,
                 recordDescriptor, new HashSpillableGroupingTableFactory(tpcf, tableSize), false);
