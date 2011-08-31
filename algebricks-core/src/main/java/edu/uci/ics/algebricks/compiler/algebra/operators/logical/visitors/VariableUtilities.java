@@ -23,6 +23,7 @@ import edu.uci.ics.algebricks.api.exceptions.AlgebricksException;
 import edu.uci.ics.algebricks.compiler.algebra.base.ILogicalOperator;
 import edu.uci.ics.algebricks.compiler.algebra.base.LogicalOperatorReference;
 import edu.uci.ics.algebricks.compiler.algebra.base.LogicalVariable;
+import edu.uci.ics.algebricks.compiler.algebra.typing.ITypingContext;
 import edu.uci.ics.algebricks.compiler.algebra.visitors.ILogicalOperatorVisitor;
 import edu.uci.ics.algebricks.utils.Pair;
 
@@ -55,15 +56,15 @@ public class VariableUtilities {
         }
     }
 
-    public static void substituteVariables(ILogicalOperator op, LogicalVariable v1, LogicalVariable v2)
-            throws AlgebricksException {
-        substituteVariables(op, v1, v2, true);
+    public static void substituteVariables(ILogicalOperator op, LogicalVariable v1, LogicalVariable v2,
+            ITypingContext ctx) throws AlgebricksException {
+        substituteVariables(op, v1, v2, true, ctx);
     }
 
     public static void substituteVariables(ILogicalOperator op, LogicalVariable v1, LogicalVariable v2,
-            boolean goThroughNts) throws AlgebricksException {
+            boolean goThroughNts, ITypingContext ctx) throws AlgebricksException {
         ILogicalOperatorVisitor<Void, Pair<LogicalVariable, LogicalVariable>> visitor = new SubstituteVariableVisitor(
-                goThroughNts);
+                goThroughNts, ctx);
         op.accept(visitor, new Pair<LogicalVariable, LogicalVariable>(v1, v2));
     }
 

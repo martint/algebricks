@@ -32,7 +32,9 @@ import edu.uci.ics.algebricks.compiler.algebra.visitors.ILogicalOperatorVisitor;
  */
 public class UnnestMapOperator extends AbstractUnnestOperator {
 
-    private final List<Object> variableTypes; // temporary solution
+    private final List<Object> variableTypes; // TODO: get rid of this and
+
+    // deprecate UnnestMap
 
     public UnnestMapOperator(List<LogicalVariable> variables, LogicalExpressionReference expression,
             List<Object> variableTypes) {
@@ -76,8 +78,9 @@ public class UnnestMapOperator extends AbstractUnnestOperator {
     }
 
     @Override
-    public IVariableTypeEnvironment computeTypeEnvironment(ITypingContext ctx) throws AlgebricksException {
-        IVariableTypeEnvironment env = new NonPropagatingTypeEnvironment(ctx.getExpressionTypeComputer());
+    public IVariableTypeEnvironment computeOutputTypeEnvironment(ITypingContext ctx) throws AlgebricksException {
+        IVariableTypeEnvironment env = new NonPropagatingTypeEnvironment(ctx.getExpressionTypeComputer(), ctx
+                .getMetadataProvider());
         int n = variables.size();
         for (int i = 0; i < n; i++) {
             env.setVarType(variables.get(i), variableTypes.get(i));

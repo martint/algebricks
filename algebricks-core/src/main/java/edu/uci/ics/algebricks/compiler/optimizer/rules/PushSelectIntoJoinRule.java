@@ -20,6 +20,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.ListIterator;
 
 import edu.uci.ics.algebricks.api.exceptions.AlgebricksException;
 import edu.uci.ics.algebricks.compiler.algebra.base.ILogicalExpression;
@@ -43,17 +44,6 @@ import edu.uci.ics.algebricks.compiler.optimizer.base.OptimizationUtil;
 
 public class PushSelectIntoJoinRule implements IAlgebraicRewriteRule {
 
-    private Collection<LogicalVariable> joinLiveVarsLeft = new HashSet<LogicalVariable>();
-    private Collection<LogicalVariable> joinLiveVarsRight = new HashSet<LogicalVariable>();
-    private Collection<LogicalVariable> liveInOpsToPushLeft = new HashSet<LogicalVariable>();
-    private Collection<LogicalVariable> liveInOpsToPushRight = new HashSet<LogicalVariable>();
-
-    private List<ILogicalOperator> pushedOnLeft = new ArrayList<ILogicalOperator>();
-    private List<ILogicalOperator> pushedOnRight = new ArrayList<ILogicalOperator>();
-    private LinkedList<ILogicalOperator> notPushedStack = new LinkedList<ILogicalOperator>();
-    private Collection<LogicalVariable> usedVars = new HashSet<LogicalVariable>();
-    private Collection<LogicalVariable> producedVars = new HashSet<LogicalVariable>();
-
     @Override
     public boolean rewritePre(LogicalOperatorReference opRef, IOptimizationContext context) {
         return false;
@@ -61,6 +51,17 @@ public class PushSelectIntoJoinRule implements IAlgebraicRewriteRule {
 
     @Override
     public boolean rewritePost(LogicalOperatorReference opRef, IOptimizationContext context) throws AlgebricksException {
+        Collection<LogicalVariable> joinLiveVarsLeft = new HashSet<LogicalVariable>();
+        Collection<LogicalVariable> joinLiveVarsRight = new HashSet<LogicalVariable>();
+        Collection<LogicalVariable> liveInOpsToPushLeft = new HashSet<LogicalVariable>();
+        Collection<LogicalVariable> liveInOpsToPushRight = new HashSet<LogicalVariable>();
+
+        List<ILogicalOperator> pushedOnLeft = new ArrayList<ILogicalOperator>();
+        List<ILogicalOperator> pushedOnRight = new ArrayList<ILogicalOperator>();
+        LinkedList<ILogicalOperator> notPushedStack = new LinkedList<ILogicalOperator>();
+        Collection<LogicalVariable> usedVars = new HashSet<LogicalVariable>();
+        Collection<LogicalVariable> producedVars = new HashSet<LogicalVariable>();
+
         AbstractLogicalOperator op = (AbstractLogicalOperator) opRef.getOperator();
         if (op.getOperatorTag() != LogicalOperatorTag.SELECT) {
             return false;
@@ -89,15 +90,8 @@ public class PushSelectIntoJoinRule implements IAlgebraicRewriteRule {
         if (needToPushOps) {
             ILogicalOperator joinBranchLeft = joinBranchLeftRef.getOperator();
             ILogicalOperator joinBranchRight = joinBranchRightRef.getOperator();
-            joinLiveVarsLeft.clear();
-            joinLiveVarsRight.clear();
             VariableUtilities.getLiveVariables(joinBranchLeft, joinLiveVarsLeft);
             VariableUtilities.getLiveVariables(joinBranchRight, joinLiveVarsRight);
-            notPushedStack.clear();
-            pushedOnLeft.clear();
-            pushedOnRight.clear();
-            liveInOpsToPushLeft.clear();
-            liveInOpsToPushRight.clear();
             LogicalOperatorReference opIterRef = opRef2;
             ILogicalOperator opIter = op2;
             while (opIter != join) {
@@ -105,7 +99,6 @@ public class PushSelectIntoJoinRule implements IAlgebraicRewriteRule {
                 if (tag == LogicalOperatorTag.PROJECT) {
                     notPushedStack.addFirst(opIter);
                 } else {
-                    usedVars.clear();
                     VariableUtilities.getUsedVariables(opIter, usedVars);
                     VariableUtilities.getProducedVariables(opIter, producedVars);
                     if (joinLiveVarsLeft.containsAll(usedVars)) {
@@ -151,8 +144,8 @@ public class PushSelectIntoJoinRule implements IAlgebraicRewriteRule {
         }
         if (intersectsAllBranches) {
             if (needToPushOps) {
-                pushOps(pushedOnLeft, joinBranchLeftRef);
-                pushOps(pushedOnRight, joinBranchRightRef);
+                pushOps(pushedOnLeft, joinBranchLeftRef, context);
+                pushOps(pushedOnRight, joinBranchRightRef, context);
             }
             addCondToJoin(select, join);
         } else { // push down
@@ -162,16 +155,14 @@ public class PushSelectIntoJoinRule implements IAlgebraicRewriteRule {
                 LogicalOperatorReference branch = branchIter.next();
                 boolean inter = intersectsBranch[j];
                 if (inter) {
-
                     if (needToPushOps) {
                         if (j == 0) {
-                            pushOps(pushedOnLeft, joinBranchLeftRef);
+                            pushOps(pushedOnLeft, joinBranchLeftRef, context);
                         } else {
-                            pushOps(pushedOnRight, joinBranchRightRef);
+                            pushOps(pushedOnRight, joinBranchRightRef, context);
                         }
                     }
-
-                    copySelectToBranch(select, branch);
+                    copySelectToBranch(select, branch, context);
                 }
 
                 // if a left outer join, we can only push conditions into the
@@ -187,6 +178,7 @@ public class PushSelectIntoJoinRule implements IAlgebraicRewriteRule {
             List<LogicalOperatorReference> npInpList = npOp.getInputs();
             npInpList.clear();
             npInpList.add(new LogicalOperatorReference(top));
+            context.computeAndSetTypeEnvironmentForOperator(npOp);
             top = npOp;
         }
         opRef.setOperator(top);
@@ -194,17 +186,19 @@ public class PushSelectIntoJoinRule implements IAlgebraicRewriteRule {
 
     }
 
-    private void pushOps(List<ILogicalOperator> opList, LogicalOperatorReference joinBranch) {
+    private void pushOps(List<ILogicalOperator> opList, LogicalOperatorReference joinBranch,
+            IOptimizationContext context) throws AlgebricksException {
         ILogicalOperator topOp = joinBranch.getOperator();
-        LogicalOperatorReference opRef = joinBranch;
-        for (ILogicalOperator op : opList) {
-            opRef.setOperator(op);
-            opRef = new LogicalOperatorReference();
+        ListIterator<ILogicalOperator> iter = opList.listIterator(opList.size());
+        while (iter.hasPrevious()) {
+            ILogicalOperator op = iter.previous();
             List<LogicalOperatorReference> opInpList = op.getInputs();
             opInpList.clear();
-            opInpList.add(opRef);
+            opInpList.add(new LogicalOperatorReference(topOp));
+            topOp = op;
+            context.computeAndSetTypeEnvironmentForOperator(op);
         }
-        opRef.setOperator(topOp);
+        joinBranch.setOperator(topOp);
     }
 
     private static void addCondToJoin(SelectOperator select, AbstractBinaryJoin join) {
@@ -225,18 +219,20 @@ public class PushSelectIntoJoinRule implements IAlgebraicRewriteRule {
                 }
             }
             if (!bAddedToConj) {
-                AbstractFunctionCallExpression newCond = new ScalarFunctionCallExpression(
-                        AlgebricksBuiltinFunctions.getBuiltinFunctionInfo(AlgebricksBuiltinFunctions.AND),
-                        select.getCondition(), new LogicalExpressionReference(join.getCondition().getExpression()));
+                AbstractFunctionCallExpression newCond = new ScalarFunctionCallExpression(AlgebricksBuiltinFunctions
+                        .getBuiltinFunctionInfo(AlgebricksBuiltinFunctions.AND), select.getCondition(),
+                        new LogicalExpressionReference(join.getCondition().getExpression()));
                 join.getCondition().setExpression(newCond);
             }
         }
     }
 
-    private static void copySelectToBranch(SelectOperator select, LogicalOperatorReference branch) {
+    private static void copySelectToBranch(SelectOperator select, LogicalOperatorReference branch,
+            IOptimizationContext context) throws AlgebricksException {
         ILogicalOperator newSelect = new SelectOperator(select.getCondition());
         LogicalOperatorReference newRef = new LogicalOperatorReference(branch.getOperator());
         newSelect.getInputs().add(newRef);
         branch.setOperator(newSelect);
+        context.computeAndSetTypeEnvironmentForOperator(newSelect);
     }
 }

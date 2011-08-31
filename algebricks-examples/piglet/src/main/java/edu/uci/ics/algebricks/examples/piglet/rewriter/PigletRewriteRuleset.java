@@ -23,18 +23,23 @@ import edu.uci.ics.algebricks.compiler.optimizer.rules.PushProjectDownRule;
 import edu.uci.ics.algebricks.compiler.optimizer.rules.PushProjectIntoDataSourceScanRule;
 import edu.uci.ics.algebricks.compiler.optimizer.rules.PushSelectDownRule;
 import edu.uci.ics.algebricks.compiler.optimizer.rules.PushSelectIntoJoinRule;
+import edu.uci.ics.algebricks.compiler.optimizer.rules.ReinferAllTypesRule;
 import edu.uci.ics.algebricks.compiler.optimizer.rules.RemoveRedundantProjectionRule;
 import edu.uci.ics.algebricks.compiler.optimizer.rules.RemoveUnusedAssignAndAggregateRule;
 import edu.uci.ics.algebricks.compiler.optimizer.rules.SetAlgebricksPhysicalOperatorsRule;
 import edu.uci.ics.algebricks.compiler.optimizer.rules.SetExecutionModeRule;
 
 public class PigletRewriteRuleset {
+    public final static LinkedList<IAlgebraicRewriteRule> TYPE_INFERENCE = new LinkedList<IAlgebraicRewriteRule>();
+    static {
+        TYPE_INFERENCE.add(new InferTypesRule());
+    }
+
     public final static LinkedList<IAlgebraicRewriteRule> NORMALIZATION = new LinkedList<IAlgebraicRewriteRule>();
     static {
         NORMALIZATION.add(new EliminateSubplanRule());
         NORMALIZATION.add(new IntroduceGroupByForStandaloneAggregRule());
         NORMALIZATION.add(new BreakSelectIntoConjunctsRule());
-        NORMALIZATION.add(new IntroduceGroupByForStandaloneAggregRule());
         NORMALIZATION.add(new PushSelectIntoJoinRule());
         NORMALIZATION.add(new ExtractGbyExpressionsRule());
     }
@@ -47,13 +52,11 @@ public class PigletRewriteRuleset {
         COND_PUSHDOWN_AND_JOIN_INFERENCE.add(new EliminateSubplanRule());
     }
 
-    public final static LinkedList<IAlgebraicRewriteRule> LOAD_FIELDS = new LinkedList<IAlgebraicRewriteRule>();
+    public final static LinkedList<IAlgebraicRewriteRule> JOIN_INFERENCE = new LinkedList<IAlgebraicRewriteRule>();
     static {
-        // should LoadRecordFieldsRule be applied in only one pass over the
-        // plan?
-        LOAD_FIELDS.add(new InlineVariablesRule());
+        JOIN_INFERENCE.add(new InlineVariablesRule());
         // LOAD_FIELDS.add(new RemoveUnusedAssignAndAggregateRule());
-        LOAD_FIELDS.add(new ComplexJoinInferenceRule());
+        JOIN_INFERENCE.add(new ComplexJoinInferenceRule());
     }
 
     public final static LinkedList<IAlgebraicRewriteRule> OP_PUSHDOWN = new LinkedList<IAlgebraicRewriteRule>();
@@ -91,7 +94,7 @@ public class PigletRewriteRuleset {
                 HeuristicOptimizer.hyraxOperatorsBelowWhichJobGenIsDisabled));
         PREPARE_FOR_JOBGEN.add(new ExtractCommonOperatorsRule());
         PREPARE_FOR_JOBGEN.add(new PushProjectIntoDataSourceScanRule());
-        PREPARE_FOR_JOBGEN.add(new InferTypesRule());
+        PREPARE_FOR_JOBGEN.add(new ReinferAllTypesRule());
     }
 
 }

@@ -67,12 +67,14 @@ public class AggregateOperator extends AbstractAssignOperator {
     }
 
     @Override
-    public IVariableTypeEnvironment computeTypeEnvironment(ITypingContext ctx) throws AlgebricksException {
-        IVariableTypeEnvironment env = new NonPropagatingTypeEnvironment(ctx.getExpressionTypeComputer());
-        IVariableTypeEnvironment env2 = ctx.getTypeEnvironment(inputs.get(0).getOperator());
+    public IVariableTypeEnvironment computeOutputTypeEnvironment(ITypingContext ctx) throws AlgebricksException {
+        IVariableTypeEnvironment env = new NonPropagatingTypeEnvironment(ctx.getExpressionTypeComputer(), ctx
+                .getMetadataProvider());
+        IVariableTypeEnvironment env2 = ctx.getOutputTypeEnvironment(inputs.get(0).getOperator());
         int n = variables.size();
         for (int i = 0; i < n; i++) {
-            Object t = ctx.getExpressionTypeComputer().getType(expressions.get(i).getExpression(), env2);
+            Object t = ctx.getExpressionTypeComputer().getType(expressions.get(i).getExpression(), ctx.getMetadataProvider(),
+                    env2);
             env.setVarType(variables.get(i), t);
         }
         return env;

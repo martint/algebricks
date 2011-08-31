@@ -64,6 +64,7 @@ public class ConsolidateAssignsRule implements IAlgebraicRewriteRule {
         List<LogicalOperatorReference> asgnInpList = assign1.getInputs();
         asgnInpList.clear();
         asgnInpList.add(botOpRef);
+        context.computeAndSetTypeEnvironmentForOperator(assign1);
         return true;
     }
 

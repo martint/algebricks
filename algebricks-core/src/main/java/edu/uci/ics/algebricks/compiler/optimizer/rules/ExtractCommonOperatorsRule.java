@@ -28,11 +28,11 @@ import edu.uci.ics.algebricks.compiler.algebra.base.LogicalOperatorTag;
 import edu.uci.ics.algebricks.compiler.algebra.base.LogicalVariable;
 import edu.uci.ics.algebricks.compiler.algebra.expressions.VariableReferenceExpression;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.AbstractLogicalOperator;
-import edu.uci.ics.algebricks.compiler.algebra.operators.logical.AbstractLogicalOperator.ExecutionMode;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.AssignOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.ExchangeOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.ProjectOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.ReplicateOperator;
+import edu.uci.ics.algebricks.compiler.algebra.operators.logical.AbstractLogicalOperator.ExecutionMode;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.visitors.IsomorphismUtilities;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.visitors.VariableUtilities;
 import edu.uci.ics.algebricks.compiler.algebra.operators.physical.AssignPOperator;
@@ -74,11 +74,11 @@ public class ExtractCommonOperatorsRule implements IAlgebraicRewriteRule {
                 // applying the rewriting until fixpoint
                 topDownMaterialization(roots);
                 removeNonJoinBuildBranchCandidates();
-                genCandidates();
+                genCandidates(context);
                 removeTrivialShare();
                 removeNonJoinBuildBranchCandidates();
                 if (equivalenceClasses.size() > 0)
-                    changed = rewrite();
+                    changed = rewrite(context);
                 if (!rewritten)
                     rewritten = changed;
                 equivalenceClasses.clear();
@@ -141,16 +141,17 @@ public class ExtractCommonOperatorsRule implements IAlgebraicRewriteRule {
         } while (true);
     }
 
-    private boolean rewrite() throws AlgebricksException {
+    private boolean rewrite(IOptimizationContext context) throws AlgebricksException {
         boolean changed = false;
         for (List<LogicalOperatorReference> members : equivalenceClasses) {
-            if (rewriteForOneEquivalentClass(members))
+            if (rewriteForOneEquivalentClass(members, context))
                 changed = true;
         }
         return changed;
     }
 
-    private boolean rewriteForOneEquivalentClass(List<LogicalOperatorReference> members) throws AlgebricksException {
+    private boolean rewriteForOneEquivalentClass(List<LogicalOperatorReference> members, IOptimizationContext context)
+            throws AlgebricksException {
         List<LogicalOperatorReference> group = new ArrayList<LogicalOperatorReference>();
         boolean rewritten = false;
         while (members.size() > 0) {
@@ -176,20 +177,25 @@ public class ExtractCommonOperatorsRule implements IAlgebraicRewriteRule {
                 AbstractLogicalOperator beforeExchange = new ExchangeOperator();
                 beforeExchange.setPhysicalOperator(new OneToOneExchangePOperator());
                 beforeExchange.getInputs().add(candidate);
+                context.computeAndSetTypeEnvironmentForOperator(beforeExchange);
                 rop.getInputs().add(new LogicalOperatorReference(beforeExchange));
             }
+            context.computeAndSetTypeEnvironmentForOperator(rop);
 
             List<LogicalOperatorReference> parents = childrenToParents.get(candidate);
             for (LogicalOperatorReference parentRef : parents) {
                 AbstractLogicalOperator parent = (AbstractLogicalOperator) parentRef.getOperator();
                 int index = parent.getInputs().indexOf(candidate);
-                AbstractLogicalOperator exchange = new ExchangeOperator();
-                exchange.setPhysicalOperator(new OneToOneExchangePOperator());
                 if (parent.getOperatorTag() == LogicalOperatorTag.EXCHANGE) {
                     parent.getInputs().set(index, ropRef);
                 } else {
+                    AbstractLogicalOperator exchange = new ExchangeOperator();
+                    exchange.setPhysicalOperator(new OneToOneExchangePOperator());
                     exchange.getInputs().add(ropRef);
+                    context.computeAndSetTypeEnvironmentForOperator(exchange);
+                    // parent.getInputs().get(index).setOperator(exchange);
                     parent.getInputs().set(index, new LogicalOperatorReference(exchange));
+                    context.computeAndSetTypeEnvironmentForOperator(parent);
                 }
             }
 
@@ -219,14 +225,18 @@ public class ExtractCommonOperatorsRule implements IAlgebraicRewriteRule {
 
                 assignOperator.getInputs().add(new LogicalOperatorReference(exchOp));
                 projectOperator.getInputs().add(new LogicalOperatorReference(assignOperator));
+                // set the types
+                context.computeAndSetTypeEnvironmentForOperator(exchOp);
+                context.computeAndSetTypeEnvironmentForOperator(assignOperator);
+                context.computeAndSetTypeEnvironmentForOperator(projectOperator);
 
                 List<LogicalOperatorReference> parentOpList = childrenToParents.get(ref);
                 for (LogicalOperatorReference parentOpRef : parentOpList) {
                     AbstractLogicalOperator parentOp = (AbstractLogicalOperator) parentOpRef.getOperator();
                     int index = parentOp.getInputs().indexOf(ref);
                     if (parentOp.getOperatorTag() == LogicalOperatorTag.EXCHANGE) {
-                        AbstractLogicalOperator parentOpNext = (AbstractLogicalOperator) childrenToParents
-                                .get(parentOpRef).get(0).getOperator();
+                        AbstractLogicalOperator parentOpNext = (AbstractLogicalOperator) childrenToParents.get(
+                                parentOpRef).get(0).getOperator();
                         if (parentOpNext.isMap()) {
                             index = parentOpNext.getInputs().indexOf(parentOpRef);
                             parentOp = parentOpNext;
@@ -244,6 +254,7 @@ public class ExtractCommonOperatorsRule implements IAlgebraicRewriteRule {
                         exchg.getInputs().add(new LogicalOperatorReference(childOp));
                         parentOp.getInputs().set(index, new LogicalOperatorReference(exchg));
                     }
+                    context.computeAndSetTypeEnvironmentForOperator(exchg);
                 }
             }
             rewritten = true;
@@ -251,7 +262,7 @@ public class ExtractCommonOperatorsRule implements IAlgebraicRewriteRule {
         return rewritten;
     }
 
-    private void genCandidates() throws AlgebricksException {
+    private void genCandidates(IOptimizationContext context) throws AlgebricksException {
         List<List<LogicalOperatorReference>> previousEquivalenceClasses = new ArrayList<List<LogicalOperatorReference>>();
         while (equivalenceClasses.size() > 0) {
             previousEquivalenceClasses.clear();
@@ -275,11 +286,11 @@ public class ExtractCommonOperatorsRule implements IAlgebraicRewriteRule {
             }
             if (currentLevelOpRefs.size() == 0)
                 break;
-            prune();
+            prune(context);
         }
         if (equivalenceClasses.size() < 1 && previousEquivalenceClasses.size() > 0) {
             equivalenceClasses.addAll(previousEquivalenceClasses);
-            prune();
+            prune(context);
         }
     }
 
@@ -336,7 +347,7 @@ public class ExtractCommonOperatorsRule implements IAlgebraicRewriteRule {
         }
     }
 
-    private void prune() throws AlgebricksException {
+    private void prune(IOptimizationContext context) throws AlgebricksException {
         List<List<LogicalOperatorReference>> previousEquivalenceClasses = new ArrayList<List<LogicalOperatorReference>>();
         for (List<LogicalOperatorReference> candidates : equivalenceClasses) {
             List<LogicalOperatorReference> candidatesCopy = new ArrayList<LogicalOperatorReference>();

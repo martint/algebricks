@@ -48,14 +48,14 @@ public class LeftOuterJoinOperator extends AbstractBinaryJoin {
     }
 
     @Override
-    public IVariableTypeEnvironment computeTypeEnvironment(ITypingContext ctx) throws AlgebricksException {
+    public IVariableTypeEnvironment computeOutputTypeEnvironment(ITypingContext ctx) throws AlgebricksException {
         int n = inputs.size();
         ITypeEnvPointer[] envPointers = new ITypeEnvPointer[n];
         for (int i = 0; i < n; i++) {
             envPointers[i] = new OpRefTypeEnvPointer(inputs.get(i), ctx);
         }
-        return new PropagatingTypeEnvironment(ctx.getExpressionTypeComputer(), ctx.getNullableTypeComputer(),
-                TypePropagationPolicy.LEFT_OUTER, envPointers);
+        return new PropagatingTypeEnvironment(ctx.getExpressionTypeComputer(), ctx.getNullableTypeComputer(), ctx
+                .getMetadataProvider(), TypePropagationPolicy.LEFT_OUTER, envPointers);
     }
 
 }

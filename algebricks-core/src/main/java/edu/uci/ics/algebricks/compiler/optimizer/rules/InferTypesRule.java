@@ -16,10 +16,10 @@ public class InferTypesRule implements IAlgebraicRewriteRule {
     @Override
     public boolean rewritePost(LogicalOperatorReference opRef, IOptimizationContext context) throws AlgebricksException {
         ILogicalOperator op = opRef.getOperator();
-        if (context.getTypeEnvironment(op) != null) {
+        if (context.getOutputTypeEnvironment(op) != null) {
             return false;
         }
-        context.setTypeEnvironment(op, op.computeTypeEnvironment(context));
+        context.computeAndSetTypeEnvironmentForOperator(op);
         return true;
     }
 

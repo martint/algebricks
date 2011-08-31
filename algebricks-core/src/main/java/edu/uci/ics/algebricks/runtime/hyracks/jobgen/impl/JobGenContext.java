@@ -161,7 +161,7 @@ public class JobGenContext {
     }
 
     public Object getType(ILogicalExpression expr, IVariableTypeEnvironment env) throws AlgebricksException {
-        return expressionTypeComputer.getType(expr, env);
+        return expressionTypeComputer.getType(expr, typingContext.getMetadataProvider(), env);
     }
 
     public INullWriterFactory getNullWriterFactory() {
@@ -185,7 +185,7 @@ public class JobGenContext {
     }
 
     public IVariableTypeEnvironment getTypeEnvironment(ILogicalOperator op) {
-        return typingContext.getTypeEnvironment(op);
+        return typingContext.getOutputTypeEnvironment(op);
     }
 
 }

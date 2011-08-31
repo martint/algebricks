@@ -83,6 +83,7 @@ public class InsertOuterJoinRule implements IAlgebraicRewriteRule {
                 loj.getInputs().add(leftRef);
                 loj.getInputs().add(rightRef);
                 opRef.setOperator(loj);
+                context.computeAndSetTypeEnvironmentForOperator(loj);
                 return true;
             }
             case LEFTOUTERJOIN: {
@@ -94,6 +95,7 @@ public class InsertOuterJoinRule implements IAlgebraicRewriteRule {
                 }
                 ntsRef.setOperator(opUnder.getOperator());
                 opRef.setOperator(join);
+                context.computeAndSetTypeEnvironmentForOperator(join);
                 return true;
             }
             default: {

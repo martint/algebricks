@@ -19,6 +19,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 
+import edu.uci.ics.algebricks.api.exceptions.AlgebricksException;
 import edu.uci.ics.algebricks.api.expr.IExpressionEvalSizeComputer;
 import edu.uci.ics.algebricks.api.expr.IExpressionTypeComputer;
 import edu.uci.ics.algebricks.api.expr.IMergeAggregationExpressionFactory;
@@ -225,12 +226,12 @@ public class AlgebricksOptimizationContext implements IOptimizationContext {
     }
 
     @Override
-    public IVariableTypeEnvironment getTypeEnvironment(ILogicalOperator op) {
+    public IVariableTypeEnvironment getOutputTypeEnvironment(ILogicalOperator op) {
         return typeEnvMap.get(op);
     }
 
     @Override
-    public void setTypeEnvironment(ILogicalOperator op, IVariableTypeEnvironment env) {
+    public void setOutputTypeEnvironment(ILogicalOperator op, IVariableTypeEnvironment env) {
         typeEnvMap.put(op, env);
     }
 
@@ -244,4 +245,13 @@ public class AlgebricksOptimizationContext implements IOptimizationContext {
         return nullableTypeComputer;
     }
 
+    @Override
+    public void invalidateTypeEnvironmentForOperator(ILogicalOperator op) {
+        typeEnvMap.put(op, null);
+    }
+
+    @Override
+    public void computeAndSetTypeEnvironmentForOperator(ILogicalOperator op) throws AlgebricksException {
+        setOutputTypeEnvironment(op, op.computeOutputTypeEnvironment(this));
+    }
 }

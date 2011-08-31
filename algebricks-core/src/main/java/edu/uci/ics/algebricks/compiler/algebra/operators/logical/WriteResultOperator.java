@@ -89,7 +89,7 @@ public class WriteResultOperator extends AbstractLogicalOperator {
     }
 
     @Override
-    public IVariableTypeEnvironment computeTypeEnvironment(ITypingContext ctx) throws AlgebricksException {
+    public IVariableTypeEnvironment computeOutputTypeEnvironment(ITypingContext ctx) throws AlgebricksException {
         return createPropagatingAllInputsTypeEnvironment(ctx);
     }
 

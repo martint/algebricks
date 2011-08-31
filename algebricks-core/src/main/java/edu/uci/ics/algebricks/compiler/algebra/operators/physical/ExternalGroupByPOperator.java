@@ -20,10 +20,10 @@ import edu.uci.ics.algebricks.compiler.algebra.base.PhysicalOperatorTag;
 import edu.uci.ics.algebricks.compiler.algebra.expressions.AggregateFunctionCallExpression;
 import edu.uci.ics.algebricks.compiler.algebra.expressions.VariableReferenceExpression;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.AbstractLogicalOperator;
-import edu.uci.ics.algebricks.compiler.algebra.operators.logical.AbstractLogicalOperator.ExecutionMode;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.AggregateOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.GroupByOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.IOperatorSchema;
+import edu.uci.ics.algebricks.compiler.algebra.operators.logical.AbstractLogicalOperator.ExecutionMode;
 import edu.uci.ics.algebricks.compiler.algebra.properties.ILocalStructuralProperty;
 import edu.uci.ics.algebricks.compiler.algebra.properties.IPartitioningRequirementsCoordinator;
 import edu.uci.ics.algebricks.compiler.algebra.properties.IPhysicalPropertiesVector;
@@ -175,7 +175,8 @@ public class ExternalGroupByPOperator extends AbstractPhysicalOperator {
             AggregateFunctionCallExpression aggFun = (AggregateFunctionCallExpression) exprRef.getExpression();
             aff[i++] = exprJobGen.createSerializableAggregateFunctionFactory(aggFun, aggOpInputEnv, inputSchemas,
                     context);
-            intermediateTypes.add(partialAggregationTypeComputer.getType(aggFun, aggOpInputEnv));
+            intermediateTypes.add(partialAggregationTypeComputer.getType(aggFun, aggOpInputEnv, context
+                    .getMetadataProvider()));
         }
 
         int[] keyAndDecFields = new int[keys.length + fdColumns.length];
@@ -208,8 +209,8 @@ public class ExternalGroupByPOperator extends AbstractPhysicalOperator {
         IOperatorSchema[] localInputSchemas = new IOperatorSchema[1];
         localInputSchemas[0] = new OperatorSchemaImpl();
         for (i = 0; i < n; i++) {
-            AggregateFunctionCallExpression aggFun = (AggregateFunctionCallExpression) aggOp.getMergeExpressions()
-                    .get(i).getExpression();
+            AggregateFunctionCallExpression aggFun = (AggregateFunctionCallExpression) aggOp.getMergeExpressions().get(
+                    i).getExpression();
             aggFun.getUsedVariables(usedVars);
         }
         i = 0;

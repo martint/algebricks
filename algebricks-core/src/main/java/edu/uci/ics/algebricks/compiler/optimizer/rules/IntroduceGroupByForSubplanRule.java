@@ -50,6 +50,7 @@ import edu.uci.ics.algebricks.compiler.algebra.properties.FunctionalDependency;
 import edu.uci.ics.algebricks.compiler.optimizer.base.IAlgebraicRewriteRule;
 import edu.uci.ics.algebricks.compiler.optimizer.base.IOptimizationContext;
 import edu.uci.ics.algebricks.compiler.optimizer.base.OperatorManipulationUtil;
+import edu.uci.ics.algebricks.compiler.optimizer.base.OptimizationUtil;
 import edu.uci.ics.algebricks.compiler.optimizer.base.PhysicalOptimizationsUtil;
 import edu.uci.ics.algebricks.config.AlgebricksConfig;
 import edu.uci.ics.algebricks.utils.Pair;
@@ -167,6 +168,7 @@ public class IntroduceGroupByForSubplanRule implements IAlgebraicRewriteRule {
                     ConstantExpression.TRUE));
             tmpAsgn.getInputs().add(new LogicalOperatorReference(rightRef.getOperator()));
             rightRef.setOperator(tmpAsgn);
+            context.computeAndSetTypeEnvironmentForOperator(tmpAsgn);
         }
 
         IFunctionInfo finfoEq = AlgebricksBuiltinFunctions.getBuiltinFunctionInfo(AlgebricksBuiltinFunctions.IS_NULL);
@@ -201,7 +203,9 @@ public class IntroduceGroupByForSubplanRule implements IAlgebraicRewriteRule {
                     new Pair<LogicalVariable, LogicalExpressionReference>(null, new LogicalExpressionReference(
                             new VariableReferenceExpression(uv))));
         }
-
+        OptimizationUtil.typeOpRec(subplanRoot, context);
+        OptimizationUtil.typeOpRec(gPlan.getRoots().get(0), context);
+        context.computeAndSetTypeEnvironmentForOperator(g);
         return true;
     }
 
@@ -247,11 +251,11 @@ public class IntroduceGroupByForSubplanRule implements IAlgebraicRewriteRule {
             for (ILogicalPlan p : g.getNestedPlans()) {
                 for (LogicalOperatorReference r : p.getRoots()) {
                     OperatorManipulationUtil.substituteVarRec((AbstractLogicalOperator) r.getOperator(), ov, newVar,
-                            true);
+                            true, context);
                 }
             }
             AbstractLogicalOperator opUnder = (AbstractLogicalOperator) g.getInputs().get(0).getOperator();
-            OperatorManipulationUtil.substituteVarRec(opUnder, ov, newVar, true);
+            OperatorManipulationUtil.substituteVarRec(opUnder, ov, newVar, true, context);
         }
     }
 

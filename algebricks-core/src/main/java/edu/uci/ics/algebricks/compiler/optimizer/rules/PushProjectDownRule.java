@@ -110,18 +110,23 @@ public class PushProjectDownRule implements IAlgebraicRewriteRule {
 
         // get rid of useless decor vars.
         if (!canCommuteProjection && op2.getOperatorTag() == LogicalOperatorTag.GROUP) {
+            boolean gbyChanged = false;
             GroupByOperator gby = (GroupByOperator) op2;
             List<Pair<LogicalVariable, LogicalExpressionReference>> newDecorList = new ArrayList<Pair<LogicalVariable, LogicalExpressionReference>>();
             for (Pair<LogicalVariable, LogicalExpressionReference> p : gby.getDecorList()) {
                 LogicalVariable decorVar = GroupByOperator.getDecorVariable(p);
                 if (!toPush.contains(decorVar)) {
                     used2.remove(decorVar);
+                    gbyChanged = true;
                 } else {
                     newDecorList.add(p);
                 }
             }
             gby.getDecorList().clear();
             gby.getDecorList().addAll(newDecorList);
+            if (gbyChanged) {
+                context.computeAndSetTypeEnvironmentForOperator(gby);
+            }
         }
         used2.clear();
         VariableUtilities.getUsedVariables(op2, used2);
@@ -180,7 +185,8 @@ public class PushProjectDownRule implements IAlgebraicRewriteRule {
 
     // It does not try to push above another Projection.
     private static boolean pushAllProjectionsOnTopOf(Collection<LogicalVariable> toPush,
-            LogicalOperatorReference opRef, IOptimizationContext context, ILogicalOperator initialOp) {
+            LogicalOperatorReference opRef, IOptimizationContext context, ILogicalOperator initialOp)
+            throws AlgebricksException {
         if (toPush.isEmpty()) {
             return false;
         }
@@ -205,6 +211,7 @@ public class PushProjectDownRule implements IAlgebraicRewriteRule {
         pi2.getInputs().add(new LogicalOperatorReference(op));
         opRef.setOperator(pi2);
         pi2.setExecutionMode(op.getExecutionMode());
+        context.computeAndSetTypeEnvironmentForOperator(pi2);
         return true;
     }
 

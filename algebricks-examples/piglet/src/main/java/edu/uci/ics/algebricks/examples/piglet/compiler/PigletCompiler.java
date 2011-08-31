@@ -27,6 +27,7 @@ import edu.uci.ics.algebricks.compiler.algebra.expressions.ScalarFunctionCallExp
 import edu.uci.ics.algebricks.compiler.algebra.expressions.VariableReferenceExpression;
 import edu.uci.ics.algebricks.compiler.algebra.functions.AlgebricksBuiltinFunctions;
 import edu.uci.ics.algebricks.compiler.algebra.functions.IFunctionInfo;
+import edu.uci.ics.algebricks.compiler.algebra.metadata.IMetadataProvider;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.AssignOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.DataSourceScanOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.EmptyTupleSourceOperator;
@@ -73,12 +74,14 @@ public class PigletCompiler {
         SequentialFixpointRuleController seqCtrlNoDfs = new SequentialFixpointRuleController(false);
         SequentialFixpointRuleController seqCtrlFullDfs = new SequentialFixpointRuleController(true);
         SequentialOnceRuleControllerFullDFS seqOnceCtrl = new SequentialOnceRuleControllerFullDFS();
+        DEFAULT_LOGICAL_REWRITES.add(new Pair<AbstractRuleController, List<IAlgebraicRewriteRule>>(seqOnceCtrl,
+                PigletRewriteRuleset.TYPE_INFERENCE));
         DEFAULT_LOGICAL_REWRITES.add(new Pair<AbstractRuleController, List<IAlgebraicRewriteRule>>(seqCtrlFullDfs,
                 PigletRewriteRuleset.NORMALIZATION));
         DEFAULT_LOGICAL_REWRITES.add(new Pair<AbstractRuleController, List<IAlgebraicRewriteRule>>(seqCtrlNoDfs,
                 PigletRewriteRuleset.COND_PUSHDOWN_AND_JOIN_INFERENCE));
         DEFAULT_LOGICAL_REWRITES.add(new Pair<AbstractRuleController, List<IAlgebraicRewriteRule>>(seqCtrlFullDfs,
-                PigletRewriteRuleset.LOAD_FIELDS));
+                PigletRewriteRuleset.JOIN_INFERENCE));
         DEFAULT_LOGICAL_REWRITES.add(new Pair<AbstractRuleController, List<IAlgebraicRewriteRule>>(seqCtrlNoDfs,
                 PigletRewriteRuleset.OP_PUSHDOWN));
         DEFAULT_LOGICAL_REWRITES.add(new Pair<AbstractRuleController, List<IAlgebraicRewriteRule>>(seqOnceCtrl,
@@ -115,7 +118,8 @@ public class PigletCompiler {
         builder.setExprJobGen(new PigletExpressionJobGen());
         builder.setExpressionTypeComputer(new IExpressionTypeComputer() {
             @Override
-            public Object getType(ILogicalExpression expr, IVariableTypeEnvironment env) throws AlgebricksException {
+            public Object getType(ILogicalExpression expr, IMetadataProvider<?, ?> metadataProvider,
+                    IVariableTypeEnvironment env) throws AlgebricksException {
                 return null;
             }
         });

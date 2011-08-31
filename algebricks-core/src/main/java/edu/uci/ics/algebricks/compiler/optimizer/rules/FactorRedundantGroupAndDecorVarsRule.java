@@ -49,14 +49,15 @@ public class FactorRedundantGroupAndDecorVarsRule implements IAlgebraicRewriteRu
         }
         GroupByOperator gby = (GroupByOperator) op;
         Map<LogicalVariable, LogicalVariable> varRhsToLhs = new HashMap<LogicalVariable, LogicalVariable>();
-        boolean gvChanged = factorRedundantRhsVars(gby.getGroupByList(), opRef, varRhsToLhs);
-        boolean dvChanged = factorRedundantRhsVars(gby.getDecorList(), opRef, varRhsToLhs);
+        boolean gvChanged = factorRedundantRhsVars(gby.getGroupByList(), opRef, varRhsToLhs, context);
+        boolean dvChanged = factorRedundantRhsVars(gby.getDecorList(), opRef, varRhsToLhs, context);
 
         return gvChanged || dvChanged;
     }
 
     private boolean factorRedundantRhsVars(List<Pair<LogicalVariable, LogicalExpressionReference>> veList,
-            LogicalOperatorReference opRef, Map<LogicalVariable, LogicalVariable> varRhsToLhs) {
+            LogicalOperatorReference opRef, Map<LogicalVariable, LogicalVariable> varRhsToLhs,
+            IOptimizationContext context) throws AlgebricksException {
         varRhsToLhs.clear();
         ListIterator<Pair<LogicalVariable, LogicalExpressionReference>> iter = veList.listIterator();
         boolean changed = false;
@@ -74,6 +75,7 @@ public class FactorRedundantGroupAndDecorVarsRule implements IAlgebraicRewriteRu
                     ILogicalOperator op = opRef.getOperator();
                     assign.getInputs().add(new LogicalOperatorReference(op));
                     opRef.setOperator(assign);
+                    context.computeAndSetTypeEnvironmentForOperator(assign);
                 }
                 iter.remove();
                 changed = true;

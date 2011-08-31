@@ -72,7 +72,7 @@ public class EmptyTupleSourceOperator extends AbstractLogicalOperator {
     }
 
     @Override
-    public IVariableTypeEnvironment computeTypeEnvironment(final ITypingContext ctx) throws AlgebricksException {
+    public IVariableTypeEnvironment computeOutputTypeEnvironment(final ITypingContext ctx) throws AlgebricksException {
         return new IVariableTypeEnvironment() {
 
             @Override
@@ -87,13 +87,19 @@ public class EmptyTupleSourceOperator extends AbstractLogicalOperator {
 
             @Override
             public Object getType(ILogicalExpression expr) throws AlgebricksException {
-                return ctx.getExpressionTypeComputer().getType(expr, this);
+                return ctx.getExpressionTypeComputer().getType(expr, ctx.getMetadataProvider(), this);
             }
 
             @Override
             public Object getVarType(LogicalVariable var, List<LogicalVariable> nonNullVariables)
                     throws AlgebricksException {
                 return null;
+            }
+
+            @Override
+            public boolean substituteProducedVariable(LogicalVariable v1, LogicalVariable v2)
+                    throws AlgebricksException {
+                return false;
             }
         };
     }

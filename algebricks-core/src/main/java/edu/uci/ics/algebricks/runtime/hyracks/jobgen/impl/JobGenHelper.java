@@ -15,6 +15,7 @@
 package edu.uci.ics.algebricks.runtime.hyracks.jobgen.impl;
 
 import java.util.Collection;
+import java.util.logging.Logger;
 
 import edu.uci.ics.algebricks.api.data.IBinaryComparatorFactoryProvider;
 import edu.uci.ics.algebricks.api.data.IBinaryHashFunctionFactoryProvider;
@@ -45,6 +46,8 @@ import edu.uci.ics.hyracks.storage.am.rtree.tuples.RTreeTypeAwareTupleWriterFact
 
 public final class JobGenHelper {
 
+    private static final Logger LOGGER = Logger.getLogger(JobGenHelper.class.getName());
+
     public static ITreeIndexFrameFactory createBTreeNSMInteriorFrameFactory(ITypeTrait[] typeTraits) {
         return new BTreeNSMInteriorFrameFactory(new TypeAwareTupleWriterFactory(typeTraits));
     }
@@ -70,6 +73,10 @@ public final class JobGenHelper {
         IVariableTypeEnvironment env = context.getTypeEnvironment(op);
         for (LogicalVariable var : opSchema) {
             Object t = env.getVarType(var);
+            if (t == null) {
+                LOGGER.warning("No type for variable " + var);
+                // throw new AlgebricksException("No type for variable " + var);
+            }
             fields[i] = sdp.getSerializerDeserializer(t);
             i++;
         }

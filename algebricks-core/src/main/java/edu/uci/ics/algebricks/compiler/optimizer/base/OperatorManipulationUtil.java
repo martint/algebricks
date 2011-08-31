@@ -29,25 +29,21 @@ import edu.uci.ics.algebricks.compiler.algebra.operators.logical.LimitOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.NestedTupleSourceOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.SubplanOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.visitors.VariableUtilities;
+import edu.uci.ics.algebricks.compiler.algebra.typing.ITypingContext;
 
 public class OperatorManipulationUtil {
 
     // Transforms all NestedTupleSource operators to EmptyTupleSource operators
-    public static void ntsToEts(LogicalOperatorReference opRef) {
+    public static void ntsToEts(LogicalOperatorReference opRef, IOptimizationContext context)
+            throws AlgebricksException {
         AbstractLogicalOperator op = (AbstractLogicalOperator) opRef.getOperator();
         if (op.getOperatorTag() == LogicalOperatorTag.NESTEDTUPLESOURCE) {
-            opRef.setOperator(new EmptyTupleSourceOperator());
+            EmptyTupleSourceOperator ets = new EmptyTupleSourceOperator();
+            context.computeAndSetTypeEnvironmentForOperator(ets);
+            opRef.setOperator(ets);
         } else {
             for (LogicalOperatorReference i : opRef.getOperator().getInputs()) {
-                ntsToEts(i);
-            }
-        }
-    }
-
-    public static void ntsToEtsInSubplan(SubplanOperator subplan) {
-        for (ILogicalPlan p : subplan.getNestedPlans()) {
-            for (LogicalOperatorReference r : p.getRoots()) {
-                ntsToEts(r);
+                ntsToEts(i, context);
             }
         }
     }
@@ -135,17 +131,17 @@ public class OperatorManipulationUtil {
     }
 
     public static void substituteVarRec(AbstractLogicalOperator op, LogicalVariable v1, LogicalVariable v2,
-            boolean goThroughNts) throws AlgebricksException {
-        VariableUtilities.substituteVariables(op, v1, v2, goThroughNts);
+            boolean goThroughNts, ITypingContext ctx) throws AlgebricksException {
+        VariableUtilities.substituteVariables(op, v1, v2, goThroughNts, ctx);
         for (LogicalOperatorReference opRef2 : op.getInputs()) {
-            substituteVarRec((AbstractLogicalOperator) opRef2.getOperator(), v1, v2, goThroughNts);
+            substituteVarRec((AbstractLogicalOperator) opRef2.getOperator(), v1, v2, goThroughNts, ctx);
         }
         if (op.getOperatorTag() == LogicalOperatorTag.NESTEDTUPLESOURCE && goThroughNts) {
             NestedTupleSourceOperator nts = (NestedTupleSourceOperator) op;
             if (nts.getDataSourceReference() != null) {
                 AbstractLogicalOperator op2 = (AbstractLogicalOperator) nts.getDataSourceReference().getOperator()
                         .getInputs().get(0).getOperator();
-                substituteVarRec(op2, v1, v2, goThroughNts);
+                substituteVarRec(op2, v1, v2, goThroughNts, ctx);
             }
         }
         if (op.hasNestedPlans()) {
@@ -153,7 +149,7 @@ public class OperatorManipulationUtil {
             for (ILogicalPlan p : aonp.getNestedPlans()) {
                 for (LogicalOperatorReference ref : p.getRoots()) {
                     AbstractLogicalOperator aop = (AbstractLogicalOperator) ref.getOperator();
-                    substituteVarRec(aop, v1, v2, goThroughNts);
+                    substituteVarRec(aop, v1, v2, goThroughNts, ctx);
                 }
             }
         }

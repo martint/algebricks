@@ -88,7 +88,7 @@ public class SubplanOperator extends AbstractOperatorWithNestedPlans {
     }
 
     @Override
-    public IVariableTypeEnvironment computeTypeEnvironment(ITypingContext ctx) throws AlgebricksException {
+    public IVariableTypeEnvironment computeOutputTypeEnvironment(ITypingContext ctx) throws AlgebricksException {
         int n = 0;
         for (ILogicalPlan p : nestedPlans) {
             n += p.getRoots().size();
@@ -102,8 +102,8 @@ public class SubplanOperator extends AbstractOperatorWithNestedPlans {
                 i++;
             }
         }
-        return new PropagatingTypeEnvironment(ctx.getExpressionTypeComputer(), ctx.getNullableTypeComputer(),
-                TypePropagationPolicy.LEFT_OUTER, envPointers);
+        return new PropagatingTypeEnvironment(ctx.getExpressionTypeComputer(), ctx.getNullableTypeComputer(), ctx
+                .getMetadataProvider(), TypePropagationPolicy.LEFT_OUTER, envPointers);
     }
 
 }

@@ -43,8 +43,6 @@ import edu.uci.ics.algebricks.utils.Pair;
 
 public class InlineVariablesRule implements IAlgebraicRewriteRule {
 
-    private VariableSubstitutionVisitor substVisitor = new VariableSubstitutionVisitor();
-
     @Override
     public boolean rewritePost(LogicalOperatorReference opRef, IOptimizationContext context) {
         return false;
@@ -60,14 +58,18 @@ public class InlineVariablesRule implements IAlgebraicRewriteRule {
         if (context.checkIfInDontApplySet(this, opRef.getOperator())) {
             return false;
         }
+        VariableSubstitutionVisitor substVisitor = new VariableSubstitutionVisitor(false);
+        VariableSubstitutionVisitor substVisitorForWrites = new VariableSubstitutionVisitor(true);
         substVisitor.setContext(context);
+        substVisitorForWrites.setContext(context);
         Pair<Boolean, Boolean> bb = collectEqClassesAndRemoveRedundantOps(opRef, context, true,
-                new LinkedList<EquivalenceClass>());
+                new LinkedList<EquivalenceClass>(), substVisitor, substVisitorForWrites);
         return bb.first;
     }
 
     private Pair<Boolean, Boolean> collectEqClassesAndRemoveRedundantOps(LogicalOperatorReference opRef,
-            IOptimizationContext context, boolean first, List<EquivalenceClass> equivClasses)
+            IOptimizationContext context, boolean first, List<EquivalenceClass> equivClasses,
+            VariableSubstitutionVisitor substVisitor, VariableSubstitutionVisitor substVisitorForWrites)
             throws AlgebricksException {
         AbstractLogicalOperator op = (AbstractLogicalOperator) opRef.getOperator();
         // if (context.checkIfInDontApplySet(this, opRef.getOperator())) {
@@ -77,10 +79,11 @@ public class InlineVariablesRule implements IAlgebraicRewriteRule {
         boolean ecChange = false;
         int cnt = 0;
         for (LogicalOperatorReference i : op.getInputs()) {
-            boolean isInnerInputBranch = op.getOperatorTag() == LogicalOperatorTag.LEFTOUTERJOIN && cnt == 1;
-            List<EquivalenceClass> eqc = isInnerInputBranch ? new LinkedList<EquivalenceClass>() : equivClasses;
+            boolean isOuterInputBranch = op.getOperatorTag() == LogicalOperatorTag.LEFTOUTERJOIN && cnt == 1;
+            List<EquivalenceClass> eqc = isOuterInputBranch ? new LinkedList<EquivalenceClass>() : equivClasses;
 
-            Pair<Boolean, Boolean> bb = (collectEqClassesAndRemoveRedundantOps(i, context, false, eqc));
+            Pair<Boolean, Boolean> bb = (collectEqClassesAndRemoveRedundantOps(i, context, false, eqc, substVisitor,
+                    substVisitorForWrites));
 
             if (bb.first) {
                 modified = true;
@@ -89,7 +92,7 @@ public class InlineVariablesRule implements IAlgebraicRewriteRule {
                 ecChange = true;
             }
 
-            if (isInnerInputBranch) {
+            if (isOuterInputBranch) {
                 if (AlgebricksConfig.DEBUG) {
                     AlgebricksConfig.ALGEBRICKS_LOGGER.finest("--- Equivalence classes for inner branch of outer op.: "
                             + eqc + "\n");
@@ -113,7 +116,8 @@ public class InlineVariablesRule implements IAlgebraicRewriteRule {
             }
             for (ILogicalPlan p : n.getNestedPlans()) {
                 for (LogicalOperatorReference r : p.getRoots()) {
-                    Pair<Boolean, Boolean> bb = collectEqClassesAndRemoveRedundantOps(r, context, false, eqc);
+                    Pair<Boolean, Boolean> bb = collectEqClassesAndRemoveRedundantOps(r, context, false, eqc,
+                            substVisitor, substVisitorForWrites);
                     if (bb.first) {
                         modified = true;
                     }
@@ -164,12 +168,19 @@ public class InlineVariablesRule implements IAlgebraicRewriteRule {
             ecChange = r1.second || r2.second;
         }
 
-        substVisitor.setEquivalenceClasses(equivClasses);
         if (op.getOperatorTag() == LogicalOperatorTag.PROJECT) {
             assignVarsNeededByProject((ProjectOperator) op, equivClasses, context);
         } else {
-            if (op.acceptExpressionTransform(substVisitor)) {
-                modified = true;
+            if (op.getOperatorTag() == LogicalOperatorTag.WRITE) {
+                substVisitorForWrites.setEquivalenceClasses(equivClasses);
+                if (op.acceptExpressionTransform(substVisitorForWrites)) {
+                    modified = true;
+                }
+            } else {
+                substVisitor.setEquivalenceClasses(equivClasses);
+                if (op.acceptExpressionTransform(substVisitor)) {
+                    modified = true;
+                }
             }
         }
 
@@ -203,24 +214,28 @@ public class InlineVariablesRule implements IAlgebraicRewriteRule {
     // also take constants (or even expression), at the expense of a more
     // complex project push down.
     private void assignVarsNeededByProject(ProjectOperator op, List<EquivalenceClass> equivClasses,
-            IOptimizationContext context) {
+            IOptimizationContext context) throws AlgebricksException {
         List<LogicalVariable> prVars = op.getVariables();
         int sz = prVars.size();
         for (int i = 0; i < sz; i++) {
             EquivalenceClass ec = findEquivClass(prVars.get(i), equivClasses);
             if (ec != null) {
-                if (ec.representativeIsConst()) {
-                    LogicalOperatorReference opRef = op.getInputs().get(0);
-                    AssignOperator a = new AssignOperator(prVars.get(i), new LogicalExpressionReference(ec
-                            .getConstRepresentative()));
-                    a.getInputs().add(new LogicalOperatorReference(opRef.getOperator()));
-                    opRef.setOperator(a);
-                    // context.addToDontApplySet(this, a);
-                    // context.addToDontApplySet(this, op);
-                    ec.setVariableRepresentative(prVars.get(i));
-                } else {
+                if (!ec.representativeIsConst()) {
                     prVars.set(i, ec.getVariableRepresentative());
                 }
+                // if (ec.representativeIsConst()) {
+                // LogicalOperatorReference opRef = op.getInputs().get(0);
+                // AssignOperator a = new AssignOperator(prVars.get(i), new
+                // LogicalExpressionReference(ec
+                // .getConstRepresentative()));
+                // a.getInputs().add(new
+                // LogicalOperatorReference(opRef.getOperator()));
+                // opRef.setOperator(a);
+                // context.computeAndSetTypeEnvironmentForOperator(a);
+                // ec.setVariableRepresentative(prVars.get(i));
+                // } else {
+                // prVars.set(i, ec.getVariableRepresentative());
+                // }
             }
         }
     }
@@ -237,6 +252,11 @@ public class InlineVariablesRule implements IAlgebraicRewriteRule {
     private class VariableSubstitutionVisitor implements ILogicalExpressionReferenceTransform {
         private List<EquivalenceClass> equivClasses;
         private IOptimizationContext context;
+        private final boolean doNotSubstWithConst;
+
+        public VariableSubstitutionVisitor(boolean doNotSubstWithConst) {
+            this.doNotSubstWithConst = doNotSubstWithConst;
+        }
 
         public void setContext(IOptimizationContext context) {
             this.context = context;
@@ -261,6 +281,9 @@ public class InlineVariablesRule implements IAlgebraicRewriteRule {
                         return false;
                     }
                     if (ec.representativeIsConst()) {
+                        if (doNotSubstWithConst) {
+                            return false;
+                        }
                         exprRef.setExpression(ec.getConstRepresentative());
                         return true;
                     } else {

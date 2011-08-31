@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.Map;
 
 import edu.uci.ics.algebricks.api.exceptions.AlgebricksException;
+import edu.uci.ics.algebricks.api.expr.IVariableTypeEnvironment;
 import edu.uci.ics.algebricks.compiler.algebra.base.ILogicalOperator;
 import edu.uci.ics.algebricks.compiler.algebra.base.IPhysicalOperator;
 import edu.uci.ics.algebricks.compiler.algebra.base.LogicalOperatorReference;
@@ -168,13 +169,19 @@ public abstract class AbstractLogicalOperator implements ILogicalOperator {
         return bJobGenEnabled;
     }
 
-    protected PropagatingTypeEnvironment createPropagatingAllInputsTypeEnvironment(ITypingContext ctx) {
+    @Override
+    public IVariableTypeEnvironment computeInputTypeEnvironment(ITypingContext ctx) throws AlgebricksException {
+        return createPropagatingAllInputsTypeEnvironment(ctx);
+    }
+
+    protected IVariableTypeEnvironment createPropagatingAllInputsTypeEnvironment(ITypingContext ctx) {
+//        return createPropagatingAllInputsTypeEnvironment(ctx);
         int n = inputs.size();
         ITypeEnvPointer[] envPointers = new ITypeEnvPointer[n];
         for (int i = 0; i < n; i++) {
             envPointers[i] = new OpRefTypeEnvPointer(inputs.get(i), ctx);
         }
-        return new PropagatingTypeEnvironment(ctx.getExpressionTypeComputer(), ctx.getNullableTypeComputer(),
-                TypePropagationPolicy.ALL, envPointers);
+        return new PropagatingTypeEnvironment(ctx.getExpressionTypeComputer(), ctx.getNullableTypeComputer(), ctx
+                .getMetadataProvider(), TypePropagationPolicy.ALL, envPointers);
     }
 }

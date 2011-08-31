@@ -229,7 +229,7 @@ public class GroupByOperator extends AbstractOperatorWithNestedPlans {
     }
 
     @Override
-    public IVariableTypeEnvironment computeTypeEnvironment(ITypingContext ctx) throws AlgebricksException {
+    public IVariableTypeEnvironment computeOutputTypeEnvironment(ITypingContext ctx) throws AlgebricksException {
         int n = 0;
         for (ILogicalPlan p : nestedPlans) {
             n += p.getRoots().size();
@@ -243,9 +243,9 @@ public class GroupByOperator extends AbstractOperatorWithNestedPlans {
             }
         }
         IVariableTypeEnvironment env = new PropagatingTypeEnvironment(ctx.getExpressionTypeComputer(), ctx
-                .getNullableTypeComputer(), TypePropagationPolicy.ALL, envPointers);
+                .getNullableTypeComputer(), ctx.getMetadataProvider(), TypePropagationPolicy.ALL, envPointers);
         ILogicalOperator child = inputs.get(0).getOperator();
-        IVariableTypeEnvironment env2 = ctx.getTypeEnvironment(child);
+        IVariableTypeEnvironment env2 = ctx.getOutputTypeEnvironment(child);
         for (Pair<LogicalVariable, LogicalExpressionReference> p : getGroupByList()) {
             ILogicalExpression expr = p.second.getExpression();
             if (p.first != null) {

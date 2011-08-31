@@ -28,4 +28,6 @@ public interface IVariableTypeEnvironment {
     public void setVarType(LogicalVariable var, Object type);
 
     public Object getType(ILogicalExpression expr) throws AlgebricksException;
+
+    public boolean substituteProducedVariable(LogicalVariable v1, LogicalVariable v2) throws AlgebricksException;
 }

@@ -17,6 +17,7 @@ package edu.uci.ics.algebricks.compiler.optimizer.base;
 import java.util.List;
 import java.util.Map;
 
+import edu.uci.ics.algebricks.api.exceptions.AlgebricksException;
 import edu.uci.ics.algebricks.api.expr.IExpressionEvalSizeComputer;
 import edu.uci.ics.algebricks.api.expr.IMergeAggregationExpressionFactory;
 import edu.uci.ics.algebricks.api.expr.IVariableEvalSizeEnvironment;
@@ -80,4 +81,7 @@ public interface IOptimizationContext extends ITypingContext {
 
     public abstract PhysicalOptimizationConfig getPhysicalOptimizationConfig();
 
+    public abstract void invalidateTypeEnvironmentForOperator(ILogicalOperator op);
+
+    public abstract void computeAndSetTypeEnvironmentForOperator(ILogicalOperator op) throws AlgebricksException;
 }

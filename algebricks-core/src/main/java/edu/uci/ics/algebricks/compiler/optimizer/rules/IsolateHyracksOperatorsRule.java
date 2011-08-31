@@ -131,6 +131,7 @@ public class IsolateHyracksOperatorsRule implements IAlgebraicRewriteRule {
         ExecutionMode em = ((AbstractLogicalOperator) inOp).getExecutionMode();
         e.setExecutionMode(em);
         e.computeDeliveredPhysicalProperties(context);
+        context.computeAndSetTypeEnvironmentForOperator(e);
     }
 
 }

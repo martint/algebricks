@@ -16,6 +16,7 @@ package edu.uci.ics.algebricks.compiler.optimizer.rules;
 
 import java.util.List;
 
+import edu.uci.ics.algebricks.api.exceptions.AlgebricksException;
 import edu.uci.ics.algebricks.compiler.algebra.base.LogicalExpressionReference;
 import edu.uci.ics.algebricks.compiler.algebra.base.LogicalOperatorReference;
 import edu.uci.ics.algebricks.compiler.algebra.base.LogicalOperatorTag;
@@ -35,7 +36,7 @@ public class ConsolidateSelectsRule implements IAlgebraicRewriteRule {
     }
 
     @Override
-    public boolean rewritePre(LogicalOperatorReference opRef, IOptimizationContext context) {
+    public boolean rewritePre(LogicalOperatorReference opRef, IOptimizationContext context) throws AlgebricksException {
         AbstractLogicalOperator op = (AbstractLogicalOperator) opRef.getOperator();
         if (op.getOperatorTag() != LogicalOperatorTag.SELECT) {
             return false;
@@ -47,8 +48,8 @@ public class ConsolidateSelectsRule implements IAlgebraicRewriteRule {
             return false;
         }
 
-        AbstractFunctionCallExpression conj = new ScalarFunctionCallExpression(
-                AlgebricksBuiltinFunctions.getBuiltinFunctionInfo(AlgebricksBuiltinFunctions.AND));
+        AbstractFunctionCallExpression conj = new ScalarFunctionCallExpression(AlgebricksBuiltinFunctions
+                .getBuiltinFunctionInfo(AlgebricksBuiltinFunctions.AND));
         conj.getArguments().add(new LogicalExpressionReference(select.getCondition().getExpression()));
         conj.getArguments().add(((SelectOperator) op2).getCondition());
 
@@ -67,6 +68,7 @@ public class ConsolidateSelectsRule implements IAlgebraicRewriteRule {
         List<LogicalOperatorReference> selInptList = select.getInputs();
         selInptList.clear();
         selInptList.add(botOpRef);
+        context.computeAndSetTypeEnvironmentForOperator(select);
         return true;
     }
 

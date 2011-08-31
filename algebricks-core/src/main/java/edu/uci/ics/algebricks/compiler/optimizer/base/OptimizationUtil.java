@@ -180,4 +180,23 @@ public class OptimizationUtil {
         return true;
     }
 
+    public static void typePlan(ILogicalPlan p, IOptimizationContext context) throws AlgebricksException {
+        for (LogicalOperatorReference r : p.getRoots()) {
+            typeOpRec(r, context);
+        }
+    }
+
+    public static void typeOpRec(LogicalOperatorReference r, IOptimizationContext context) throws AlgebricksException {
+        AbstractLogicalOperator op = (AbstractLogicalOperator) r.getOperator();
+        for (LogicalOperatorReference i : op.getInputs()) {
+            typeOpRec(i, context);
+        }
+        if (op.hasNestedPlans()) {
+            for (ILogicalPlan p : ((AbstractOperatorWithNestedPlans) op).getNestedPlans()) {
+                typePlan(p, context);
+            }
+        }
+        context.computeAndSetTypeEnvironmentForOperator(op);
+    }
+
 }

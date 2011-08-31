@@ -69,7 +69,9 @@ public interface ILogicalOperator {
      */
     public VariablePropagationPolicy getVariablePropagationPolicy();
 
-    public IVariableTypeEnvironment computeTypeEnvironment(ITypingContext ctx) throws AlgebricksException;
+    public IVariableTypeEnvironment computeOutputTypeEnvironment(ITypingContext ctx) throws AlgebricksException;
+
+    public IVariableTypeEnvironment computeInputTypeEnvironment(ITypingContext ctx) throws AlgebricksException;
 
     // structural properties
 

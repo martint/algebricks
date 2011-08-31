@@ -14,6 +14,7 @@
  */
 package edu.uci.ics.algebricks.compiler.optimizer.rules;
 
+import edu.uci.ics.algebricks.api.exceptions.AlgebricksException;
 import edu.uci.ics.algebricks.compiler.algebra.base.ILogicalExpression;
 import edu.uci.ics.algebricks.compiler.algebra.base.LogicalExpressionReference;
 import edu.uci.ics.algebricks.compiler.algebra.base.LogicalExpressionTag;
@@ -38,7 +39,7 @@ public class ExtractGbyExpressionsRule extends AbstractExtractExprRule {
     }
 
     @Override
-    public boolean rewritePost(LogicalOperatorReference opRef, IOptimizationContext context) {
+    public boolean rewritePost(LogicalOperatorReference opRef, IOptimizationContext context) throws AlgebricksException {
         AbstractLogicalOperator op1 = (AbstractLogicalOperator) opRef.getOperator();
         if (op1.getOperatorTag() != LogicalOperatorTag.GROUP) {
             return false;
@@ -51,10 +52,14 @@ public class ExtractGbyExpressionsRule extends AbstractExtractExprRule {
         GroupByOperator g = (GroupByOperator) op1;
         boolean r1 = gbyExprWasRewritten(g, context);
         boolean r2 = decorExprWasRewritten(g, context);
-        return r1 || r2;
+        boolean fired = r1 || r2;
+        if (fired) {
+            context.computeAndSetTypeEnvironmentForOperator(g);
+        }
+        return fired;
     }
 
-    private boolean gbyExprWasRewritten(GroupByOperator g, IOptimizationContext context) {
+    private boolean gbyExprWasRewritten(GroupByOperator g, IOptimizationContext context) throws AlgebricksException {
         if (!gbyHasComplexExpr(g)) {
             return false;
         }
@@ -69,7 +74,7 @@ public class ExtractGbyExpressionsRule extends AbstractExtractExprRule {
         return true;
     }
 
-    private boolean decorExprWasRewritten(GroupByOperator g, IOptimizationContext context) {
+    private boolean decorExprWasRewritten(GroupByOperator g, IOptimizationContext context) throws AlgebricksException {
         if (!decorHasComplexExpr(g)) {
             return false;
         }

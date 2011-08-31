@@ -76,7 +76,7 @@ public class IntroJoinInsideSubplanRule extends AbstractDecorrelationRule {
                         Set<LogicalVariable> free1 = new HashSet<LogicalVariable>();
                         OptimizationUtil.getFreeVariablesInSelfOrDesc(op1, free1);
                         if (!free1.isEmpty()) {
-                            OperatorManipulationUtil.ntsToEts(op2Ref);
+                            OperatorManipulationUtil.ntsToEts(op2Ref, context);
                             NestedTupleSourceOperator nts = new NestedTupleSourceOperator(new LogicalOperatorReference(
                                     subplan));
                             LogicalOperatorReference ntsRef = new LogicalOperatorReference(nts);
@@ -84,6 +84,8 @@ public class IntroJoinInsideSubplanRule extends AbstractDecorrelationRule {
                             InnerJoinOperator join = new InnerJoinOperator(new LogicalExpressionReference(
                                     ConstantExpression.TRUE), ntsRef, innerRef);
                             op2Ref.setOperator(join);
+                            context.computeAndSetTypeEnvironmentForOperator(nts);
+                            context.computeAndSetTypeEnvironmentForOperator(join);
                             return true;
                         }
                     }

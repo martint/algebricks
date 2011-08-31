@@ -50,14 +50,15 @@ public class RemoveUnusedAssignAndAggregateRule implements IAlgebraicRewriteRule
         collectUnusedAssignedVars((AbstractLogicalOperator) opRef.getOperator(), toRemove, true, context);
         boolean smthToRemove = !toRemove.isEmpty();
         if (smthToRemove) {
-            removeUnusedAssigns(opRef, toRemove);
+            removeUnusedAssigns(opRef, toRemove, context);
         }
         return smthToRemove;
     }
 
-    private void removeUnusedAssigns(LogicalOperatorReference opRef, Set<LogicalVariable> toRemove) {
+    private void removeUnusedAssigns(LogicalOperatorReference opRef, Set<LogicalVariable> toRemove,
+            IOptimizationContext context) throws AlgebricksException {
         AbstractLogicalOperator op = (AbstractLogicalOperator) opRef.getOperator();
-        while (removeFromAssigns(op, toRemove) == 0) {
+        while (removeFromAssigns(op, toRemove, context) == 0) {
             if (op.getOperatorTag() == LogicalOperatorTag.AGGREGATE) {
                 break;
             }
@@ -67,7 +68,7 @@ public class RemoveUnusedAssignAndAggregateRule implements IAlgebraicRewriteRule
         Iterator<LogicalOperatorReference> childIter = op.getInputs().iterator();
         while (childIter.hasNext()) {
             LogicalOperatorReference cRef = childIter.next();
-            removeUnusedAssigns(cRef, toRemove);
+            removeUnusedAssigns(cRef, toRemove, context);
         }
         if (op.hasNestedPlans()) {
             AbstractOperatorWithNestedPlans opWithNest = (AbstractOperatorWithNestedPlans) op;
@@ -75,27 +76,33 @@ public class RemoveUnusedAssignAndAggregateRule implements IAlgebraicRewriteRule
             while (planIter.hasNext()) {
                 ILogicalPlan p = planIter.next();
                 for (LogicalOperatorReference r : p.getRoots()) {
-                    removeUnusedAssigns(r, toRemove);
+                    removeUnusedAssigns(r, toRemove, context);
                 }
             }
         }
     }
 
-    private int removeFromAssigns(AbstractLogicalOperator op, Set<LogicalVariable> toRemove) {
+    private int removeFromAssigns(AbstractLogicalOperator op, Set<LogicalVariable> toRemove,
+            IOptimizationContext context) throws AlgebricksException {
         if (op.getOperatorTag() == LogicalOperatorTag.ASSIGN) {
             AssignOperator assign = (AssignOperator) op;
-            removeUnusedVarsAndExprs(toRemove, assign.getVariables(), assign.getExpressions());
+            if (removeUnusedVarsAndExprs(toRemove, assign.getVariables(), assign.getExpressions())) {
+                context.computeAndSetTypeEnvironmentForOperator(assign);
+            }
             return assign.getVariables().size();
         } else if (op.getOperatorTag() == LogicalOperatorTag.AGGREGATE) {
             AggregateOperator agg = (AggregateOperator) op;
-            removeUnusedVarsAndExprs(toRemove, agg.getVariables(), agg.getExpressions());
+            if (removeUnusedVarsAndExprs(toRemove, agg.getVariables(), agg.getExpressions())) {
+                context.computeAndSetTypeEnvironmentForOperator(agg);
+            }
             return agg.getVariables().size();
         }
         return -1;
     }
 
-    private void removeUnusedVarsAndExprs(Set<LogicalVariable> toRemove, List<LogicalVariable> varList,
+    private boolean removeUnusedVarsAndExprs(Set<LogicalVariable> toRemove, List<LogicalVariable> varList,
             List<LogicalExpressionReference> exprList) {
+        boolean changed = false;
         Iterator<LogicalVariable> varIter = varList.iterator();
         Iterator<LogicalExpressionReference> exprIter = exprList.iterator();
         while (varIter.hasNext()) {
@@ -104,8 +111,10 @@ public class RemoveUnusedAssignAndAggregateRule implements IAlgebraicRewriteRule
             if (toRemove.contains(v)) {
                 varIter.remove();
                 exprIter.remove();
+                changed = true;
             }
         }
+        return changed;
     }
 
     private void collectUnusedAssignedVars(AbstractLogicalOperator op, Set<LogicalVariable> toRemove, boolean first,

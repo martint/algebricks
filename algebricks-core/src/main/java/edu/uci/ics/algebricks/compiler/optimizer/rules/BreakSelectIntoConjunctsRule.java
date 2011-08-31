@@ -17,6 +17,7 @@ package edu.uci.ics.algebricks.compiler.optimizer.rules;
 import java.util.ArrayList;
 import java.util.List;
 
+import edu.uci.ics.algebricks.api.exceptions.AlgebricksException;
 import edu.uci.ics.algebricks.compiler.algebra.base.ILogicalExpression;
 import edu.uci.ics.algebricks.compiler.algebra.base.ILogicalOperator;
 import edu.uci.ics.algebricks.compiler.algebra.base.LogicalExpressionReference;
@@ -37,7 +38,7 @@ public class BreakSelectIntoConjunctsRule implements IAlgebraicRewriteRule {
     }
 
     @Override
-    public boolean rewritePre(LogicalOperatorReference opRef, IOptimizationContext context) {
+    public boolean rewritePre(LogicalOperatorReference opRef, IOptimizationContext context) throws AlgebricksException {
         AbstractLogicalOperator op = (AbstractLogicalOperator) opRef.getOperator();
         if (op.getOperatorTag() != LogicalOperatorTag.SELECT) {
             return false;
@@ -65,12 +66,14 @@ public class BreakSelectIntoConjunctsRule implements IAlgebraicRewriteRule {
                 List<LogicalOperatorReference> botInpList = botOp.getInputs();
                 botInpList.clear();
                 botInpList.add(new LogicalOperatorReference(newSelect));
+                context.computeAndSetTypeEnvironmentForOperator(botOp);
                 botOp = newSelect;
             }
         }
         botOp.getInputs().add(childOfSelect);
-
         select.getCondition().setExpression(firstExpr);
+        context.computeAndSetTypeEnvironmentForOperator(botOp);
+        context.computeAndSetTypeEnvironmentForOperator(select);
 
         return true;
     }

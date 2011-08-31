@@ -26,7 +26,6 @@ import edu.uci.ics.algebricks.compiler.algebra.properties.TypePropagationPolicy;
 import edu.uci.ics.algebricks.compiler.algebra.properties.VariablePropagationPolicy;
 import edu.uci.ics.algebricks.compiler.algebra.typing.ITypeEnvPointer;
 import edu.uci.ics.algebricks.compiler.algebra.typing.ITypingContext;
-import edu.uci.ics.algebricks.compiler.algebra.typing.OpRefTypeEnvPointer;
 import edu.uci.ics.algebricks.compiler.algebra.typing.PropagatingTypeEnvironment;
 import edu.uci.ics.algebricks.compiler.algebra.visitors.ILogicalExpressionReferenceTransform;
 import edu.uci.ics.algebricks.compiler.algebra.visitors.ILogicalOperatorVisitor;
@@ -82,11 +81,23 @@ public class NestedTupleSourceOperator extends AbstractLogicalOperator {
     }
 
     @Override
-    public IVariableTypeEnvironment computeTypeEnvironment(ITypingContext ctx) throws AlgebricksException {
+    public IVariableTypeEnvironment computeOutputTypeEnvironment(final ITypingContext ctx) throws AlgebricksException {
         ITypeEnvPointer[] p = new ITypeEnvPointer[1];
-        p[0] = new OpRefTypeEnvPointer(dataSourceReference.getOperator().getInputs().get(0), ctx);
-        return new PropagatingTypeEnvironment(ctx.getExpressionTypeComputer(), ctx.getNullableTypeComputer(),
-                TypePropagationPolicy.ALL, p);
+        p[0] = new ITypeEnvPointer() {
+
+            @Override
+            public IVariableTypeEnvironment getTypeEnv() {
+                ILogicalOperator op = dataSourceReference.getOperator().getInputs().get(0).getOperator();
+                return ctx.getOutputTypeEnvironment(op);
+            }
+        };
+        return new PropagatingTypeEnvironment(ctx.getExpressionTypeComputer(), ctx.getNullableTypeComputer(), ctx
+                .getMetadataProvider(), TypePropagationPolicy.ALL, p);
+    }
+
+    @Override
+    public IVariableTypeEnvironment computeInputTypeEnvironment(ITypingContext ctx) throws AlgebricksException {
+        return computeOutputTypeEnvironment(ctx);
     }
 
 }

@@ -92,6 +92,9 @@ public class IntroduceGroupByForStandaloneAggregRule implements IAlgebraicRewrit
             nts.getDataSourceReference().setOperator(gbyOp);
             gbyOp.getInputs().add(opRef3);
             List<LogicalOperatorReference> asgnInpList = assign.getInputs();
+            context.computeAndSetTypeEnvironmentForOperator(nts);
+            context.computeAndSetTypeEnvironmentForOperator(agg);
+            context.computeAndSetTypeEnvironmentForOperator(gbyOp);
             asgnInpList.clear();
             asgnInpList.add(opRefGby);
             return true;

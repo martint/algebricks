@@ -82,7 +82,7 @@ public class PullSelectOutOfEqJoin implements IAlgebraicRewriteRule {
         join.getCondition().setExpression(newJoinCond);
         select.getInputs().add(new LogicalOperatorReference(join));
         opRef.setOperator(select);
-
+        context.computeAndSetTypeEnvironmentForOperator(select);
         return true;
     }
 

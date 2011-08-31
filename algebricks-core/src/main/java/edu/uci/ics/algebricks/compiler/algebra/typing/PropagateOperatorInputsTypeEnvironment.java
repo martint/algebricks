@@ -5,33 +5,23 @@ import java.util.List;
 
 import edu.uci.ics.algebricks.api.exceptions.AlgebricksException;
 import edu.uci.ics.algebricks.api.expr.IExpressionTypeComputer;
-import edu.uci.ics.algebricks.api.expr.INullableTypeComputer;
+import edu.uci.ics.algebricks.api.expr.IVariableTypeEnvironment;
+import edu.uci.ics.algebricks.compiler.algebra.base.ILogicalOperator;
+import edu.uci.ics.algebricks.compiler.algebra.base.LogicalOperatorReference;
 import edu.uci.ics.algebricks.compiler.algebra.base.LogicalVariable;
 import edu.uci.ics.algebricks.compiler.algebra.metadata.IMetadataProvider;
-import edu.uci.ics.algebricks.compiler.algebra.properties.TypePropagationPolicy;
 
-public class PropagatingTypeEnvironment extends AbstractTypeEnvironment {
-
-    private final TypePropagationPolicy policy;
-
-    private final INullableTypeComputer nullableTypeComputer;
-
-    private final ITypeEnvPointer[] envPointers;
+public class PropagateOperatorInputsTypeEnvironment extends AbstractTypeEnvironment {
 
     private final List<LogicalVariable> nonNullVariables = new ArrayList<LogicalVariable>();
+    private final ILogicalOperator op;
+    private final ITypingContext ctx;
 
-    public PropagatingTypeEnvironment(IExpressionTypeComputer expressionTypeComputer,
-            INullableTypeComputer nullableTypeComputer, IMetadataProvider<?, ?> metadataProvider,
-            TypePropagationPolicy policy, ITypeEnvPointer[] envPointers) {
+    public PropagateOperatorInputsTypeEnvironment(ILogicalOperator op, ITypingContext ctx,
+            IExpressionTypeComputer expressionTypeComputer, IMetadataProvider<?, ?> metadataProvider) {
         super(expressionTypeComputer, metadataProvider);
-        this.nullableTypeComputer = nullableTypeComputer;
-        this.policy = policy;
-        this.envPointers = envPointers;
-    }
-
-    @Override
-    public Object getVarType(LogicalVariable var) throws AlgebricksException {
-        return getVarTypeFullList(var, nonNullVariables);
+        this.op = op;
+        this.ctx = ctx;
     }
 
     public List<LogicalVariable> getNonNullVariables() {
@@ -50,6 +40,20 @@ public class PropagatingTypeEnvironment extends AbstractTypeEnvironment {
         if (t != null) {
             return t;
         }
-        return policy.getVarType(var, nullableTypeComputer, nonNullVariableList, envPointers);
+        for (LogicalOperatorReference r : op.getInputs()) {
+            ILogicalOperator c = r.getOperator();
+            IVariableTypeEnvironment env = ctx.getOutputTypeEnvironment(c);
+            Object t2 = env.getVarType(var, nonNullVariableList);
+            if (t2 != null) {
+                return t2;
+            }
+        }
+        return null;
     }
+
+    @Override
+    public Object getVarType(LogicalVariable var) throws AlgebricksException {
+        return getVarTypeFullList(var, nonNullVariables);
+    }
+
 }

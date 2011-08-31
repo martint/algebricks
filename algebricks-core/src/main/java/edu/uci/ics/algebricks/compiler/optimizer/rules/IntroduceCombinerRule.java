@@ -23,6 +23,7 @@ import edu.uci.ics.algebricks.compiler.algebra.expressions.AggregateFunctionCall
 import edu.uci.ics.algebricks.compiler.algebra.expressions.VariableReferenceExpression;
 import edu.uci.ics.algebricks.compiler.algebra.functions.IFunctionInfo;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.AbstractLogicalOperator;
+import edu.uci.ics.algebricks.compiler.algebra.operators.logical.AbstractOperatorWithNestedPlans;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.AggregateOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.GroupByOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.NestedTupleSourceOperator;
@@ -99,13 +100,22 @@ public class IntroduceCombinerRule implements IAlgebraicRewriteRule {
                 LogicalVariable newDecorVar = context.newVar();
                 newGbyOp.addDecorExpression(newDecorVar, new VariableReferenceExpression(var));
                 VariableUtilities.substituteVariables(gbyOp.getNestedPlans().get(0).getRoots().get(0).getOperator(),
-                        var, newDecorVar);
+                        var, newDecorVar, context);
             }
         }
 
         LogicalOperatorReference opRef3 = gbyOp.getInputs().get(0);
         opRef3.setOperator(newGbyOp);
+        typeGby(newGbyOp, context);
+        typeGby(gbyOp, context);
         return true;
+    }
+
+    private void typeGby(AbstractOperatorWithNestedPlans op, IOptimizationContext context) throws AlgebricksException {
+        for (ILogicalPlan p : op.getNestedPlans()) {
+            OptimizationUtil.typePlan(p, context);
+        }
+        context.computeAndSetTypeEnvironmentForOperator(op);
     }
 
     private GroupByOperator opToPush(GroupByOperator gbyOp, BookkeepingInfo bi, IOptimizationContext context)
@@ -166,7 +176,7 @@ public class IntroduceCombinerRule implements IAlgebraicRewriteRule {
         int n = newOpGbyList.size();
         for (int i = 0; i < n; i++) {
             newGbyOp.addGbyExpression(replGbyList.get(i), new VariableReferenceExpression(newOpGbyList.get(i)));
-            VariableUtilities.substituteVariables(gbyOp, newOpGbyList.get(i), replGbyList.get(i), false);
+            VariableUtilities.substituteVariables(gbyOp, newOpGbyList.get(i), replGbyList.get(i), false, context);
         }
         return newGbyOp;
     }

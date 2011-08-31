@@ -15,7 +15,7 @@ public class OpRefTypeEnvPointer implements ITypeEnvPointer {
 
     @Override
     public IVariableTypeEnvironment getTypeEnv() {
-        return ctx.getTypeEnvironment(op.getOperator());
+        return ctx.getOutputTypeEnvironment(op.getOperator());
     }
 
     @Override

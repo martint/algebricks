@@ -72,13 +72,13 @@ public class ComplexJoinInferenceRule implements IAlgebraicRewriteRule {
             return false;
         }
 
-        ntsToEtsInSubplan(subplan);
+        ntsToEtsInSubplan(subplan, context);
         InnerJoinOperator join = new InnerJoinOperator(new LogicalExpressionReference(ConstantExpression.TRUE));
         join.getInputs().add(opRef3);
         opRef2.setOperator(OperatorManipulationUtil.eliminateSingleSubplanOverEts(subplan));
         join.getInputs().add(new LogicalOperatorReference(op));
         opRef.setOperator(join);
-
+        context.computeAndSetTypeEnvironmentForOperator(join);
         return true;
     }
 
@@ -87,10 +87,10 @@ public class ComplexJoinInferenceRule implements IAlgebraicRewriteRule {
         return false;
     }
 
-    private static void ntsToEtsInSubplan(SubplanOperator s) {
+    private static void ntsToEtsInSubplan(SubplanOperator s, IOptimizationContext context) throws AlgebricksException {
         for (ILogicalPlan p : s.getNestedPlans()) {
             for (LogicalOperatorReference r : p.getRoots()) {
-                OperatorManipulationUtil.ntsToEts(r);
+                OperatorManipulationUtil.ntsToEts(r, context);
             }
         }
     }

@@ -14,6 +14,7 @@
  */
 package edu.uci.ics.algebricks.compiler.optimizer.rules;
 
+import edu.uci.ics.algebricks.api.exceptions.AlgebricksException;
 import edu.uci.ics.algebricks.compiler.algebra.base.ILogicalExpression;
 import edu.uci.ics.algebricks.compiler.algebra.base.LogicalExpressionReference;
 import edu.uci.ics.algebricks.compiler.algebra.base.LogicalExpressionTag;
@@ -26,7 +27,7 @@ import edu.uci.ics.algebricks.compiler.optimizer.base.IOptimizationContext;
 public abstract class AbstractExtractExprRule implements IAlgebraicRewriteRule {
 
     protected LogicalVariable extractExprIntoAssignOpRef(ILogicalExpression gExpr, LogicalOperatorReference opRef2,
-            IOptimizationContext context) {
+            IOptimizationContext context) throws AlgebricksException {
         LogicalVariable v = context.newVar();
         AssignOperator a = new AssignOperator(v, new LogicalExpressionReference(gExpr));
         a.getInputs().add(new LogicalOperatorReference(opRef2.getOperator()));
@@ -34,6 +35,7 @@ public abstract class AbstractExtractExprRule implements IAlgebraicRewriteRule {
         if (gExpr.getExpressionTag() == LogicalExpressionTag.CONSTANT) {
             context.addNotToBeInlinedVar(v);
         }
+        context.computeAndSetTypeEnvironmentForOperator(a);
         return v;
     }
 

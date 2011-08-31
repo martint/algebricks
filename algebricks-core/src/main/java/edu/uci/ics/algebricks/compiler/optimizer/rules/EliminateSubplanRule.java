@@ -18,6 +18,7 @@ import java.util.LinkedList;
 
 import edu.uci.ics.algebricks.api.exceptions.AlgebricksException;
 import edu.uci.ics.algebricks.compiler.algebra.base.ILogicalOperator;
+import edu.uci.ics.algebricks.compiler.algebra.base.ILogicalPlan;
 import edu.uci.ics.algebricks.compiler.algebra.base.LogicalExpressionReference;
 import edu.uci.ics.algebricks.compiler.algebra.base.LogicalOperatorReference;
 import edu.uci.ics.algebricks.compiler.algebra.base.LogicalOperatorTag;
@@ -55,7 +56,7 @@ public class EliminateSubplanRule implements IAlgebraicRewriteRule {
         LogicalOperatorReference outerRef = subplan.getInputs().get(0);
         AbstractLogicalOperator outerRefOp = (AbstractLogicalOperator) outerRef.getOperator();
         if (outerRefOp.getOperatorTag() == LogicalOperatorTag.EMPTYTUPLESOURCE) {
-            elimSubplanOverEts(opRef);
+            elimSubplanOverEts(opRef, context);
             return true;
         }
         if (subplan.getNestedPlans().size() == 1 && subplan.getNestedPlans().get(0).getRoots().size() == 1
@@ -93,9 +94,14 @@ public class EliminateSubplanRule implements IAlgebraicRewriteRule {
         }
     }
 
-    private void elimSubplanOverEts(LogicalOperatorReference opRef) {
+    private void elimSubplanOverEts(LogicalOperatorReference opRef, IOptimizationContext ctx)
+            throws AlgebricksException {
         SubplanOperator subplan = (SubplanOperator) opRef.getOperator();
-        OperatorManipulationUtil.ntsToEtsInSubplan(subplan);
+        for (ILogicalPlan p : subplan.getNestedPlans()) {
+            for (LogicalOperatorReference r : p.getRoots()) {
+                OperatorManipulationUtil.ntsToEts(r, ctx);
+            }
+        }
         LinkedList<LogicalOperatorReference> allRoots = subplan.allRootsInReverseOrder();
         if (allRoots.size() == 1) {
             opRef.setOperator(allRoots.get(0).getOperator());
@@ -109,11 +115,11 @@ public class EliminateSubplanRule implements IAlgebraicRewriteRule {
                             ConstantExpression.TRUE));
                     j.getInputs().add(new LogicalOperatorReference(topOp));
                     j.getInputs().add(r);
+                    ctx.setOutputTypeEnvironment(j, j.computeOutputTypeEnvironment(ctx));
                     topOp = j;
                 }
             }
             opRef.setOperator(topOp);
         }
     }
-
 }

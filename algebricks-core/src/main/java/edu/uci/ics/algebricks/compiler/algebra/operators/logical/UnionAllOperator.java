@@ -100,9 +100,10 @@ public class UnionAllOperator extends AbstractLogicalOperator {
     }
 
     @Override
-    public IVariableTypeEnvironment computeTypeEnvironment(ITypingContext ctx) throws AlgebricksException {
-        IVariableTypeEnvironment env = new NonPropagatingTypeEnvironment(ctx.getExpressionTypeComputer());
-        IVariableTypeEnvironment envLeft = ctx.getTypeEnvironment(inputs.get(0).getOperator());
+    public IVariableTypeEnvironment computeOutputTypeEnvironment(ITypingContext ctx) throws AlgebricksException {
+        IVariableTypeEnvironment env = new NonPropagatingTypeEnvironment(ctx.getExpressionTypeComputer(), ctx
+                .getMetadataProvider());
+        IVariableTypeEnvironment envLeft = ctx.getOutputTypeEnvironment(inputs.get(0).getOperator());
         if (envLeft == null) {
             throw new AlgebricksException("Left input types for union operator are not computed.");
         }

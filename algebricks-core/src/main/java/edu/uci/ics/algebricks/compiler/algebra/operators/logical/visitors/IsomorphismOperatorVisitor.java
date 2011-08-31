@@ -472,11 +472,12 @@ public class IsomorphismOperatorVisitor implements ILogicalOperatorVisitor<Boole
         if (producedVars.size() != producedVarsNew.size())
             return newOp;
         for (Entry<LogicalVariable, LogicalVariable> map : variableMapping.entrySet()) {
-            if (liveVars.contains(map.getKey()))
-                VariableUtilities.substituteVariables(newOp, map.getKey(), map.getValue());
+            if (liveVars.contains(map.getKey())) {
+                VariableUtilities.substituteVariables(newOp, map.getKey(), map.getValue(), null);
+            }
         }
         for (int i = 0; i < producedVars.size(); i++)
-            VariableUtilities.substituteVariables(newOp, producedVars.get(i), producedVarsNew.get(i));
+            VariableUtilities.substituteVariables(newOp, producedVars.get(i), producedVarsNew.get(i), null);
         return newOp;
     }
 

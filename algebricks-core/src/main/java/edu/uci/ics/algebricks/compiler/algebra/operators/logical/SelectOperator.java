@@ -26,8 +26,11 @@ import edu.uci.ics.algebricks.compiler.algebra.base.LogicalVariable;
 import edu.uci.ics.algebricks.compiler.algebra.expressions.AbstractFunctionCallExpression;
 import edu.uci.ics.algebricks.compiler.algebra.expressions.VariableReferenceExpression;
 import edu.uci.ics.algebricks.compiler.algebra.functions.AlgebricksBuiltinFunctions;
+import edu.uci.ics.algebricks.compiler.algebra.properties.TypePropagationPolicy;
 import edu.uci.ics.algebricks.compiler.algebra.properties.VariablePropagationPolicy;
+import edu.uci.ics.algebricks.compiler.algebra.typing.ITypeEnvPointer;
 import edu.uci.ics.algebricks.compiler.algebra.typing.ITypingContext;
+import edu.uci.ics.algebricks.compiler.algebra.typing.OpRefTypeEnvPointer;
 import edu.uci.ics.algebricks.compiler.algebra.typing.PropagatingTypeEnvironment;
 import edu.uci.ics.algebricks.compiler.algebra.visitors.ILogicalExpressionReferenceTransform;
 import edu.uci.ics.algebricks.compiler.algebra.visitors.ILogicalOperatorVisitor;
@@ -74,8 +77,11 @@ public class SelectOperator extends AbstractLogicalOperator {
     }
 
     @Override
-    public IVariableTypeEnvironment computeTypeEnvironment(ITypingContext ctx) throws AlgebricksException {
-        PropagatingTypeEnvironment env = createPropagatingAllInputsTypeEnvironment(ctx);
+    public IVariableTypeEnvironment computeOutputTypeEnvironment(ITypingContext ctx) throws AlgebricksException {
+        ITypeEnvPointer[] envPointers = new ITypeEnvPointer[1];
+        envPointers[0] = new OpRefTypeEnvPointer(inputs.get(0), ctx);
+        PropagatingTypeEnvironment env = new PropagatingTypeEnvironment(ctx.getExpressionTypeComputer(), ctx
+                .getNullableTypeComputer(), ctx.getMetadataProvider(), TypePropagationPolicy.ALL, envPointers);
         if (condition.getExpression().getExpressionTag() == LogicalExpressionTag.FUNCTION_CALL) {
             AbstractFunctionCallExpression f1 = (AbstractFunctionCallExpression) condition.getExpression();
             if (f1.getFunctionIdentifier() == AlgebricksBuiltinFunctions.NOT) {

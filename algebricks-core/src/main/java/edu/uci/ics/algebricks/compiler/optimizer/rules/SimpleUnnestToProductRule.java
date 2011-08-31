@@ -50,13 +50,16 @@ public class SimpleUnnestToProductRule implements IAlgebraicRewriteRule {
         }
         InnerJoinOperator product = new InnerJoinOperator(new LogicalExpressionReference(ConstantExpression.TRUE));
 
-        LogicalOperatorReference emptySrc = new LogicalOperatorReference(new EmptyTupleSourceOperator());
+        EmptyTupleSourceOperator ets = new EmptyTupleSourceOperator();
+        context.computeAndSetTypeEnvironmentForOperator(ets);
+        LogicalOperatorReference emptySrc = new LogicalOperatorReference(ets);
         List<LogicalOperatorReference> opInpList = op.getInputs();
         opInpList.clear();
         opInpList.add(emptySrc);
         product.getInputs().add(opRef2); // outer branch
         product.getInputs().add(new LogicalOperatorReference(op));
         opRef.setOperator(product); // plug the product in the plan
+        context.computeAndSetTypeEnvironmentForOperator(product);
         return true;
     }
 
