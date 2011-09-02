@@ -29,15 +29,18 @@ import edu.uci.ics.algebricks.compiler.algebra.operators.logical.AbstractLogical
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.AggregateOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.AssignOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.DataSourceScanOperator;
+import edu.uci.ics.algebricks.compiler.algebra.operators.logical.DeleteOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.DistinctOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.EmptyTupleSourceOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.ExchangeOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.GroupByOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.InnerJoinOperator;
+import edu.uci.ics.algebricks.compiler.algebra.operators.logical.InsertOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.LeftOuterJoinOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.LimitOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.NestedTupleSourceOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.OrderOperator;
+import edu.uci.ics.algebricks.compiler.algebra.operators.logical.OrderOperator.IOrder;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.PartitioningSplitOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.ProjectOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.ReplicateOperator;
@@ -50,7 +53,6 @@ import edu.uci.ics.algebricks.compiler.algebra.operators.logical.UnnestMapOperat
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.UnnestOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.WriteOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.WriteResultOperator;
-import edu.uci.ics.algebricks.compiler.algebra.operators.logical.OrderOperator.IOrder;
 import edu.uci.ics.algebricks.compiler.algebra.typing.ITypingContext;
 import edu.uci.ics.algebricks.compiler.algebra.visitors.ILogicalOperatorVisitor;
 import edu.uci.ics.algebricks.compiler.optimizer.base.OperatorManipulationUtil;
@@ -356,6 +358,27 @@ public class SubstituteVariableVisitor implements ILogicalOperatorVisitor<Void, 
     public Void visitReplicateOperator(ReplicateOperator op, Pair<LogicalVariable, LogicalVariable> arg)
             throws AlgebricksException {
         op.substituteVar(arg.first, arg.second);
+        return null;
+    }
+
+    @Override
+    public Void visitInsertOperator(InsertOperator op, Pair<LogicalVariable, LogicalVariable> pair)
+            throws AlgebricksException {
+        op.getPayloadExpression().getExpression().substituteVar(pair.first, pair.second);
+        for (LogicalExpressionReference e : op.getKeyExpressions()) {
+            e.getExpression().substituteVar(pair.first, pair.second);
+        }
+        substVarTypes(op, pair);
+        return null;
+    }
+
+    @Override
+    public Void visitDeleteOperator(DeleteOperator op, Pair<LogicalVariable, LogicalVariable> pair)
+            throws AlgebricksException {
+        for (LogicalExpressionReference e : op.getKeyExpressions()) {
+            e.getExpression().substituteVar(pair.first, pair.second);
+        }
+        substVarTypes(op, pair);
         return null;
     }
 

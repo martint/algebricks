@@ -32,11 +32,13 @@ import edu.uci.ics.algebricks.compiler.algebra.operators.logical.AbstractOperato
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.AggregateOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.AssignOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.DataSourceScanOperator;
+import edu.uci.ics.algebricks.compiler.algebra.operators.logical.DeleteOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.DistinctOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.EmptyTupleSourceOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.ExchangeOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.GroupByOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.InnerJoinOperator;
+import edu.uci.ics.algebricks.compiler.algebra.operators.logical.InsertOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.LeftOuterJoinOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.LimitOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.NestedTupleSourceOperator;
@@ -223,6 +225,18 @@ public class IsomorphismVariableMappingVisitor implements ILogicalOperatorVisito
         return null;
     }
 
+    @Override
+    public Void visitInsertOperator(InsertOperator op, ILogicalOperator arg) throws AlgebricksException {
+        mapVariablesStandard(op, arg);
+        return null;
+    }
+
+    @Override
+    public Void visitDeleteOperator(DeleteOperator op, ILogicalOperator arg) throws AlgebricksException {
+        mapVariablesStandard(op, arg);
+        return null;
+    }
+
     private void mapChildren(ILogicalOperator op, ILogicalOperator opArg) throws AlgebricksException {
         List<LogicalOperatorReference> inputs = op.getInputs();
         List<LogicalOperatorReference> inputsArg = opArg.getInputs();
@@ -262,8 +276,8 @@ public class IsomorphismVariableMappingVisitor implements ILogicalOperatorVisito
         List<LogicalVariable> producedVarRight = new ArrayList<LogicalVariable>();
         VariableUtilities.getProducedVariables(left, producedVarLeft);
         VariableUtilities.getProducedVariables(right, producedVarRight);
-        mapVariablesForAbstractAssign(producedVarLeft, leftOp.getExpressions(), producedVarRight, rightOp
-                .getExpressions());
+        mapVariablesForAbstractAssign(producedVarLeft, leftOp.getExpressions(), producedVarRight,
+                rightOp.getExpressions());
     }
 
     private void mapVariablesForGroupBy(ILogicalOperator left, ILogicalOperator right) throws AlgebricksException {

@@ -20,6 +20,7 @@ import edu.uci.ics.algebricks.api.constraints.AlgebricksPartitionConstraint;
 import edu.uci.ics.algebricks.api.data.IPrinterFactory;
 import edu.uci.ics.algebricks.api.exceptions.AlgebricksException;
 import edu.uci.ics.algebricks.compiler.algebra.base.LogicalVariable;
+import edu.uci.ics.algebricks.compiler.algebra.operators.logical.IOperatorSchema;
 import edu.uci.ics.algebricks.runtime.hyracks.base.IPushRuntimeFactory;
 import edu.uci.ics.algebricks.runtime.hyracks.jobgen.impl.JobGenContext;
 import edu.uci.ics.algebricks.utils.Pair;
@@ -41,9 +42,21 @@ public interface IMetadataProvider<S, I> {
 
     public boolean scannerOperatorIsLeaf(IDataSource<S> dataSource);
 
-    public Pair<IPushRuntimeFactory, AlgebricksPartitionConstraint> getWriterRuntime(IDataSink sink,
+    public Pair<IPushRuntimeFactory, AlgebricksPartitionConstraint> getWriteFileRuntime(IDataSink sink,
             int[] printColumns, IPrinterFactory[] printerFactories, RecordDescriptor inputDesc)
             throws AlgebricksException;
+
+    public Pair<IOperatorDescriptor, AlgebricksPartitionConstraint> getWriteResultRuntime(String datasetName,
+            IOperatorSchema propagatedSchema, List<LogicalVariable> keys, LogicalVariable payLoadVar,
+            JobGenContext context, JobSpecification jobSpec) throws AlgebricksException;
+
+    public Pair<IOperatorDescriptor, AlgebricksPartitionConstraint> getInsertRuntime(String datasetName,
+            IOperatorSchema propagatedSchema, List<LogicalVariable> keys, LogicalVariable payLoadVar,
+            RecordDescriptor recordDesc, JobGenContext context, JobSpecification jobSpec) throws AlgebricksException;
+
+    public Pair<IOperatorDescriptor, AlgebricksPartitionConstraint> getDeleteRuntime(String datasetName,
+            IOperatorSchema propagatedSchema, List<LogicalVariable> keys, RecordDescriptor recordDesc,
+            JobGenContext context, JobSpecification jobSpec) throws AlgebricksException;
 
     public IDataSourceIndex<I, S> findDataSourceIndex(I indexId, S dataSourceId) throws AlgebricksException;
 }

@@ -11,6 +11,7 @@ import edu.uci.ics.algebricks.compiler.algebra.metadata.IDataSink;
 import edu.uci.ics.algebricks.compiler.algebra.metadata.IDataSource;
 import edu.uci.ics.algebricks.compiler.algebra.metadata.IDataSourceIndex;
 import edu.uci.ics.algebricks.compiler.algebra.metadata.IMetadataProvider;
+import edu.uci.ics.algebricks.compiler.algebra.operators.logical.IOperatorSchema;
 import edu.uci.ics.algebricks.examples.piglet.types.Type;
 import edu.uci.ics.algebricks.runtime.hyracks.base.IPushRuntimeFactory;
 import edu.uci.ics.algebricks.runtime.hyracks.jobgen.impl.JobGenContext;
@@ -99,7 +100,7 @@ public class PigletMetadataProvider implements IMetadataProvider<String, String>
     }
 
     @Override
-    public Pair<IPushRuntimeFactory, AlgebricksPartitionConstraint> getWriterRuntime(IDataSink sink,
+    public Pair<IPushRuntimeFactory, AlgebricksPartitionConstraint> getWriteFileRuntime(IDataSink sink,
             int[] printColumns, IPrinterFactory[] printerFactories, RecordDescriptor inputDesc)
             throws AlgebricksException {
         PigletFileDataSink ds = (PigletFileDataSink) sink;
@@ -117,6 +118,27 @@ public class PigletMetadataProvider implements IMetadataProvider<String, String>
     @Override
     public IDataSourceIndex<String, String> findDataSourceIndex(String indexId, String dataSourceId)
             throws AlgebricksException {
+        return null;
+    }
+
+    @Override
+    public Pair<IOperatorDescriptor, AlgebricksPartitionConstraint> getWriteResultRuntime(String datasetName,
+            IOperatorSchema propagatedSchema, List<LogicalVariable> keys, LogicalVariable payLoadVar,
+            JobGenContext context, JobSpecification jobSpec) throws AlgebricksException {
+        return null;
+    }
+
+    @Override
+    public Pair<IOperatorDescriptor, AlgebricksPartitionConstraint> getInsertRuntime(String datasetName,
+            IOperatorSchema propagatedSchema, List<LogicalVariable> keys, LogicalVariable payLoadVar,
+            RecordDescriptor recordDesc, JobGenContext context, JobSpecification jobSpec) throws AlgebricksException {
+        return null;
+    }
+
+    @Override
+    public Pair<IOperatorDescriptor, AlgebricksPartitionConstraint> getDeleteRuntime(String datasetName,
+            IOperatorSchema propagatedSchema, List<LogicalVariable> keys, RecordDescriptor recordDesc,
+            JobGenContext context, JobSpecification jobSpec) throws AlgebricksException {
         return null;
     }
 }

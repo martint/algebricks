@@ -37,5 +37,8 @@ public enum PhysicalOperatorTag {
     SUBPLAN,
     UNION_ALL,
     UNNEST,
-    WRITE_RESULT
+    WRITE_RESULT,
+    INSERT,
+    DELETE,
+    UPDATE
 }
