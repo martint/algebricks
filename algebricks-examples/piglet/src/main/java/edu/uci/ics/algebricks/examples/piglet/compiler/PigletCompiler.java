@@ -68,31 +68,36 @@ import edu.uci.ics.hyracks.api.job.JobSpecification;
 public class PigletCompiler {
     private static final Logger LOGGER = Logger.getLogger(PigletCompiler.class.getName());
 
-    private static List<Pair<AbstractRuleController, List<IAlgebraicRewriteRule>>> DEFAULT_LOGICAL_REWRITES = new ArrayList<Pair<AbstractRuleController, List<IAlgebraicRewriteRule>>>();
-    private static List<Pair<AbstractRuleController, List<IAlgebraicRewriteRule>>> DEFAULT_PHYSICAL_REWRITES = new ArrayList<Pair<AbstractRuleController, List<IAlgebraicRewriteRule>>>();
-    static {
+    private static List<Pair<AbstractRuleController, List<IAlgebraicRewriteRule>>> buildDefaultLogicalRewrites() {
+        List<Pair<AbstractRuleController, List<IAlgebraicRewriteRule>>> defaultLogicalRewrites = new ArrayList<Pair<AbstractRuleController, List<IAlgebraicRewriteRule>>>();
         SequentialFixpointRuleController seqCtrlNoDfs = new SequentialFixpointRuleController(false);
         SequentialFixpointRuleController seqCtrlFullDfs = new SequentialFixpointRuleController(true);
         SequentialOnceRuleControllerFullDFS seqOnceCtrl = new SequentialOnceRuleControllerFullDFS();
-        DEFAULT_LOGICAL_REWRITES.add(new Pair<AbstractRuleController, List<IAlgebraicRewriteRule>>(seqOnceCtrl,
-                PigletRewriteRuleset.TYPE_INFERENCE));
-        DEFAULT_LOGICAL_REWRITES.add(new Pair<AbstractRuleController, List<IAlgebraicRewriteRule>>(seqCtrlFullDfs,
-                PigletRewriteRuleset.NORMALIZATION));
-        DEFAULT_LOGICAL_REWRITES.add(new Pair<AbstractRuleController, List<IAlgebraicRewriteRule>>(seqCtrlNoDfs,
-                PigletRewriteRuleset.COND_PUSHDOWN_AND_JOIN_INFERENCE));
-        DEFAULT_LOGICAL_REWRITES.add(new Pair<AbstractRuleController, List<IAlgebraicRewriteRule>>(seqCtrlFullDfs,
-                PigletRewriteRuleset.JOIN_INFERENCE));
-        DEFAULT_LOGICAL_REWRITES.add(new Pair<AbstractRuleController, List<IAlgebraicRewriteRule>>(seqCtrlNoDfs,
-                PigletRewriteRuleset.OP_PUSHDOWN));
-        DEFAULT_LOGICAL_REWRITES.add(new Pair<AbstractRuleController, List<IAlgebraicRewriteRule>>(seqOnceCtrl,
-                PigletRewriteRuleset.DATA_EXCHANGE));
-        DEFAULT_LOGICAL_REWRITES.add(new Pair<AbstractRuleController, List<IAlgebraicRewriteRule>>(seqCtrlNoDfs,
-                PigletRewriteRuleset.CONSOLIDATION));
+        defaultLogicalRewrites.add(new Pair<AbstractRuleController, List<IAlgebraicRewriteRule>>(seqOnceCtrl,
+                PigletRewriteRuleset.buildTypeInferenceRuleCollection()));
+        defaultLogicalRewrites.add(new Pair<AbstractRuleController, List<IAlgebraicRewriteRule>>(seqCtrlFullDfs,
+                PigletRewriteRuleset.buildNormalizationRuleCollection()));
+        defaultLogicalRewrites.add(new Pair<AbstractRuleController, List<IAlgebraicRewriteRule>>(seqCtrlNoDfs,
+                PigletRewriteRuleset.buildCondPushDownRuleCollection()));
+        defaultLogicalRewrites.add(new Pair<AbstractRuleController, List<IAlgebraicRewriteRule>>(seqCtrlNoDfs,
+                PigletRewriteRuleset.buildJoinInferenceRuleCollection()));
+        defaultLogicalRewrites.add(new Pair<AbstractRuleController, List<IAlgebraicRewriteRule>>(seqCtrlNoDfs,
+                PigletRewriteRuleset.buildOpPushDownRuleCollection()));
+        defaultLogicalRewrites.add(new Pair<AbstractRuleController, List<IAlgebraicRewriteRule>>(seqOnceCtrl,
+                PigletRewriteRuleset.buildDataExchangeRuleCollection()));
+        defaultLogicalRewrites.add(new Pair<AbstractRuleController, List<IAlgebraicRewriteRule>>(seqCtrlNoDfs,
+                PigletRewriteRuleset.buildConsolidationRuleCollection()));
+        return defaultLogicalRewrites;
+    }
 
-        DEFAULT_PHYSICAL_REWRITES.add(new Pair<AbstractRuleController, List<IAlgebraicRewriteRule>>(seqOnceCtrl,
-                PigletRewriteRuleset.PHYSICAL_PLAN_REWRITES));
-        DEFAULT_PHYSICAL_REWRITES.add(new Pair<AbstractRuleController, List<IAlgebraicRewriteRule>>(seqOnceCtrl,
-                PigletRewriteRuleset.PREPARE_FOR_JOBGEN));
+    private static List<Pair<AbstractRuleController, List<IAlgebraicRewriteRule>>> buildDefaultPhysicalRewrites() {
+        List<Pair<AbstractRuleController, List<IAlgebraicRewriteRule>>> defaultPhysicalRewrites = new ArrayList<Pair<AbstractRuleController, List<IAlgebraicRewriteRule>>>();
+        SequentialOnceRuleControllerFullDFS seqOnceCtrl = new SequentialOnceRuleControllerFullDFS();
+        defaultPhysicalRewrites.add(new Pair<AbstractRuleController, List<IAlgebraicRewriteRule>>(seqOnceCtrl,
+                PigletRewriteRuleset.buildPhysicalPlanRewritesRuleCollection()));
+        defaultPhysicalRewrites.add(new Pair<AbstractRuleController, List<IAlgebraicRewriteRule>>(seqOnceCtrl,
+                PigletRewriteRuleset.prepareForJobGenRuleCollection()));
+        return defaultPhysicalRewrites;
     }
 
     private final ICompilerFactory cFactory;
@@ -105,8 +110,8 @@ public class PigletCompiler {
 
     public PigletCompiler() {
         HeuristicCompilerFactoryBuilder builder = new HeuristicCompilerFactoryBuilder();
-        builder.setLogicalRewrites(DEFAULT_LOGICAL_REWRITES);
-        builder.setPhysicalRewrites(DEFAULT_PHYSICAL_REWRITES);
+        builder.setLogicalRewrites(buildDefaultLogicalRewrites());
+        builder.setPhysicalRewrites(buildDefaultPhysicalRewrites());
         builder.setSerializerDeserializerProvider(new ISerializerDeserializerProvider() {
             @SuppressWarnings("unchecked")
             @Override
