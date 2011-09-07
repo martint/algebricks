@@ -45,6 +45,7 @@ import edu.uci.ics.algebricks.compiler.algebra.operators.logical.ReplicateOperat
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.RunningAggregateOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.ScriptOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.SelectOperator;
+import edu.uci.ics.algebricks.compiler.algebra.operators.logical.SinkOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.SubplanOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.UnionAllOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.UnnestMapOperator;
@@ -249,6 +250,12 @@ public class SchemaVariableVisitor implements ILogicalOperatorVisitor<Void, Void
 
     @Override
     public Void visitDeleteOperator(DeleteOperator op, Void arg) throws AlgebricksException {
+        standardLayout(op);
+        return null;
+    }
+
+    @Override
+    public Void visitSinkOperator(SinkOperator op, Void arg) throws AlgebricksException {
         standardLayout(op);
         return null;
     }

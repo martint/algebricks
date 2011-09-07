@@ -52,6 +52,7 @@ import edu.uci.ics.algebricks.compiler.algebra.operators.logical.ReplicateOperat
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.RunningAggregateOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.ScriptOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.SelectOperator;
+import edu.uci.ics.algebricks.compiler.algebra.operators.logical.SinkOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.SubplanOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.UnionAllOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.UnnestMapOperator;
@@ -444,6 +445,11 @@ public class IsomorphismOperatorVisitor implements ILogicalOperatorVisitor<Boole
         return isomorphic;
     }
 
+    @Override
+    public Boolean visitSinkOperator(SinkOperator op, ILogicalOperator arg) throws AlgebricksException {
+        return true;
+    }
+
     private Boolean compareExpressions(List<LogicalExpressionReference> opExprs,
             List<LogicalExpressionReference> argExprs) {
         if (opExprs.size() != argExprs.size())
@@ -745,6 +751,11 @@ public class IsomorphismOperatorVisitor implements ILogicalOperatorVisitor<Boole
             deepCopyExpressionRefs(newKeyExpressions, Arrays.asList(op.getKeyExpressions()));
             return new InsertOperator(op.getDatasetName(), deepCopyExpressionRef(op.getPayloadExpression()),
                     newKeyExpressions.toArray(new LogicalExpressionReference[0]));
+        }
+
+        @Override
+        public ILogicalOperator visitSinkOperator(SinkOperator op, Void arg) throws AlgebricksException {
+            return new SinkOperator();
         }
 
         @Override

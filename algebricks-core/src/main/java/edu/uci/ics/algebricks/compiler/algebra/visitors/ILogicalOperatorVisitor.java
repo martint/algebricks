@@ -35,11 +35,11 @@ import edu.uci.ics.algebricks.compiler.algebra.operators.logical.ReplicateOperat
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.RunningAggregateOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.ScriptOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.SelectOperator;
+import edu.uci.ics.algebricks.compiler.algebra.operators.logical.SinkOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.SubplanOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.UnionAllOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.UnnestMapOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.UnnestOperator;
-import edu.uci.ics.algebricks.compiler.algebra.operators.logical.UpdateOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.WriteOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.WriteResultOperator;
 
@@ -76,6 +76,8 @@ public interface ILogicalOperatorVisitor<R, T> {
     public R visitScriptOperator(ScriptOperator op, T arg) throws AlgebricksException;
 
     public R visitSubplanOperator(SubplanOperator op, T arg) throws AlgebricksException;
+
+    public R visitSinkOperator(SinkOperator op, T arg) throws AlgebricksException;
 
     public R visitUnionOperator(UnionAllOperator op, T arg) throws AlgebricksException;
 

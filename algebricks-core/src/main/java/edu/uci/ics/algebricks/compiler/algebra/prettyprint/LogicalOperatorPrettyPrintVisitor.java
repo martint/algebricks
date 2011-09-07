@@ -43,6 +43,7 @@ import edu.uci.ics.algebricks.compiler.algebra.operators.logical.ReplicateOperat
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.RunningAggregateOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.ScriptOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.SelectOperator;
+import edu.uci.ics.algebricks.compiler.algebra.operators.logical.SinkOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.SubplanOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.UnionAllOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.UnnestMapOperator;
@@ -323,6 +324,13 @@ public class LogicalOperatorPrettyPrintVisitor implements ILogicalOperatorVisito
         StringBuilder buffer = new StringBuilder();
         addIndent(buffer, indent).append("delete from ").append(op.getDatasetName()).append(" partitioned by ")
                 .append(Arrays.toString(op.getKeyExpressions()));
+        return buffer.toString();
+    }
+
+    @Override
+    public String visitSinkOperator(SinkOperator op, Integer indent) throws AlgebricksException {
+        StringBuilder buffer = new StringBuilder();
+        addIndent(buffer, indent).append("sink");
         return buffer.toString();
     }
 

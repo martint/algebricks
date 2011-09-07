@@ -34,6 +34,7 @@ public enum LogicalOperatorTag {
     RUNNINGAGGREGATE,
     SCRIPT,
     SELECT,
+    SINK,
     SUBPLAN,
     UNIONALL,
     UNNEST,

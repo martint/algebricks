@@ -60,6 +60,7 @@ import edu.uci.ics.algebricks.compiler.algebra.operators.logical.ReplicateOperat
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.RunningAggregateOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.ScriptOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.SelectOperator;
+import edu.uci.ics.algebricks.compiler.algebra.operators.logical.SinkOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.SubplanOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.UnionAllOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.UnnestMapOperator;
@@ -481,6 +482,12 @@ public class FDsAndEquivClassesVisitor implements ILogicalOperatorVisitor<Void, 
 
     @Override
     public Void visitDeleteOperator(DeleteOperator op, IOptimizationContext ctx) throws AlgebricksException {
+        setEmptyFDsEqClasses(op, ctx);
+        return null;
+    }
+
+    @Override
+    public Void visitSinkOperator(SinkOperator op, IOptimizationContext ctx) throws AlgebricksException {
         setEmptyFDsEqClasses(op, ctx);
         return null;
     }

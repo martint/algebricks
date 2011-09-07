@@ -44,6 +44,7 @@ import edu.uci.ics.algebricks.compiler.algebra.operators.physical.PreSortedDisti
 import edu.uci.ics.algebricks.compiler.algebra.operators.physical.PreclusteredGroupByPOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.physical.ReplicatePOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.physical.RunningAggregatePOperator;
+import edu.uci.ics.algebricks.compiler.algebra.operators.physical.SinkPOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.physical.SinkWritePOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.physical.StableSortPOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.physical.StreamLimitPOperator;
@@ -265,6 +266,10 @@ public class SetAlgebricksPhysicalOperatorsRule implements IAlgebraicRewriteRule
                         keys.add(((VariableReferenceExpression) e).getVariableReference());
                     }
                     op.setPhysicalOperator(new DeletePOperator(keys));
+                    break;
+                }
+                case SINK: {
+                    op.setPhysicalOperator(new SinkPOperator());
                     break;
                 }
             }
