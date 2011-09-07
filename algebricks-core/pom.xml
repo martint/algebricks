@@ -27,19 +27,19 @@
   	<dependency>
   		<groupId>edu.uci.ics.hyracks</groupId>
   		<artifactId>hyracks-dataflow-std</artifactId>
-  		<version>0.1.7</version>
+  		<version>0.1.7.1</version>
   		<scope>compile</scope>
   	</dependency>
   	<dependency>
   		<groupId>edu.uci.ics.hyracks</groupId>
   		<artifactId>hyracks-storage-am-btree</artifactId>
-  		<version>0.1.7</version>
+  		<version>0.1.7.1</version>
   		<scope>compile</scope>
   	</dependency>
   	<dependency>
   		<groupId>edu.uci.ics.hyracks</groupId>
   		<artifactId>hyracks-storage-am-rtree</artifactId>
-  		<version>0.1.7</version>
+  		<version>0.1.7.1</version>
   		<scope>compile</scope>
   	</dependency>
   </dependencies>
