@@ -26,23 +26,86 @@ import edu.uci.ics.algebricks.compiler.algebra.base.LogicalVariable;
 import edu.uci.ics.algebricks.compiler.algebra.visitors.ILogicalExpressionVisitor;
 
 public final class ConstantExpression extends AbstractLogicalExpression {
-    private Object value;
+    private IAlgebricksConstantValue value;
 
-    public final static ConstantExpression TRUE = new ConstantExpression(TrueLiteral.INSTANCE);
-    public final static ConstantExpression FALSE = new ConstantExpression(FalseLiteral.INSTANCE);
-    public final static ConstantExpression NULL = new ConstantExpression(NullLiteral.INSTANCE);
+    public final static ConstantExpression TRUE = new ConstantExpression(new IAlgebricksConstantValue() {
+
+        @Override
+        public boolean isTrue() {
+            return true;
+        }
+
+        @Override
+        public boolean isNull() {
+            return false;
+        }
+
+        @Override
+        public boolean isFalse() {
+            return false;
+        }
+
+        @Override
+        public String toString() {
+            return "TRUE";
+        }
+    });
+    public final static ConstantExpression FALSE = new ConstantExpression(new IAlgebricksConstantValue() {
+
+        @Override
+        public boolean isTrue() {
+            return false;
+        }
+
+        @Override
+        public boolean isNull() {
+            return false;
+        }
+
+        @Override
+        public boolean isFalse() {
+            return true;
+        }
+
+        @Override
+        public String toString() {
+            return "FALSE";
+        }
+    });
+    public final static ConstantExpression NULL = new ConstantExpression(new IAlgebricksConstantValue() {
+
+        @Override
+        public boolean isTrue() {
+            return false;
+        }
+
+        @Override
+        public boolean isNull() {
+            return true;
+        }
+
+        @Override
+        public boolean isFalse() {
+            return false;
+        }
+
+        @Override
+        public String toString() {
+            return "NULL";
+        }
+    });
 
     private Map<Object, IExpressionAnnotation> annotationMap = new HashMap<Object, IExpressionAnnotation>();
 
-    public ConstantExpression(Object value) {
+    public ConstantExpression(IAlgebricksConstantValue value) {
         this.value = value;
     }
 
-    public Object getValue() {
+    public IAlgebricksConstantValue getValue() {
         return value;
     }
 
-    public void setValue(Object value) {
+    public void setValue(IAlgebricksConstantValue value) {
         this.value = value;
     }
 

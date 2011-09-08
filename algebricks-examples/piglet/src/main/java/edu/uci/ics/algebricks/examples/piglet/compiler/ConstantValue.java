@@ -1,8 +1,9 @@
 package edu.uci.ics.algebricks.examples.piglet.compiler;
 
+import edu.uci.ics.algebricks.compiler.algebra.expressions.IAlgebricksConstantValue;
 import edu.uci.ics.algebricks.examples.piglet.types.Type;
 
-public final class ConstantValue {
+public final class ConstantValue implements IAlgebricksConstantValue {
     private final Type type;
 
     private final String image;
@@ -18,5 +19,20 @@ public final class ConstantValue {
 
     public String getImage() {
         return image;
+    }
+
+    @Override
+    public boolean isFalse() {
+        return false;
+    }
+
+    @Override
+    public boolean isNull() {
+        return false;
+    }
+
+    @Override
+    public boolean isTrue() {
+        return false;
     }
 }

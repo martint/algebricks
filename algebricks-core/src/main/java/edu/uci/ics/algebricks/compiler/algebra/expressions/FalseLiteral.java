@@ -16,9 +16,6 @@ package edu.uci.ics.algebricks.compiler.algebra.expressions;
 
 public class FalseLiteral implements ILiteral {
 
-    /**
-     * 
-     */
     private static final long serialVersionUID = -750814844423165149L;
 
     private FalseLiteral() {

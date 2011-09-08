@@ -19,14 +19,12 @@ import java.util.LinkedList;
 import java.util.List;
 
 import edu.uci.ics.algebricks.api.exceptions.AlgebricksException;
-import edu.uci.ics.algebricks.compiler.algebra.base.ILogicalExpression;
 import edu.uci.ics.algebricks.compiler.algebra.base.ILogicalPlan;
 import edu.uci.ics.algebricks.compiler.algebra.base.LogicalExpressionReference;
 import edu.uci.ics.algebricks.compiler.algebra.base.LogicalOperatorReference;
 import edu.uci.ics.algebricks.compiler.algebra.base.LogicalOperatorTag;
 import edu.uci.ics.algebricks.compiler.algebra.base.LogicalVariable;
 import edu.uci.ics.algebricks.compiler.algebra.expressions.ConstantExpression;
-import edu.uci.ics.algebricks.compiler.algebra.expressions.IntegerLiteral;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.AbstractLogicalOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.AggregateOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.AssignOperator;
@@ -76,9 +74,10 @@ public class IntroduceGroupByForStandaloneAggregRule implements IAlgebraicRewrit
             LogicalOperatorReference opRef3 = op2.getInputs().get(0);
             List<Pair<LogicalVariable, LogicalExpressionReference>> groupByList = new ArrayList<Pair<LogicalVariable, LogicalExpressionReference>>();
             LogicalVariable gbyVar = context.newVar();
-            ILogicalExpression constOne = new ConstantExpression(new IntegerLiteral(new Integer(1)));
+            // ILogicalExpression constOne = new ConstantExpression(new
+            // IntegerLiteral(new Integer(1)));
             groupByList.add(new Pair<LogicalVariable, LogicalExpressionReference>(gbyVar,
-                    new LogicalExpressionReference(constOne)));
+                    new LogicalExpressionReference(ConstantExpression.TRUE)));
             NestedTupleSourceOperator nts = new NestedTupleSourceOperator(new LogicalOperatorReference());
             List<LogicalOperatorReference> aggInpList = agg.getInputs();
             aggInpList.clear();

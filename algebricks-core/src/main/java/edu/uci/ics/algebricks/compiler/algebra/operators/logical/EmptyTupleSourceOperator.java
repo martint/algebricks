@@ -56,12 +56,7 @@ public class EmptyTupleSourceOperator extends AbstractLogicalOperator {
         return visitor.visitEmptyTupleSourceOperator(this, arg);
     }
 
-    //
-    // @Override
-    // public void computeConstraintsAndEquivClasses() {
-    // }
-
-    @Override
+     @Override
     public void recomputeSchema() {
         schema = new ArrayList<LogicalVariable>();
     }
