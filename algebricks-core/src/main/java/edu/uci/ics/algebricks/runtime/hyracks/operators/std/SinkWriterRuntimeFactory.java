@@ -20,7 +20,8 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.PrintStream;
 
-import edu.uci.ics.algebricks.api.data.IPrinter;
+import edu.uci.ics.algebricks.api.data.IAWriter;
+import edu.uci.ics.algebricks.api.data.IAWriterFactory;
 import edu.uci.ics.algebricks.api.data.IPrinterFactory;
 import edu.uci.ics.algebricks.api.exceptions.AlgebricksException;
 import edu.uci.ics.algebricks.runtime.hyracks.base.IPushRuntime;
@@ -32,16 +33,18 @@ public class SinkWriterRuntimeFactory implements IPushRuntimeFactory {
 
     private static final long serialVersionUID = 1L;
 
-    private final int[] printColumns;
+    private final int[] fields;
     private final IPrinterFactory[] printerFactories;
     private final File outputFile;
     private final RecordDescriptor inputRecordDesc;
+    private final IAWriterFactory writerFactory;
 
-    public SinkWriterRuntimeFactory(int[] printColumns, IPrinterFactory[] printerFactories, File outputFile,
-            RecordDescriptor inputRecordDesc) {
-        this.printColumns = printColumns;
+    public SinkWriterRuntimeFactory(int[] fields, IPrinterFactory[] printerFactories, File outputFile,
+            IAWriterFactory writerFactory, RecordDescriptor inputRecordDesc) {
+        this.fields = fields;
         this.printerFactories = printerFactories;
         this.outputFile = outputFile;
+        this.writerFactory = writerFactory;
         this.inputRecordDesc = inputRecordDesc;
     }
 
@@ -49,11 +52,11 @@ public class SinkWriterRuntimeFactory implements IPushRuntimeFactory {
     public String toString() {
         StringBuilder buf = new StringBuilder();
         buf.append("sink-write " + "[");
-        for (int i = 0; i < printColumns.length; i++) {
+        for (int i = 0; i < fields.length; i++) {
             if (i > 0) {
                 buf.append("; ");
             }
-            buf.append(printColumns[i]);
+            buf.append(fields[i]);
         }
         buf.append("] outputFile");
         return buf.toString();
@@ -67,16 +70,7 @@ public class SinkWriterRuntimeFactory implements IPushRuntimeFactory {
         } catch (FileNotFoundException e) {
             throw new AlgebricksException(e);
         }
-        IPrinter[] printers = createPrinters(printerFactories);
-        return new PrinterRuntime(printColumns, printers, context, filePrintStream, inputRecordDesc, true);
+        IAWriter w = writerFactory.createWriter(fields, filePrintStream, printerFactories, inputRecordDesc);
+        return new SinkWriterRuntime(w, context, filePrintStream, inputRecordDesc, true);
     }
-
-    private static IPrinter[] createPrinters(IPrinterFactory[] pf) {
-        IPrinter[] printers = new IPrinter[pf.length];
-        for (int i = 0; i < pf.length; i++) {
-            printers[i] = pf[i].createPrinter();
-        }
-        return printers;
-    }
-
 }

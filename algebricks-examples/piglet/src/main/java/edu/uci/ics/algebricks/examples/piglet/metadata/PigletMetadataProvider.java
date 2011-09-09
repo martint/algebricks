@@ -16,6 +16,7 @@ import edu.uci.ics.algebricks.examples.piglet.types.Type;
 import edu.uci.ics.algebricks.runtime.hyracks.base.IPushRuntimeFactory;
 import edu.uci.ics.algebricks.runtime.hyracks.jobgen.impl.JobGenContext;
 import edu.uci.ics.algebricks.runtime.hyracks.operators.std.SinkWriterRuntimeFactory;
+import edu.uci.ics.algebricks.runtime.hyracks.writers.PrinterBasedWriterFactory;
 import edu.uci.ics.algebricks.utils.Pair;
 import edu.uci.ics.hyracks.api.dataflow.IOperatorDescriptor;
 import edu.uci.ics.hyracks.api.dataflow.value.ISerializerDeserializer;
@@ -110,7 +111,7 @@ public class PigletMetadataProvider implements IMetadataProvider<String, String>
             locations[i] = fileSplits[i].getNodeName();
         }
         IPushRuntimeFactory prf = new SinkWriterRuntimeFactory(printColumns, printerFactories, fileSplits[0]
-                .getLocalFile().getFile(), inputDesc);
+                .getLocalFile().getFile(), PrinterBasedWriterFactory.INSTANCE, inputDesc);
         AlgebricksAbsolutePartitionConstraint constraint = new AlgebricksAbsolutePartitionConstraint(locations);
         return new Pair<IPushRuntimeFactory, AlgebricksPartitionConstraint>(prf, constraint);
     }

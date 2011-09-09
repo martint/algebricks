@@ -14,11 +14,12 @@
  */
 package edu.uci.ics.algebricks.runtime.hyracks.operators.std;
 
-import edu.uci.ics.algebricks.api.data.IPrinter;
+import edu.uci.ics.algebricks.api.data.IAWriter;
 import edu.uci.ics.algebricks.api.data.IPrinterFactory;
 import edu.uci.ics.algebricks.runtime.hyracks.base.IPushRuntime;
 import edu.uci.ics.algebricks.runtime.hyracks.base.IPushRuntimeFactory;
 import edu.uci.ics.algebricks.runtime.hyracks.context.RuntimeContext;
+import edu.uci.ics.algebricks.runtime.hyracks.writers.PrinterBasedWriterFactory;
 import edu.uci.ics.hyracks.api.dataflow.value.RecordDescriptor;
 
 public class PrinterRuntimeFactory implements IPushRuntimeFactory {
@@ -52,15 +53,8 @@ public class PrinterRuntimeFactory implements IPushRuntimeFactory {
 
     @Override
     public IPushRuntime createPushRuntime(final RuntimeContext context) {
-        IPrinter[] printers = createPrinters(printerFactories);
-        return new PrinterRuntime(printColumns, printers, context, System.out, inputRecordDesc);
-    }
-
-    public static IPrinter[] createPrinters(IPrinterFactory[] pf) {
-        IPrinter[] printers = new IPrinter[pf.length];
-        for (int i = 0; i < pf.length; i++) {
-            printers[i] = pf[i].createPrinter();
-        }
-        return printers;
+        IAWriter w = PrinterBasedWriterFactory.INSTANCE.createWriter(printColumns, System.out, printerFactories,
+                inputRecordDesc);
+        return new SinkWriterRuntime(w, context, System.out, inputRecordDesc);
     }
 }

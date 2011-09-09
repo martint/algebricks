@@ -75,7 +75,7 @@ public class SinkWritePOperator extends AbstractPhysicalOperator {
             IOperatorSchema propagatedSchema, IOperatorSchema[] inputSchemas, IOperatorSchema outerPlanSchema)
             throws AlgebricksException {
         WriteOperator write = (WriteOperator) op;
-        int[] printColumns = new int[write.getExpressions().size()];
+        int[] columns = new int[write.getExpressions().size()];
         int i = 0;
         for (LogicalExpressionReference exprRef : write.getExpressions()) {
             ILogicalExpression expr = exprRef.getExpression();
@@ -84,19 +84,19 @@ public class SinkWritePOperator extends AbstractPhysicalOperator {
             }
             VariableReferenceExpression varRef = (VariableReferenceExpression) expr;
             LogicalVariable v = varRef.getVariableReference();
-            printColumns[i++] = inputSchemas[0].findVariable(v);
+            columns[i++] = inputSchemas[0].findVariable(v);
         }
         RecordDescriptor recDesc = JobGenHelper.mkRecordDescriptor(op, propagatedSchema, context);
         RecordDescriptor inputDesc = JobGenHelper.mkRecordDescriptor(op.getInputs().get(0).getOperator(),
                 inputSchemas[0], context);
 
         IPrinterFactory[] pf = JobGenHelper.mkPrinterFactories(inputSchemas[0], context.getTypeEnvironment(op),
-                context, printColumns);
+                context, columns);
 
         IMetadataProvider<?, ?> mp = context.getMetadataProvider();
 
         Pair<IPushRuntimeFactory, AlgebricksPartitionConstraint> runtime = mp.getWriteFileRuntime(write.getDataSink(),
-                printColumns, pf, inputDesc);
+                columns, pf, inputDesc);
 
         builder.contributeMicroOperator(write, runtime.first, recDesc, runtime.second);
         ILogicalOperator src = write.getInputs().get(0).getOperator();
