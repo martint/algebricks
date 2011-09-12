@@ -84,4 +84,6 @@ public interface IOptimizationContext extends ITypingContext {
     public abstract void invalidateTypeEnvironmentForOperator(ILogicalOperator op);
 
     public abstract void computeAndSetTypeEnvironmentForOperator(ILogicalOperator op) throws AlgebricksException;
+
+    public abstract void updatePrimaryKeys(Map<LogicalVariable, LogicalVariable> mappedVars);
 }

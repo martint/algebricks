@@ -14,6 +14,7 @@
  */
 package edu.uci.ics.algebricks.compiler.optimizer.base;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -253,5 +254,31 @@ public class AlgebricksOptimizationContext implements IOptimizationContext {
     @Override
     public void computeAndSetTypeEnvironmentForOperator(ILogicalOperator op) throws AlgebricksException {
         setOutputTypeEnvironment(op, op.computeOutputTypeEnvironment(this));
+    }
+
+    @Override
+    public void updatePrimaryKeys(Map<LogicalVariable, LogicalVariable> mappedVars) {
+        for (Map.Entry<LogicalVariable, FunctionalDependency> me : recordToPrimaryKey.entrySet()) {
+            FunctionalDependency fd = me.getValue();
+            List<LogicalVariable> hd = new ArrayList<LogicalVariable>();
+            for (LogicalVariable v : fd.getHead()) {
+                LogicalVariable v2 = mappedVars.get(v);
+                if (v2 == null) {
+                    hd.add(v);
+                } else {
+                    hd.add(v2);
+                }
+            }
+            List<LogicalVariable> tl = new ArrayList<LogicalVariable>();
+            for (LogicalVariable v : fd.getTail()) {
+                LogicalVariable v2 = mappedVars.get(v);
+                if (v2 == null) {
+                    tl.add(v);
+                } else {
+                    tl.add(v2);
+                }
+            }
+            me.setValue(new FunctionalDependency(hd, tl));
+        }
     }
 }

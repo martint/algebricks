@@ -16,9 +16,11 @@ package edu.uci.ics.algebricks.compiler.optimizer.rules;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import edu.uci.ics.algebricks.api.exceptions.AlgebricksException;
@@ -196,8 +198,8 @@ public class IntroduceGroupByForSubplanRule implements IAlgebraicRewriteRule {
         HashSet<LogicalVariable> underVars = new HashSet<LogicalVariable>();
         VariableUtilities.getLiveVariables(subplan.getInputs().get(0).getOperator(), underVars);
         underVars.removeAll(pkVars);
-        buildVarExprList(pkVars, context, g, g.getGroupByList());
-        // buildVarExprList(underVars, context, g, g.getDecorList());
+        Map<LogicalVariable, LogicalVariable> mappedVars = buildVarExprList(pkVars, context, g, g.getGroupByList());
+        context.updatePrimaryKeys(mappedVars);
         for (LogicalVariable uv : underVars) {
             g.getDecorList().add(
                     new Pair<LogicalVariable, LogicalExpressionReference>(null, new LogicalExpressionReference(
@@ -241,8 +243,10 @@ public class IntroduceGroupByForSubplanRule implements IAlgebraicRewriteRule {
         return null;
     }
 
-    private void buildVarExprList(Collection<LogicalVariable> vars, IOptimizationContext context, GroupByOperator g,
+    private Map<LogicalVariable, LogicalVariable> buildVarExprList(Collection<LogicalVariable> vars,
+            IOptimizationContext context, GroupByOperator g,
             List<Pair<LogicalVariable, LogicalExpressionReference>> outVeList) throws AlgebricksException {
+        Map<LogicalVariable, LogicalVariable> m = new HashMap<LogicalVariable, LogicalVariable>();
         for (LogicalVariable ov : vars) {
             LogicalVariable newVar = context.newVar();
             ILogicalExpression varExpr = new VariableReferenceExpression(newVar);
@@ -256,7 +260,8 @@ public class IntroduceGroupByForSubplanRule implements IAlgebraicRewriteRule {
             }
             AbstractLogicalOperator opUnder = (AbstractLogicalOperator) g.getInputs().get(0).getOperator();
             OperatorManipulationUtil.substituteVarRec(opUnder, ov, newVar, true, context);
+            m.put(ov, newVar);
         }
+        return m;
     }
-
 }
