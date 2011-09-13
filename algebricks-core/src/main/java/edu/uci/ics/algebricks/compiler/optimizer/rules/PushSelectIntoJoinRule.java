@@ -31,7 +31,6 @@ import edu.uci.ics.algebricks.compiler.algebra.base.LogicalOperatorReference;
 import edu.uci.ics.algebricks.compiler.algebra.base.LogicalOperatorTag;
 import edu.uci.ics.algebricks.compiler.algebra.base.LogicalVariable;
 import edu.uci.ics.algebricks.compiler.algebra.expressions.AbstractFunctionCallExpression;
-import edu.uci.ics.algebricks.compiler.algebra.expressions.ConstantExpression;
 import edu.uci.ics.algebricks.compiler.algebra.expressions.ScalarFunctionCallExpression;
 import edu.uci.ics.algebricks.compiler.algebra.functions.AlgebricksBuiltinFunctions;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.AbstractBinaryJoin;
@@ -203,7 +202,7 @@ public class PushSelectIntoJoinRule implements IAlgebraicRewriteRule {
 
     private static void addCondToJoin(SelectOperator select, AbstractBinaryJoin join) {
         ILogicalExpression cond = join.getCondition().getExpression();
-        if (cond == ConstantExpression.TRUE) { // the join was a product
+        if (OptimizationUtil.isAlwaysTrueCond(cond)) { // the join was a product
             join.getCondition().setExpression(select.getCondition().getExpression());
         } else {
             boolean bAddedToConj = false;

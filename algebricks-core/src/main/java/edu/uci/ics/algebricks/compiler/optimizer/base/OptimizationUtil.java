@@ -27,6 +27,7 @@ import edu.uci.ics.algebricks.compiler.algebra.base.LogicalOperatorReference;
 import edu.uci.ics.algebricks.compiler.algebra.base.LogicalOperatorTag;
 import edu.uci.ics.algebricks.compiler.algebra.base.LogicalVariable;
 import edu.uci.ics.algebricks.compiler.algebra.expressions.AbstractFunctionCallExpression;
+import edu.uci.ics.algebricks.compiler.algebra.expressions.ConstantExpression;
 import edu.uci.ics.algebricks.compiler.algebra.functions.AlgebricksBuiltinFunctions;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.AbstractLogicalOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.AbstractOperatorWithNestedPlans;
@@ -199,4 +200,10 @@ public class OptimizationUtil {
         context.computeAndSetTypeEnvironmentForOperator(op);
     }
 
+    public static boolean isAlwaysTrueCond(ILogicalExpression cond) {
+        if (cond.getExpressionTag() == LogicalExpressionTag.CONSTANT) {
+            return ((ConstantExpression) cond).getValue().isTrue();
+        }
+        return false;
+    }
 }
