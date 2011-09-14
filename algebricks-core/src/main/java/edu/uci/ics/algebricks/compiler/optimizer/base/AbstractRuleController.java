@@ -19,7 +19,6 @@ import java.util.Collection;
 import edu.uci.ics.algebricks.api.exceptions.AlgebricksException;
 import edu.uci.ics.algebricks.compiler.algebra.base.ILogicalPlan;
 import edu.uci.ics.algebricks.compiler.algebra.base.LogicalOperatorReference;
-import edu.uci.ics.algebricks.compiler.algebra.base.LogicalOperatorTag;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.AbstractLogicalOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.AbstractOperatorWithNestedPlans;
 import edu.uci.ics.algebricks.compiler.algebra.prettyprint.LogicalOperatorPrettyPrintVisitor;
@@ -32,10 +31,6 @@ public abstract class AbstractRuleController {
     private LogicalOperatorPrettyPrintVisitor pvisitor = new LogicalOperatorPrettyPrintVisitor();
 
     public AbstractRuleController() {
-    }
-
-    public AbstractRuleController(IOptimizationContext context) {
-        this.context = context;
     }
 
     public void setContext(IOptimizationContext context) {
@@ -71,8 +66,8 @@ public abstract class AbstractRuleController {
         AlgebricksConfig.ALGEBRICKS_LOGGER.fine(sb.toString());
     }
 
-    protected boolean rewriteOperatorRef(LogicalOperatorReference opRef, IAlgebraicRewriteRule rule, boolean enterGbys,
-            boolean fullDFS) throws AlgebricksException {
+    protected boolean rewriteOperatorRef(LogicalOperatorReference opRef, IAlgebraicRewriteRule rule,
+            boolean enterNestedPlans, boolean fullDFS) throws AlgebricksException {
 
         if (rule.rewritePre(opRef, context)) {
             printRuleApplication(rule, opRef);
@@ -82,7 +77,7 @@ public abstract class AbstractRuleController {
         AbstractLogicalOperator op = (AbstractLogicalOperator) opRef.getOperator();
 
         for (LogicalOperatorReference inp : op.getInputs()) {
-            if (rewriteOperatorRef(inp, rule, enterGbys, fullDFS)) {
+            if (rewriteOperatorRef(inp, rule, enterNestedPlans, fullDFS)) {
                 rewritten = true;
                 if (!fullDFS) {
                     break;
@@ -90,11 +85,11 @@ public abstract class AbstractRuleController {
             }
         }
 
-        if (op.hasNestedPlans() && (enterGbys || op.getOperatorTag() != LogicalOperatorTag.GROUP)) {
+        if (op.hasNestedPlans() && enterNestedPlans) {
             AbstractOperatorWithNestedPlans o2 = (AbstractOperatorWithNestedPlans) op;
             for (ILogicalPlan p : o2.getNestedPlans()) {
                 for (LogicalOperatorReference r : p.getRoots()) {
-                    if (rewriteOperatorRef(r, rule, enterGbys, fullDFS)) {
+                    if (rewriteOperatorRef(r, rule, enterNestedPlans, fullDFS)) {
                         rewritten = true;
                         if (!fullDFS) {
                             break;

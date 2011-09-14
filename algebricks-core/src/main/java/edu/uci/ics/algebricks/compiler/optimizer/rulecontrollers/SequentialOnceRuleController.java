@@ -20,15 +20,14 @@ import edu.uci.ics.algebricks.api.exceptions.AlgebricksException;
 import edu.uci.ics.algebricks.compiler.algebra.base.LogicalOperatorReference;
 import edu.uci.ics.algebricks.compiler.optimizer.base.AbstractRuleController;
 import edu.uci.ics.algebricks.compiler.optimizer.base.IAlgebraicRewriteRule;
-import edu.uci.ics.algebricks.compiler.optimizer.base.IOptimizationContext;
 
-public class SequentialOnceRuleControllerFullDFS extends AbstractRuleController {
+public class SequentialOnceRuleController extends AbstractRuleController {
 
-    public SequentialOnceRuleControllerFullDFS() {
-    }
+    private final boolean enterNestedPlans;
 
-    public SequentialOnceRuleControllerFullDFS(IOptimizationContext context) {
-        super(context);
+    public SequentialOnceRuleController(boolean enterNestedPlans) {
+        super();
+        this.enterNestedPlans = enterNestedPlans;
     }
 
     @Override
@@ -36,11 +35,10 @@ public class SequentialOnceRuleControllerFullDFS extends AbstractRuleController 
             throws AlgebricksException {
         boolean fired = false;
         for (IAlgebraicRewriteRule rule : rules) {
-            if (rewriteOperatorRef(root, rule, true, true)) {
+            if (rewriteOperatorRef(root, rule, enterNestedPlans, true)) {
                 fired = true;
             }
         }
         return fired;
     }
-
 }

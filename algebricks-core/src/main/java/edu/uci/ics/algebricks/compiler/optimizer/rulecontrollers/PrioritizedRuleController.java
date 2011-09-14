@@ -20,7 +20,6 @@ import edu.uci.ics.algebricks.api.exceptions.AlgebricksException;
 import edu.uci.ics.algebricks.compiler.algebra.base.LogicalOperatorReference;
 import edu.uci.ics.algebricks.compiler.optimizer.base.AbstractRuleController;
 import edu.uci.ics.algebricks.compiler.optimizer.base.IAlgebraicRewriteRule;
-import edu.uci.ics.algebricks.compiler.optimizer.base.IOptimizationContext;
 
 /**
  * 
@@ -34,8 +33,8 @@ import edu.uci.ics.algebricks.compiler.optimizer.base.IOptimizationContext;
 
 public class PrioritizedRuleController extends AbstractRuleController {
 
-    public PrioritizedRuleController(IOptimizationContext context) {
-        super(context);
+    public PrioritizedRuleController() {
+        super();
     }
 
     @Override

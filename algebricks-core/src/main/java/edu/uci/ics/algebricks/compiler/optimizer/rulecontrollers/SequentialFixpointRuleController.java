@@ -20,7 +20,6 @@ import edu.uci.ics.algebricks.api.exceptions.AlgebricksException;
 import edu.uci.ics.algebricks.compiler.algebra.base.LogicalOperatorReference;
 import edu.uci.ics.algebricks.compiler.optimizer.base.AbstractRuleController;
 import edu.uci.ics.algebricks.compiler.optimizer.base.IAlgebraicRewriteRule;
-import edu.uci.ics.algebricks.compiler.optimizer.base.IOptimizationContext;
 
 /**
  * 
@@ -36,11 +35,7 @@ public class SequentialFixpointRuleController extends AbstractRuleController {
     private boolean fullDfs;
 
     public SequentialFixpointRuleController(boolean fullDfs) {
-        this.fullDfs = fullDfs;
-    }
-
-    public SequentialFixpointRuleController(IOptimizationContext context, boolean fullDfs) {
-        super(context);
+        super();
         this.fullDfs = fullDfs;
     }
 

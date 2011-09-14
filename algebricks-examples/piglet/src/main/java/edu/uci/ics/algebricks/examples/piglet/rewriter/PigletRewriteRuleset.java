@@ -84,17 +84,23 @@ public class PigletRewriteRuleset {
         return consolidation;
     }
 
-    public final static List<IAlgebraicRewriteRule> buildPhysicalPlanRewritesRuleCollection() {
+    public final static List<IAlgebraicRewriteRule> buildPhysicalRewritesAllLevelsRuleCollection() {
         List<IAlgebraicRewriteRule> physicalPlanRewrites = new LinkedList<IAlgebraicRewriteRule>();
         physicalPlanRewrites.add(new PullSelectOutOfEqJoin());
         physicalPlanRewrites.add(new SetAlgebricksPhysicalOperatorsRule());
         physicalPlanRewrites.add(new EnforceStructuralPropertiesRule());
         physicalPlanRewrites.add(new PushProjectDownRule());
-        physicalPlanRewrites.add(new SetAlgebricksPhysicalOperatorsRule());
         physicalPlanRewrites.add(new PushLimitDownRule());
         return physicalPlanRewrites;
     }
 
+    public final static List<IAlgebraicRewriteRule> buildPhysicalRewritesTopLevelRuleCollection() {
+        List<IAlgebraicRewriteRule> physicalPlanRewrites = new LinkedList<IAlgebraicRewriteRule>();
+        physicalPlanRewrites.add(new PushLimitDownRule());
+        return physicalPlanRewrites;
+    }
+
+    
     public final static List<IAlgebraicRewriteRule> prepareForJobGenRuleCollection() {
         List<IAlgebraicRewriteRule> prepareForJobGenRewrites = new LinkedList<IAlgebraicRewriteRule>();
         prepareForJobGenRewrites.add(new IsolateHyracksOperatorsRule(

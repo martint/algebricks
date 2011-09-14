@@ -39,7 +39,7 @@ import edu.uci.ics.algebricks.compiler.algebra.prettyprint.PlanPrettyPrinter;
 import edu.uci.ics.algebricks.compiler.optimizer.base.AbstractRuleController;
 import edu.uci.ics.algebricks.compiler.optimizer.base.IAlgebraicRewriteRule;
 import edu.uci.ics.algebricks.compiler.optimizer.rulecontrollers.SequentialFixpointRuleController;
-import edu.uci.ics.algebricks.compiler.optimizer.rulecontrollers.SequentialOnceRuleControllerFullDFS;
+import edu.uci.ics.algebricks.compiler.optimizer.rulecontrollers.SequentialOnceRuleController;
 import edu.uci.ics.algebricks.examples.piglet.ast.ASTNode;
 import edu.uci.ics.algebricks.examples.piglet.ast.AssignmentNode;
 import edu.uci.ics.algebricks.examples.piglet.ast.DumpNode;
@@ -72,7 +72,7 @@ public class PigletCompiler {
         List<Pair<AbstractRuleController, List<IAlgebraicRewriteRule>>> defaultLogicalRewrites = new ArrayList<Pair<AbstractRuleController, List<IAlgebraicRewriteRule>>>();
         SequentialFixpointRuleController seqCtrlNoDfs = new SequentialFixpointRuleController(false);
         SequentialFixpointRuleController seqCtrlFullDfs = new SequentialFixpointRuleController(true);
-        SequentialOnceRuleControllerFullDFS seqOnceCtrl = new SequentialOnceRuleControllerFullDFS();
+        SequentialOnceRuleController seqOnceCtrl = new SequentialOnceRuleController(true);
         defaultLogicalRewrites.add(new Pair<AbstractRuleController, List<IAlgebraicRewriteRule>>(seqOnceCtrl,
                 PigletRewriteRuleset.buildTypeInferenceRuleCollection()));
         defaultLogicalRewrites.add(new Pair<AbstractRuleController, List<IAlgebraicRewriteRule>>(seqCtrlFullDfs,
@@ -92,10 +92,13 @@ public class PigletCompiler {
 
     private static List<Pair<AbstractRuleController, List<IAlgebraicRewriteRule>>> buildDefaultPhysicalRewrites() {
         List<Pair<AbstractRuleController, List<IAlgebraicRewriteRule>>> defaultPhysicalRewrites = new ArrayList<Pair<AbstractRuleController, List<IAlgebraicRewriteRule>>>();
-        SequentialOnceRuleControllerFullDFS seqOnceCtrl = new SequentialOnceRuleControllerFullDFS();
-        defaultPhysicalRewrites.add(new Pair<AbstractRuleController, List<IAlgebraicRewriteRule>>(seqOnceCtrl,
-                PigletRewriteRuleset.buildPhysicalPlanRewritesRuleCollection()));
-        defaultPhysicalRewrites.add(new Pair<AbstractRuleController, List<IAlgebraicRewriteRule>>(seqOnceCtrl,
+        SequentialOnceRuleController seqOnceCtrlAllLevels = new SequentialOnceRuleController(true);
+        SequentialOnceRuleController seqOnceCtrlTopLevel = new SequentialOnceRuleController(false);
+        defaultPhysicalRewrites.add(new Pair<AbstractRuleController, List<IAlgebraicRewriteRule>>(seqOnceCtrlAllLevels,
+                PigletRewriteRuleset.buildPhysicalRewritesAllLevelsRuleCollection()));
+        defaultPhysicalRewrites.add(new Pair<AbstractRuleController, List<IAlgebraicRewriteRule>>(seqOnceCtrlTopLevel,
+                PigletRewriteRuleset.buildPhysicalRewritesTopLevelRuleCollection()));
+        defaultPhysicalRewrites.add(new Pair<AbstractRuleController, List<IAlgebraicRewriteRule>>(seqOnceCtrlAllLevels,
                 PigletRewriteRuleset.prepareForJobGenRuleCollection()));
         return defaultPhysicalRewrites;
     }

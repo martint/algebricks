@@ -28,8 +28,9 @@ import edu.uci.ics.algebricks.compiler.algebra.operators.logical.InsertOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.LeftOuterJoinOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.LimitOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.OrderOperator;
-import edu.uci.ics.algebricks.compiler.algebra.operators.logical.OrderOperator.IOrder;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.WriteResultOperator;
+import edu.uci.ics.algebricks.compiler.algebra.operators.logical.AbstractLogicalOperator.ExecutionMode;
+import edu.uci.ics.algebricks.compiler.algebra.operators.logical.OrderOperator.IOrder;
 import edu.uci.ics.algebricks.compiler.algebra.operators.physical.AggregatePOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.physical.AssignPOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.physical.DataSourceScanPOperator;
@@ -132,8 +133,8 @@ public class SetAlgebricksPhysicalOperatorsRule implements IAlgebraicRewriteRule
                                     throw new NotImplementedException(
                                             "External hash group-by for nested grouping is not implemented.");
                                 }
-                                ExternalGroupByPOperator externalGby = new ExternalGroupByPOperator(
-                                        gby.getGroupByList(), physicalOptimizationConfig.getMaxFramesExternalGroupBy(),
+                                ExternalGroupByPOperator externalGby = new ExternalGroupByPOperator(gby
+                                        .getGroupByList(), physicalOptimizationConfig.getMaxFramesExternalGroupBy(),
                                         physicalOptimizationConfig.getExternalGroupByTableSize());
                                 op.setPhysicalOperator(externalGby);
                                 generateMergeAggregationExpressions(gby, context);
@@ -168,7 +169,8 @@ public class SetAlgebricksPhysicalOperatorsRule implements IAlgebraicRewriteRule
                 }
                 case LIMIT: {
                     LimitOperator opLim = (LimitOperator) op;
-                    op.setPhysicalOperator(new StreamLimitPOperator(opLim.isTopmostLimitOp()));
+                    op.setPhysicalOperator(new StreamLimitPOperator(opLim.isTopmostLimitOp()
+                            && opLim.getExecutionMode() == ExecutionMode.PARTITIONED));
                     break;
                 }
                 case NESTEDTUPLESOURCE: {
