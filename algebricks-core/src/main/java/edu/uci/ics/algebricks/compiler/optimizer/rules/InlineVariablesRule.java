@@ -14,6 +14,8 @@
  */
 package edu.uci.ics.algebricks.compiler.optimizer.rules;
 
+import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -127,7 +129,6 @@ public class InlineVariablesRule implements IAlgebraicRewriteRule {
                 }
             }
         }
-
         // we assume a variable is assigned a value only once
         if (op.getOperatorTag() == LogicalOperatorTag.ASSIGN) {
             AssignOperator a = (AssignOperator) op;
@@ -162,12 +163,11 @@ public class InlineVariablesRule implements IAlgebraicRewriteRule {
             }
         } else if (op.getOperatorTag() == LogicalOperatorTag.GROUP && !(context.checkIfInDontApplySet(this, op))) {
             GroupByOperator group = (GroupByOperator) op;
-            Pair<Boolean, Boolean> r1 = processVarExprPairs(group.getGroupByList(), context, equivClasses);
-            Pair<Boolean, Boolean> r2 = processVarExprPairs(group.getDecorList(), context, equivClasses);
+            Pair<Boolean, Boolean> r1 = processVarExprPairs(group.getGroupByList(), equivClasses);
+            Pair<Boolean, Boolean> r2 = processVarExprPairs(group.getDecorList(), equivClasses);
             modified = modified || r1.first || r2.first;
             ecChange = r1.second || r2.second;
         }
-
         if (op.getOperatorTag() == LogicalOperatorTag.PROJECT) {
             assignVarsNeededByProject((ProjectOperator) op, equivClasses, context);
         } else {
@@ -180,15 +180,52 @@ public class InlineVariablesRule implements IAlgebraicRewriteRule {
                 substVisitor.setEquivalenceClasses(equivClasses);
                 if (op.acceptExpressionTransform(substVisitor)) {
                     modified = true;
+                    if (op.getOperatorTag() == LogicalOperatorTag.GROUP) {
+                        GroupByOperator group = (GroupByOperator) op;
+                        for (Pair<LogicalVariable, LogicalExpressionReference> gp : group.getGroupByList()) {
+                            if (gp.first != null
+                                    && gp.second.getExpression().getExpressionTag() == LogicalExpressionTag.VARIABLE) {
+                                LogicalVariable gv = ((VariableReferenceExpression) gp.second.getExpression())
+                                        .getVariableReference();
+                                Iterator<Pair<LogicalVariable, LogicalExpressionReference>> iter = group.getDecorList()
+                                        .iterator();
+                                while (iter.hasNext()) {
+                                    Pair<LogicalVariable, LogicalExpressionReference> dp = iter.next();
+                                    if (dp.first == null
+                                            && dp.second.getExpression().getExpressionTag() == LogicalExpressionTag.VARIABLE) {
+                                        LogicalVariable dv = ((VariableReferenceExpression) dp.second.getExpression())
+                                                .getVariableReference();
+                                        if (dv == gv) {
+                                            // The decor variable is redundant,
+                                            // since it is
+                                            // propagated as a grouping
+                                            // variable.
+                                            EquivalenceClass ec1 = findEquivClass(gv, equivClasses);
+                                            if (ec1 != null) {
+                                                ec1.addMember(gp.first);
+                                                ec1.setVariableRepresentative(gp.first);
+                                            } else {
+                                                List<LogicalVariable> varList = new ArrayList<LogicalVariable>();
+                                                varList.add(gp.first);
+                                                varList.add(gv);
+                                                ec1 = new EquivalenceClass(varList, gp.first);
+                                            }
+                                            iter.remove();
+                                            break;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
                 }
             }
         }
-
         return new Pair<Boolean, Boolean>(modified, ecChange);
     }
 
     private Pair<Boolean, Boolean> processVarExprPairs(List<Pair<LogicalVariable, LogicalExpressionReference>> vePairs,
-            IOptimizationContext context, List<EquivalenceClass> equivClasses) {
+            List<EquivalenceClass> equivClasses) {
         boolean ecFromGroup = false;
         boolean modified = false;
         for (Pair<LogicalVariable, LogicalExpressionReference> p : vePairs) {
@@ -223,19 +260,6 @@ public class InlineVariablesRule implements IAlgebraicRewriteRule {
                 if (!ec.representativeIsConst()) {
                     prVars.set(i, ec.getVariableRepresentative());
                 }
-                // if (ec.representativeIsConst()) {
-                // LogicalOperatorReference opRef = op.getInputs().get(0);
-                // AssignOperator a = new AssignOperator(prVars.get(i), new
-                // LogicalExpressionReference(ec
-                // .getConstRepresentative()));
-                // a.getInputs().add(new
-                // LogicalOperatorReference(opRef.getOperator()));
-                // opRef.setOperator(a);
-                // context.computeAndSetTypeEnvironmentForOperator(a);
-                // ec.setVariableRepresentative(prVars.get(i));
-                // } else {
-                // prVars.set(i, ec.getVariableRepresentative());
-                // }
             }
         }
     }
