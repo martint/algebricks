@@ -41,24 +41,24 @@ public abstract class AbstractLogicalOperator implements ILogicalOperator {
 
     /*********************************************************************
      * UNPARTITIONED, the input data is not partitioned
-     * 
      * PARTITIONED, the input data is partitioned, the operator is executed on
      * each partition and may receive input from other partitions (e.g. if it is
      * a join or an aggregate)
-     * 
      * LOCAL, the input data is partitioned, the operator is executed on each
      * partition and only processes data from that partition
-     * 
      */
 
     public static enum ExecutionMode {
-        UNPARTITIONED, PARTITIONED, LOCAL
+        UNPARTITIONED,
+        PARTITIONED,
+        LOCAL
     }
 
     private AbstractLogicalOperator.ExecutionMode mode = AbstractLogicalOperator.ExecutionMode.UNPARTITIONED;
     protected IPhysicalOperator physicalOperator;
     private final Map<String, Object> annotations = new HashMap<String, Object>();
     private boolean bJobGenEnabled = true;
+    private Object hostQueryContext;
 
     final protected List<LogicalOperatorReference> inputs;
     // protected List<LogicalOperatorReference> outputs;
@@ -93,7 +93,6 @@ public abstract class AbstractLogicalOperator implements ILogicalOperator {
     }
 
     /**
-     * 
      * @return for each child, one vector of required physical properties
      */
 
@@ -104,7 +103,6 @@ public abstract class AbstractLogicalOperator implements ILogicalOperator {
     }
 
     /**
-     * 
      * @return the physical properties that this operator delivers, based on
      *         what its children deliver
      */
@@ -169,19 +167,27 @@ public abstract class AbstractLogicalOperator implements ILogicalOperator {
         return bJobGenEnabled;
     }
 
+    public void setHostQueryContext(Object context) {
+        this.hostQueryContext = context;
+    }
+
+    public Object getHostQueryContext() {
+        return hostQueryContext;
+    }
+
     @Override
     public IVariableTypeEnvironment computeInputTypeEnvironment(ITypingContext ctx) throws AlgebricksException {
         return createPropagatingAllInputsTypeEnvironment(ctx);
     }
 
     protected IVariableTypeEnvironment createPropagatingAllInputsTypeEnvironment(ITypingContext ctx) {
-//        return createPropagatingAllInputsTypeEnvironment(ctx);
+        //        return createPropagatingAllInputsTypeEnvironment(ctx);
         int n = inputs.size();
         ITypeEnvPointer[] envPointers = new ITypeEnvPointer[n];
         for (int i = 0; i < n; i++) {
             envPointers[i] = new OpRefTypeEnvPointer(inputs.get(i), ctx);
         }
-        return new PropagatingTypeEnvironment(ctx.getExpressionTypeComputer(), ctx.getNullableTypeComputer(), ctx
-                .getMetadataProvider(), TypePropagationPolicy.ALL, envPointers);
+        return new PropagatingTypeEnvironment(ctx.getExpressionTypeComputer(), ctx.getNullableTypeComputer(),
+                ctx.getMetadataProvider(), TypePropagationPolicy.ALL, envPointers);
     }
 }

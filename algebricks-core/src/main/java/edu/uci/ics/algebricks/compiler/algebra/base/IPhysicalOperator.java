@@ -32,14 +32,12 @@ public interface IPhysicalOperator {
      * @param reqdByParent
      *            parent's requirements, which are not enforced for now, as we
      *            only explore one plan
-     * 
      * @return for each child, one vector of required physical properties
      */
     public PhysicalRequirements getRequiredPropertiesForChildren(ILogicalOperator op,
             IPhysicalPropertiesVector reqdByParent);
 
     /**
-     * 
      * @return the physical properties that this operator delivers, based on
      *         what its children deliver
      */
@@ -57,4 +55,8 @@ public interface IPhysicalOperator {
     public boolean isJobGenDisabledBelowMe();
 
     public boolean isMicroOperator();
+
+    public void setHostQueryContext(Object context);
+
+    public Object getHostQueryContext();
 }

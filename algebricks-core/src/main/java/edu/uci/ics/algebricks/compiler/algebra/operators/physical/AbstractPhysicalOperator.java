@@ -44,6 +44,7 @@ public abstract class AbstractPhysicalOperator implements IPhysicalOperator {
 
     protected IPhysicalPropertiesVector deliveredProperties;
     private boolean disableJobGenBelow = false;
+    private Object hostQueryContext;
 
     @Override
     public final IPhysicalPropertiesVector getDeliveredProperties() {
@@ -53,6 +54,14 @@ public abstract class AbstractPhysicalOperator implements IPhysicalOperator {
     @Override
     public String toString() {
         return getOperatorTag().toString();
+    }
+
+    public void setHostQueryContext(Object context) {
+        this.hostQueryContext = context;
+    }
+
+    public Object getHostQueryContext() {
+        return hostQueryContext;
     }
 
     protected PhysicalRequirements emptyUnaryRequirements() {

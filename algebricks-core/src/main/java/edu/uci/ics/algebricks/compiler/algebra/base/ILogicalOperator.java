@@ -76,14 +76,12 @@ public interface ILogicalOperator {
     // structural properties
 
     /**
-     * 
      * @return for each child, one vector of required physical properties
      */
 
     public PhysicalRequirements getRequiredPhysicalPropertiesForChildren(IPhysicalPropertiesVector requiredProperties);
 
     /**
-     * 
      * @return the physical properties that this operator delivers, based on
      *         what its children deliver
      */
@@ -92,4 +90,7 @@ public interface ILogicalOperator {
 
     public void computeDeliveredPhysicalProperties(IOptimizationContext context) throws AlgebricksException;
 
+    public void setHostQueryContext(Object context);
+
+    public Object getHostQueryContext();
 }
