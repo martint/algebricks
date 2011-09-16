@@ -33,7 +33,7 @@ import edu.uci.ics.algebricks.compiler.algebra.base.LogicalVariable;
 import edu.uci.ics.algebricks.compiler.algebra.expressions.AbstractFunctionCallExpression;
 import edu.uci.ics.algebricks.compiler.algebra.expressions.ScalarFunctionCallExpression;
 import edu.uci.ics.algebricks.compiler.algebra.functions.AlgebricksBuiltinFunctions;
-import edu.uci.ics.algebricks.compiler.algebra.operators.logical.AbstractBinaryJoin;
+import edu.uci.ics.algebricks.compiler.algebra.operators.logical.AbstractBinaryJoinOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.AbstractLogicalOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.SelectOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.visitors.VariableUtilities;
@@ -81,7 +81,7 @@ public class PushSelectIntoJoinRule implements IAlgebraicRewriteRule {
             return false;
         }
         boolean isLoj = son.getOperatorTag() == LogicalOperatorTag.LEFTOUTERJOIN;
-        AbstractBinaryJoin join = (AbstractBinaryJoin) son;
+        AbstractBinaryJoinOperator join = (AbstractBinaryJoinOperator) son;
 
         LogicalOperatorReference joinBranchLeftRef = join.getInputs().get(0);
         LogicalOperatorReference joinBranchRightRef = join.getInputs().get(1);
@@ -200,7 +200,7 @@ public class PushSelectIntoJoinRule implements IAlgebraicRewriteRule {
         joinBranch.setOperator(topOp);
     }
 
-    private static void addCondToJoin(SelectOperator select, AbstractBinaryJoin join) {
+    private static void addCondToJoin(SelectOperator select, AbstractBinaryJoinOperator join) {
         ILogicalExpression cond = join.getCondition().getExpression();
         if (OptimizationUtil.isAlwaysTrueCond(cond)) { // the join was a product
             join.getCondition().setExpression(select.getCondition().getExpression());

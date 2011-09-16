@@ -22,7 +22,7 @@ import edu.uci.ics.algebricks.compiler.algebra.base.LogicalOperatorTag;
 import edu.uci.ics.algebricks.compiler.algebra.typing.ITypingContext;
 import edu.uci.ics.algebricks.compiler.algebra.visitors.ILogicalOperatorVisitor;
 
-public class InnerJoinOperator extends AbstractBinaryJoin {
+public class InnerJoinOperator extends AbstractBinaryJoinOperator {
 
     public InnerJoinOperator(LogicalExpressionReference condition) {
         super(JoinKind.INNER, condition);

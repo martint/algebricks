@@ -14,7 +14,7 @@
  */
 package edu.uci.ics.algebricks.compiler.algebra.operators.physical;
 
-import edu.uci.ics.algebricks.compiler.algebra.operators.logical.AbstractBinaryJoin.JoinKind;
+import edu.uci.ics.algebricks.compiler.algebra.operators.logical.AbstractBinaryJoinOperator.JoinKind;
 
 public abstract class AbstractJoinPOperator extends AbstractPhysicalOperator {
 

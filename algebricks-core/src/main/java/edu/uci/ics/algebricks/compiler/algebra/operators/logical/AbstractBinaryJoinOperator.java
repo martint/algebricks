@@ -23,7 +23,7 @@ import edu.uci.ics.algebricks.compiler.algebra.base.LogicalVariable;
 import edu.uci.ics.algebricks.compiler.algebra.properties.VariablePropagationPolicy;
 import edu.uci.ics.algebricks.compiler.algebra.visitors.ILogicalExpressionReferenceTransform;
 
-public abstract class AbstractBinaryJoin extends AbstractLogicalOperator {
+public abstract class AbstractBinaryJoinOperator extends AbstractLogicalOperator {
     protected final LogicalExpressionReference condition;
     protected JoinKind joinKind;
 
@@ -31,12 +31,12 @@ public abstract class AbstractBinaryJoin extends AbstractLogicalOperator {
         INNER, LEFT_OUTER
     }
 
-    public AbstractBinaryJoin(JoinKind joinKind, LogicalExpressionReference condition) {
+    public AbstractBinaryJoinOperator(JoinKind joinKind, LogicalExpressionReference condition) {
         this.joinKind = joinKind;
         this.condition = condition;
     }
 
-    public AbstractBinaryJoin(JoinKind joinKind, LogicalExpressionReference condition, LogicalOperatorReference input1,
+    public AbstractBinaryJoinOperator(JoinKind joinKind, LogicalExpressionReference condition, LogicalOperatorReference input1,
             LogicalOperatorReference input2) {
         this(joinKind, condition);
         inputs.add(input1);

@@ -34,7 +34,7 @@ import edu.uci.ics.algebricks.compiler.algebra.expressions.VariableReferenceExpr
 import edu.uci.ics.algebricks.compiler.algebra.functions.AlgebricksBuiltinFunctions;
 import edu.uci.ics.algebricks.compiler.algebra.functions.AlgebricksBuiltinFunctions.ComparisonKind;
 import edu.uci.ics.algebricks.compiler.algebra.functions.FunctionIdentifier;
-import edu.uci.ics.algebricks.compiler.algebra.operators.logical.AbstractBinaryJoin;
+import edu.uci.ics.algebricks.compiler.algebra.operators.logical.AbstractBinaryJoinOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.visitors.LogicalPropertiesVisitor;
 import edu.uci.ics.algebricks.compiler.algebra.operators.physical.AbstractJoinPOperator.JoinPartitioningType;
 import edu.uci.ics.algebricks.compiler.algebra.operators.physical.HybridHashJoinPOperator;
@@ -53,7 +53,7 @@ public class JoinUtils {
     private final static int MAX_LEFT_INPUT_SIZE_HYBRID_HASH = (int) (140L * 1024 * MB / DEFAULT_FRAME_SIZE);
     private final static int DEFAULT_MEMORY_SIZE_HYBRID_HASH = (int) (256L * MB / DEFAULT_FRAME_SIZE);
 
-    public static void setJoinAlgorithmAndExchangeAlgo(AbstractBinaryJoin op, IOptimizationContext context)
+    public static void setJoinAlgorithmAndExchangeAlgo(AbstractBinaryJoinOperator op, IOptimizationContext context)
             throws AlgebricksException {
         List<LogicalVariable> sideLeft = new LinkedList<LogicalVariable>();
         List<LogicalVariable> sideRight = new LinkedList<LogicalVariable>();
@@ -85,12 +85,12 @@ public class JoinUtils {
         }
     }
 
-    private static void setNLJoinOp(AbstractBinaryJoin op) {
+    private static void setNLJoinOp(AbstractBinaryJoinOperator op) {
         op.setPhysicalOperator(new NLJoinPOperator(op.getJoinKind(), JoinPartitioningType.BROADCAST,
                 DEFAULT_MEMORY_SIZE_HYBRID_HASH));
     }
 
-    private static void setHashJoinOp(AbstractBinaryJoin op, JoinPartitioningType partitioningType,
+    private static void setHashJoinOp(AbstractBinaryJoinOperator op, JoinPartitioningType partitioningType,
             List<LogicalVariable> sideLeft, List<LogicalVariable> sideRight, IOptimizationContext context)
             throws AlgebricksException {
         op.setPhysicalOperator(new HybridHashJoinPOperator(op.getJoinKind(), partitioningType, sideLeft, sideRight,
@@ -105,7 +105,7 @@ public class JoinUtils {
         // 1024 * 512));
     }
 
-    private static void hybridToInMemHashJoin(AbstractBinaryJoin op, IOptimizationContext context)
+    private static void hybridToInMemHashJoin(AbstractBinaryJoinOperator op, IOptimizationContext context)
             throws AlgebricksException {
         ILogicalOperator opBuild = op.getInputs().get(1).getOperator();
         LogicalPropertiesVisitor.computeLogicalPropertiesDFS(opBuild, context);

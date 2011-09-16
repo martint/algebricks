@@ -28,7 +28,7 @@ import edu.uci.ics.algebricks.compiler.algebra.expressions.ScalarFunctionCallExp
 import edu.uci.ics.algebricks.compiler.algebra.functions.AlgebricksBuiltinFunctions;
 import edu.uci.ics.algebricks.compiler.algebra.functions.FunctionIdentifier;
 import edu.uci.ics.algebricks.compiler.algebra.functions.IFunctionInfo;
-import edu.uci.ics.algebricks.compiler.algebra.operators.logical.AbstractBinaryJoin;
+import edu.uci.ics.algebricks.compiler.algebra.operators.logical.AbstractBinaryJoinOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.AbstractLogicalOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.SelectOperator;
 import edu.uci.ics.algebricks.compiler.optimizer.base.IAlgebraicRewriteRule;
@@ -52,7 +52,7 @@ public class PullSelectOutOfEqJoin implements IAlgebraicRewriteRule {
                 && op.getOperatorTag() != LogicalOperatorTag.LEFTOUTERJOIN) {
             return false;
         }
-        AbstractBinaryJoin join = (AbstractBinaryJoin) op;
+        AbstractBinaryJoinOperator join = (AbstractBinaryJoinOperator) op;
 
         ILogicalExpression expr = join.getCondition().getExpression();
         if (expr.getExpressionTag() != LogicalExpressionTag.FUNCTION_CALL) {

@@ -25,7 +25,7 @@ import edu.uci.ics.algebricks.compiler.algebra.base.ILogicalPlan;
 import edu.uci.ics.algebricks.compiler.algebra.base.LogicalOperatorReference;
 import edu.uci.ics.algebricks.compiler.algebra.base.LogicalOperatorTag;
 import edu.uci.ics.algebricks.compiler.algebra.base.LogicalVariable;
-import edu.uci.ics.algebricks.compiler.algebra.operators.logical.AbstractBinaryJoin;
+import edu.uci.ics.algebricks.compiler.algebra.operators.logical.AbstractBinaryJoinOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.AbstractLogicalOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.SubplanOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.visitors.VariableUtilities;
@@ -67,7 +67,7 @@ public class PushSubplanWithAggregateDownThroughProductRule implements IAlgebrai
         if (op2.getOperatorTag() != LogicalOperatorTag.INNERJOIN) {
             return false;
         }
-        AbstractBinaryJoin join = (AbstractBinaryJoin) op2;
+        AbstractBinaryJoinOperator join = (AbstractBinaryJoinOperator) op2;
         if (!OptimizationUtil.isAlwaysTrueCond(join.getCondition().getExpression())) {
             return false;
         }

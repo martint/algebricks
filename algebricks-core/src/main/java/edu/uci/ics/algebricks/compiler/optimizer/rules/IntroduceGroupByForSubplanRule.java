@@ -35,7 +35,7 @@ import edu.uci.ics.algebricks.compiler.algebra.expressions.ScalarFunctionCallExp
 import edu.uci.ics.algebricks.compiler.algebra.expressions.VariableReferenceExpression;
 import edu.uci.ics.algebricks.compiler.algebra.functions.AlgebricksBuiltinFunctions;
 import edu.uci.ics.algebricks.compiler.algebra.functions.IFunctionInfo;
-import edu.uci.ics.algebricks.compiler.algebra.operators.logical.AbstractBinaryJoin;
+import edu.uci.ics.algebricks.compiler.algebra.operators.logical.AbstractBinaryJoinOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.AbstractLogicalOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.AggregateOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.AssignOperator;
@@ -121,7 +121,7 @@ public class IntroduceGroupByForSubplanRule implements IAlgebraicRewriteRule {
                 && op3.getOperatorTag() != LogicalOperatorTag.LEFTOUTERJOIN) {
             return false;
         }
-        AbstractBinaryJoin join = (AbstractBinaryJoin) op3;
+        AbstractBinaryJoinOperator join = (AbstractBinaryJoinOperator) op3;
         if (join.getCondition().getExpression() == ConstantExpression.TRUE) {
             return false;
         }

@@ -23,7 +23,7 @@ import edu.uci.ics.algebricks.compiler.algebra.base.LogicalOperatorReference;
 import edu.uci.ics.algebricks.compiler.algebra.base.LogicalOperatorTag;
 import edu.uci.ics.algebricks.compiler.algebra.base.LogicalVariable;
 import edu.uci.ics.algebricks.compiler.algebra.expressions.ConstantExpression;
-import edu.uci.ics.algebricks.compiler.algebra.operators.logical.AbstractBinaryJoin;
+import edu.uci.ics.algebricks.compiler.algebra.operators.logical.AbstractBinaryJoinOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.AbstractLogicalOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.visitors.VariableUtilities;
 import edu.uci.ics.algebricks.compiler.optimizer.base.IAlgebraicRewriteRule;
@@ -47,7 +47,7 @@ public class PushAssignDownThroughProductRule implements IAlgebraicRewriteRule {
         if (op2.getOperatorTag() != LogicalOperatorTag.INNERJOIN) {
             return false;
         }
-        AbstractBinaryJoin join = (AbstractBinaryJoin) op2;
+        AbstractBinaryJoinOperator join = (AbstractBinaryJoinOperator) op2;
         if (join.getCondition().getExpression() != ConstantExpression.TRUE) {
             return false;
         }

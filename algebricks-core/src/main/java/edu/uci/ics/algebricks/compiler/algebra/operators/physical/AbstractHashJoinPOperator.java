@@ -24,7 +24,7 @@ import edu.uci.ics.algebricks.api.exceptions.NotImplementedException;
 import edu.uci.ics.algebricks.compiler.algebra.base.EquivalenceClass;
 import edu.uci.ics.algebricks.compiler.algebra.base.ILogicalOperator;
 import edu.uci.ics.algebricks.compiler.algebra.base.LogicalVariable;
-import edu.uci.ics.algebricks.compiler.algebra.operators.logical.AbstractBinaryJoin.JoinKind;
+import edu.uci.ics.algebricks.compiler.algebra.operators.logical.AbstractBinaryJoinOperator.JoinKind;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.AbstractLogicalOperator;
 import edu.uci.ics.algebricks.compiler.algebra.properties.BroadcastPartitioningProperty;
 import edu.uci.ics.algebricks.compiler.algebra.properties.ILocalStructuralProperty;

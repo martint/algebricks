@@ -26,7 +26,7 @@ import edu.uci.ics.algebricks.compiler.algebra.typing.OpRefTypeEnvPointer;
 import edu.uci.ics.algebricks.compiler.algebra.typing.PropagatingTypeEnvironment;
 import edu.uci.ics.algebricks.compiler.algebra.visitors.ILogicalOperatorVisitor;
 
-public class LeftOuterJoinOperator extends AbstractBinaryJoin {
+public class LeftOuterJoinOperator extends AbstractBinaryJoinOperator {
 
     public LeftOuterJoinOperator(LogicalExpressionReference condition) {
         super(JoinKind.LEFT_OUTER, condition);
