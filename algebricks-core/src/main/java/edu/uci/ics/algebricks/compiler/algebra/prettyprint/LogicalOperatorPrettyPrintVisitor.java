@@ -14,7 +14,6 @@
  */
 package edu.uci.ics.algebricks.compiler.algebra.prettyprint;
 
-import java.util.Arrays;
 import java.util.List;
 
 import edu.uci.ics.algebricks.api.exceptions.AlgebricksException;
@@ -26,13 +25,12 @@ import edu.uci.ics.algebricks.compiler.algebra.operators.logical.AbstractOperato
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.AggregateOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.AssignOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.DataSourceScanOperator;
-import edu.uci.ics.algebricks.compiler.algebra.operators.logical.DeleteOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.DistinctOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.EmptyTupleSourceOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.ExchangeOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.GroupByOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.InnerJoinOperator;
-import edu.uci.ics.algebricks.compiler.algebra.operators.logical.InsertOperator;
+import edu.uci.ics.algebricks.compiler.algebra.operators.logical.InsertDeleteOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.LeftOuterJoinOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.LimitOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.NestedTupleSourceOperator;
@@ -164,8 +162,7 @@ public class LogicalOperatorPrettyPrintVisitor implements ILogicalOperatorVisito
     public String visitWriteResultOperator(WriteResultOperator op, Integer indent) {
         StringBuilder buffer = new StringBuilder();
         addIndent(buffer, indent).append("load ").append(op.getDatasetName()).append(" from ")
-                .append(op.getPayloadExpression()).append(" partitioned by ")
-                .append(Arrays.toString(op.getKeyExpressions()));
+                .append(op.getPayloadExpression()).append(" partitioned by ").append(op.getKeyExpressions().toString());
         return buffer.toString();
     }
 
@@ -311,19 +308,11 @@ public class LogicalOperatorPrettyPrintVisitor implements ILogicalOperatorVisito
     }
 
     @Override
-    public String visitInsertOperator(InsertOperator op, Integer indent) throws AlgebricksException {
+    public String visitInsertDeleteOperator(InsertDeleteOperator op, Integer indent) throws AlgebricksException {
         StringBuilder buffer = new StringBuilder();
         addIndent(buffer, indent).append("insert into ").append(op.getDatasetName()).append(" from ")
                 .append(op.getPayloadExpression()).append(" partitioned by ")
-                .append(Arrays.toString(op.getKeyExpressions()));
-        return buffer.toString();
-    }
-
-    @Override
-    public String visitDeleteOperator(DeleteOperator op, Integer indent) throws AlgebricksException {
-        StringBuilder buffer = new StringBuilder();
-        addIndent(buffer, indent).append("delete from ").append(op.getDatasetName()).append(" partitioned by ")
-                .append(Arrays.toString(op.getKeyExpressions()));
+                .append(op.getPrimaryKeyExpressions().toString());
         return buffer.toString();
     }
 

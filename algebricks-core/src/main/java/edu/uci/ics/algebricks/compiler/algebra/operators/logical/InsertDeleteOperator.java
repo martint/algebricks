@@ -1,6 +1,7 @@
 package edu.uci.ics.algebricks.compiler.algebra.operators.logical;
 
 import java.util.ArrayList;
+import java.util.List;
 
 import edu.uci.ics.algebricks.api.exceptions.AlgebricksException;
 import edu.uci.ics.algebricks.api.expr.IVariableTypeEnvironment;
@@ -12,14 +13,23 @@ import edu.uci.ics.algebricks.compiler.algebra.typing.ITypingContext;
 import edu.uci.ics.algebricks.compiler.algebra.visitors.ILogicalExpressionReferenceTransform;
 import edu.uci.ics.algebricks.compiler.algebra.visitors.ILogicalOperatorVisitor;
 
-public class DeleteOperator extends AbstractLogicalOperator {
+public class InsertDeleteOperator extends AbstractLogicalOperator {
 
-    private String datasetName;
-    private LogicalExpressionReference[] keyExprs;
+    public enum Kind {
+        INSERT, DELETE
+    }
 
-    public DeleteOperator(String datasetName, LogicalExpressionReference[] keyExprs) {
+    private final String datasetName;
+    private LogicalExpressionReference payloadExpr;
+    private List<LogicalExpressionReference> primaryKeyExprs;
+    private Kind operation;
+
+    public InsertDeleteOperator(String datasetName, LogicalExpressionReference payload,
+            List<LogicalExpressionReference> primaryKeyExprs, Kind operation) {
         this.datasetName = datasetName;
-        this.keyExprs = keyExprs;
+        this.payloadExpr = payload;
+        this.primaryKeyExprs = primaryKeyExprs;
+        this.operation = operation;
     }
 
     @Override
@@ -31,8 +41,9 @@ public class DeleteOperator extends AbstractLogicalOperator {
     @Override
     public boolean acceptExpressionTransform(ILogicalExpressionReferenceTransform visitor) throws AlgebricksException {
         boolean b = false;
-        for (int i = 0; i < keyExprs.length; i++) {
-            if (visitor.transform(keyExprs[i])) {
+        b = visitor.transform(payloadExpr);
+        for (int i = 0; i < primaryKeyExprs.size(); i++) {
+            if (visitor.transform(primaryKeyExprs.get(i))) {
                 b = true;
             }
         }
@@ -41,7 +52,7 @@ public class DeleteOperator extends AbstractLogicalOperator {
 
     @Override
     public <R, T> R accept(ILogicalOperatorVisitor<R, T> visitor, T arg) throws AlgebricksException {
-        return visitor.visitDeleteOperator(this, arg);
+        return visitor.visitInsertDeleteOperator(this, arg);
     }
 
     @Override
@@ -56,7 +67,7 @@ public class DeleteOperator extends AbstractLogicalOperator {
 
     @Override
     public LogicalOperatorTag getOperatorTag() {
-        return LogicalOperatorTag.DELETE;
+        return LogicalOperatorTag.INSERT_DELETE;
     }
 
     @Override
@@ -64,11 +75,20 @@ public class DeleteOperator extends AbstractLogicalOperator {
         return createPropagatingAllInputsTypeEnvironment(ctx);
     }
 
-    public LogicalExpressionReference[] getKeyExpressions() {
-        return keyExprs;
+    public List<LogicalExpressionReference> getPrimaryKeyExpressions() {
+        return primaryKeyExprs;
     }
 
     public String getDatasetName() {
         return datasetName;
     }
+
+    public LogicalExpressionReference getPayloadExpression() {
+        return payloadExpr;
+    }
+
+    public Kind getOperation() {
+        return operation;
+    }
+
 }

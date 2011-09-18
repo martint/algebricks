@@ -18,13 +18,12 @@ import edu.uci.ics.algebricks.api.exceptions.AlgebricksException;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.AggregateOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.AssignOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.DataSourceScanOperator;
-import edu.uci.ics.algebricks.compiler.algebra.operators.logical.DeleteOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.DistinctOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.EmptyTupleSourceOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.ExchangeOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.GroupByOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.InnerJoinOperator;
-import edu.uci.ics.algebricks.compiler.algebra.operators.logical.InsertOperator;
+import edu.uci.ics.algebricks.compiler.algebra.operators.logical.InsertDeleteOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.LeftOuterJoinOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.LimitOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.NestedTupleSourceOperator;
@@ -95,7 +94,5 @@ public interface ILogicalOperatorVisitor<R, T> {
 
     public R visitWriteResultOperator(WriteResultOperator op, T arg) throws AlgebricksException;
 
-    public R visitInsertOperator(InsertOperator op, T tag) throws AlgebricksException;
-
-    public R visitDeleteOperator(DeleteOperator op, T tag) throws AlgebricksException;
+    public R visitInsertDeleteOperator(InsertDeleteOperator op, T tag) throws AlgebricksException;
 }

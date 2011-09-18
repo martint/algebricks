@@ -26,13 +26,12 @@ import edu.uci.ics.algebricks.compiler.algebra.base.LogicalVariable;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.AggregateOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.AssignOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.DataSourceScanOperator;
-import edu.uci.ics.algebricks.compiler.algebra.operators.logical.DeleteOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.DistinctOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.EmptyTupleSourceOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.ExchangeOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.GroupByOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.InnerJoinOperator;
-import edu.uci.ics.algebricks.compiler.algebra.operators.logical.InsertOperator;
+import edu.uci.ics.algebricks.compiler.algebra.operators.logical.InsertDeleteOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.LeftOuterJoinOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.LimitOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.NestedTupleSourceOperator;
@@ -254,17 +253,9 @@ public class UsedVariableVisitor implements ILogicalOperatorVisitor<Void, Void> 
     }
 
     @Override
-    public Void visitInsertOperator(InsertOperator op, Void arg) {
+    public Void visitInsertDeleteOperator(InsertDeleteOperator op, Void arg) {
         op.getPayloadExpression().getExpression().getUsedVariables(usedVariables);
-        for (LogicalExpressionReference e : op.getKeyExpressions()) {
-            e.getExpression().getUsedVariables(usedVariables);
-        }
-        return null;
-    }
-
-    @Override
-    public Void visitDeleteOperator(DeleteOperator op, Void arg) {
-        for (LogicalExpressionReference e : op.getKeyExpressions()) {
+        for (LogicalExpressionReference e : op.getPrimaryKeyExpressions()) {
             e.getExpression().getUsedVariables(usedVariables);
         }
         return null;

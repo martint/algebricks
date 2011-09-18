@@ -15,6 +15,7 @@
 package edu.uci.ics.algebricks.compiler.algebra.operators.logical;
 
 import java.util.ArrayList;
+import java.util.List;
 
 import edu.uci.ics.algebricks.api.exceptions.AlgebricksException;
 import edu.uci.ics.algebricks.api.expr.IVariableTypeEnvironment;
@@ -30,10 +31,10 @@ public class WriteResultOperator extends AbstractLogicalOperator {
 
     private String datasetName;
     private LogicalExpressionReference payloadExpr;
-    private LogicalExpressionReference[] keyExprs;
+    private List<LogicalExpressionReference> keyExprs;
 
     public WriteResultOperator(String datasetName, LogicalExpressionReference payload,
-            LogicalExpressionReference[] keyExprs) {
+            List<LogicalExpressionReference> keyExprs) {
         this.datasetName = datasetName;
         this.payloadExpr = payload;
         this.keyExprs = keyExprs;
@@ -47,7 +48,7 @@ public class WriteResultOperator extends AbstractLogicalOperator {
         return payloadExpr;
     }
 
-    public LogicalExpressionReference[] getKeyExpressions() {
+    public List<LogicalExpressionReference> getKeyExpressions() {
         return keyExprs;
     }
 
@@ -64,8 +65,8 @@ public class WriteResultOperator extends AbstractLogicalOperator {
     @Override
     public boolean acceptExpressionTransform(ILogicalExpressionReferenceTransform visitor) throws AlgebricksException {
         boolean b = visitor.transform(payloadExpr);
-        for (int i = 0; i < keyExprs.length; i++) {
-            if (visitor.transform(keyExprs[i])) {
+        for (int i = 0; i < keyExprs.size(); i++) {
+            if (visitor.transform(keyExprs.get(i))) {
                 b = true;
             }
         }

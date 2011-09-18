@@ -41,7 +41,6 @@ public enum LogicalOperatorTag {
     UNNEST_MAP,
     WRITE,
     WRITE_RESULT,
-    INSERT,
-    DELETE,
+    INSERT_DELETE,
     UPDATE
 }

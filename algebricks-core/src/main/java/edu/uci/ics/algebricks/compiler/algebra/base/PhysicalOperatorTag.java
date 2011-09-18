@@ -38,7 +38,6 @@ public enum PhysicalOperatorTag {
     UNION_ALL,
     UNNEST,
     WRITE_RESULT,
-    INSERT,
-    DELETE,
+    INSERT_DELETE,
     UPDATE
 }

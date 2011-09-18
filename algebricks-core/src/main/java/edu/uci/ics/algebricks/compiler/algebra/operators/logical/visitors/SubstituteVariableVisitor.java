@@ -29,13 +29,12 @@ import edu.uci.ics.algebricks.compiler.algebra.operators.logical.AbstractLogical
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.AggregateOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.AssignOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.DataSourceScanOperator;
-import edu.uci.ics.algebricks.compiler.algebra.operators.logical.DeleteOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.DistinctOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.EmptyTupleSourceOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.ExchangeOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.GroupByOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.InnerJoinOperator;
-import edu.uci.ics.algebricks.compiler.algebra.operators.logical.InsertOperator;
+import edu.uci.ics.algebricks.compiler.algebra.operators.logical.InsertDeleteOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.LeftOuterJoinOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.LimitOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.NestedTupleSourceOperator;
@@ -363,20 +362,10 @@ public class SubstituteVariableVisitor implements ILogicalOperatorVisitor<Void, 
     }
 
     @Override
-    public Void visitInsertOperator(InsertOperator op, Pair<LogicalVariable, LogicalVariable> pair)
+    public Void visitInsertDeleteOperator(InsertDeleteOperator op, Pair<LogicalVariable, LogicalVariable> pair)
             throws AlgebricksException {
         op.getPayloadExpression().getExpression().substituteVar(pair.first, pair.second);
-        for (LogicalExpressionReference e : op.getKeyExpressions()) {
-            e.getExpression().substituteVar(pair.first, pair.second);
-        }
-        substVarTypes(op, pair);
-        return null;
-    }
-
-    @Override
-    public Void visitDeleteOperator(DeleteOperator op, Pair<LogicalVariable, LogicalVariable> pair)
-            throws AlgebricksException {
-        for (LogicalExpressionReference e : op.getKeyExpressions()) {
+        for (LogicalExpressionReference e : op.getPrimaryKeyExpressions()) {
             e.getExpression().substituteVar(pair.first, pair.second);
         }
         substVarTypes(op, pair);
