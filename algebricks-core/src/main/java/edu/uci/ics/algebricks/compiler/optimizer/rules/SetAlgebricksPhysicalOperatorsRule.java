@@ -23,6 +23,7 @@ import edu.uci.ics.algebricks.compiler.algebra.operators.logical.AggregateOperat
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.DataSourceScanOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.DistinctOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.GroupByOperator;
+import edu.uci.ics.algebricks.compiler.algebra.operators.logical.IndexInsertDeleteOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.InnerJoinOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.InsertDeleteOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.LeftOuterJoinOperator;
@@ -36,6 +37,7 @@ import edu.uci.ics.algebricks.compiler.algebra.operators.physical.DataSourceScan
 import edu.uci.ics.algebricks.compiler.algebra.operators.physical.EmptyTupleSourcePOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.physical.ExternalGroupByPOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.physical.InMemoryStableSortPOperator;
+import edu.uci.ics.algebricks.compiler.algebra.operators.physical.IndexInsertDeletePOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.physical.InsertDeletePOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.physical.MicroPreclusteredGroupByPOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.physical.NestedTupleSourcePOperator;
@@ -255,6 +257,15 @@ public class SetAlgebricksPhysicalOperatorsRule implements IAlgebraicRewriteRule
                     op.setPhysicalOperator(new InsertDeletePOperator(payload, keys));
                     break;
                 }
+                case INDEX_INSERT_DELETE: {
+                    IndexInsertDeleteOperator opLoad = (IndexInsertDeleteOperator) op;
+                    List<LogicalVariable> primaryKeys = new ArrayList<LogicalVariable>();
+                    List<LogicalVariable> secondaryKeys = new ArrayList<LogicalVariable>();
+                    getKeys(opLoad.getPrimaryKeyExpressions(), primaryKeys);
+                    getKeys(opLoad.getSecondaryKeyExpressions(), secondaryKeys);
+                    op.setPhysicalOperator(new IndexInsertDeletePOperator(primaryKeys, secondaryKeys));
+                    break;
+                }
                 case SINK: {
                     op.setPhysicalOperator(new SinkPOperator());
                     break;
@@ -272,14 +283,7 @@ public class SetAlgebricksPhysicalOperatorsRule implements IAlgebraicRewriteRule
         }
     }
 
-    private static LogicalVariable getKeysAndLoad(LogicalExpressionReference payloadExpr,
-            LogicalExpressionReference[] keyExpressions, List<LogicalVariable> keys) {
-        LogicalVariable payload;
-        if (payloadExpr.getExpression().getExpressionTag() != LogicalExpressionTag.VARIABLE) {
-            throw new NotImplementedException();
-        }
-        payload = ((VariableReferenceExpression) payloadExpr.getExpression()).getVariableReference();
-
+    private static void getKeys(List<LogicalExpressionReference> keyExpressions, List<LogicalVariable> keys) {
         for (LogicalExpressionReference kExpr : keyExpressions) {
             ILogicalExpression e = kExpr.getExpression();
             if (e.getExpressionTag() != LogicalExpressionTag.VARIABLE) {
@@ -287,7 +291,6 @@ public class SetAlgebricksPhysicalOperatorsRule implements IAlgebraicRewriteRule
             }
             keys.add(((VariableReferenceExpression) e).getVariableReference());
         }
-        return payload;
     }
 
     private static LogicalVariable getKeysAndLoad(LogicalExpressionReference payloadExpr,

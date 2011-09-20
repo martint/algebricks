@@ -22,6 +22,7 @@ import edu.uci.ics.algebricks.compiler.algebra.operators.logical.DistinctOperato
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.EmptyTupleSourceOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.ExchangeOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.GroupByOperator;
+import edu.uci.ics.algebricks.compiler.algebra.operators.logical.IndexInsertDeleteOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.InnerJoinOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.InsertDeleteOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.LeftOuterJoinOperator;
@@ -95,4 +96,6 @@ public interface ILogicalOperatorVisitor<R, T> {
     public R visitWriteResultOperator(WriteResultOperator op, T arg) throws AlgebricksException;
 
     public R visitInsertDeleteOperator(InsertDeleteOperator op, T tag) throws AlgebricksException;
+
+    public R visitIndexInsertDeleteOperator(IndexInsertDeleteOperator op, T tag) throws AlgebricksException;
 }

@@ -29,8 +29,10 @@ import edu.uci.ics.algebricks.compiler.algebra.operators.logical.DistinctOperato
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.EmptyTupleSourceOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.ExchangeOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.GroupByOperator;
+import edu.uci.ics.algebricks.compiler.algebra.operators.logical.IndexInsertDeleteOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.InnerJoinOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.InsertDeleteOperator;
+import edu.uci.ics.algebricks.compiler.algebra.operators.logical.InsertDeleteOperator.Kind;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.LeftOuterJoinOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.LimitOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.NestedTupleSourceOperator;
@@ -310,9 +312,21 @@ public class LogicalOperatorPrettyPrintVisitor implements ILogicalOperatorVisito
     @Override
     public String visitInsertDeleteOperator(InsertDeleteOperator op, Integer indent) throws AlgebricksException {
         StringBuilder buffer = new StringBuilder();
-        addIndent(buffer, indent).append("insert into ").append(op.getDatasetName()).append(" from ")
+        String header = op.getOperation() == Kind.INSERT? "insert into ": "delete from ";
+        addIndent(buffer, indent).append(header).append(op.getDatasetName()).append(" from ")
                 .append(op.getPayloadExpression()).append(" partitioned by ")
                 .append(op.getPrimaryKeyExpressions().toString());
+        return buffer.toString();
+    }
+
+    @Override
+    public String visitIndexInsertDeleteOperator(IndexInsertDeleteOperator op, Integer indent)
+            throws AlgebricksException {
+        StringBuilder buffer = new StringBuilder();
+        String header = op.getOperation() == Kind.INSERT? "insert into ": "delete from ";
+        addIndent(buffer, indent).append(header).append(op.getIndexName()).append(" on ")
+                .append(op.getDatasetName()).append(" from ").append(op.getSecondaryKeyExpressions().toString())
+                .append(" ").append(op.getPrimaryKeyExpressions().toString());
         return buffer.toString();
     }
 

@@ -38,6 +38,7 @@ import edu.uci.ics.algebricks.compiler.algebra.operators.logical.DistinctOperato
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.EmptyTupleSourceOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.ExchangeOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.GroupByOperator;
+import edu.uci.ics.algebricks.compiler.algebra.operators.logical.IndexInsertDeleteOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.InnerJoinOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.InsertDeleteOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.LeftOuterJoinOperator;
@@ -433,6 +434,21 @@ public class IsomorphismOperatorVisitor implements ILogicalOperatorVisitor<Boole
     }
 
     @Override
+    public Boolean visitIndexInsertDeleteOperator(IndexInsertDeleteOperator op, ILogicalOperator arg)
+            throws AlgebricksException {
+        AbstractLogicalOperator aop = (AbstractLogicalOperator) arg;
+        if (aop.getOperatorTag() != LogicalOperatorTag.INDEX_INSERT_DELETE)
+            return Boolean.FALSE;
+        IndexInsertDeleteOperator insertOpArg = (IndexInsertDeleteOperator) copyAndSubstituteVar(op, arg);
+        boolean isomorphic = VariableUtilities.varListEqualUnordered(op.getSchema(), insertOpArg.getSchema());
+        if (!op.getDatasetName().equals(insertOpArg.getDatasetName()))
+            isomorphic = false;
+        if (!op.getIndexName().equals(insertOpArg.getIndexName()))
+            isomorphic = false;
+        return isomorphic;
+    }
+
+    @Override
     public Boolean visitSinkOperator(SinkOperator op, ILogicalOperator arg) throws AlgebricksException {
         return true;
     }
@@ -738,6 +754,17 @@ public class IsomorphismOperatorVisitor implements ILogicalOperatorVisitor<Boole
             deepCopyExpressionRefs(newKeyExpressions, op.getPrimaryKeyExpressions());
             return new InsertDeleteOperator(op.getDatasetName(), deepCopyExpressionRef(op.getPayloadExpression()),
                     newKeyExpressions, op.getOperation());
+        }
+
+        @Override
+        public ILogicalOperator visitIndexInsertDeleteOperator(IndexInsertDeleteOperator op, Void arg)
+                throws AlgebricksException {
+            List<LogicalExpressionReference> newPrimaryKeyExpressions = new ArrayList<LogicalExpressionReference>();
+            deepCopyExpressionRefs(newPrimaryKeyExpressions, op.getPrimaryKeyExpressions());
+            List<LogicalExpressionReference> newSecondaryKeyExpressions = new ArrayList<LogicalExpressionReference>();
+            deepCopyExpressionRefs(newSecondaryKeyExpressions, op.getSecondaryKeyExpressions());
+            return new IndexInsertDeleteOperator(op.getDatasetName(), op.getIndexName(), newPrimaryKeyExpressions,
+                    newSecondaryKeyExpressions, op.getOperation());
         }
 
         @Override

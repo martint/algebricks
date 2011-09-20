@@ -142,4 +142,22 @@ public class PigletMetadataProvider implements IMetadataProvider<String, String>
             JobGenContext context, JobSpecification jobSpec) throws AlgebricksException {
         return null;
     }
+
+    @Override
+    public Pair<IOperatorDescriptor, AlgebricksPartitionConstraint> getIndexInsertRuntime(String datasetName,
+            String indexName, IOperatorSchema propagatedSchema, List<LogicalVariable> primaryKeys,
+            List<LogicalVariable> secondaryKeys, RecordDescriptor recordDesc, JobGenContext context,
+            JobSpecification spec) throws AlgebricksException {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public Pair<IOperatorDescriptor, AlgebricksPartitionConstraint> getIndexDeleteRuntime(String datasetName,
+            String indexName, IOperatorSchema propagatedSchema, List<LogicalVariable> primaryKeys,
+            List<LogicalVariable> secondaryKeys, RecordDescriptor recordDesc, JobGenContext context,
+            JobSpecification spec) throws AlgebricksException {
+        // TODO Auto-generated method stub
+        return null;
+    }
 }

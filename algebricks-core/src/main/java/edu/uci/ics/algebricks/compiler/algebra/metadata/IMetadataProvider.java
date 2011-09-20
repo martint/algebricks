@@ -58,5 +58,15 @@ public interface IMetadataProvider<S, I> {
             IOperatorSchema propagatedSchema, List<LogicalVariable> keys, RecordDescriptor recordDesc,
             JobGenContext context, JobSpecification jobSpec) throws AlgebricksException;
 
+    public Pair<IOperatorDescriptor, AlgebricksPartitionConstraint> getIndexInsertRuntime(String datasetName,
+            String indexName, IOperatorSchema propagatedSchema, List<LogicalVariable> primaryKeys,
+            List<LogicalVariable> secondaryKeys, RecordDescriptor recordDesc, JobGenContext context,
+            JobSpecification spec) throws AlgebricksException;
+
+    public Pair<IOperatorDescriptor, AlgebricksPartitionConstraint> getIndexDeleteRuntime(String datasetName,
+            String indexName, IOperatorSchema propagatedSchema, List<LogicalVariable> primaryKeys,
+            List<LogicalVariable> secondaryKeys, RecordDescriptor recordDesc, JobGenContext context,
+            JobSpecification spec) throws AlgebricksException;
+
     public IDataSourceIndex<I, S> findDataSourceIndex(I indexId, S dataSourceId) throws AlgebricksException;
 }

@@ -36,6 +36,7 @@ import edu.uci.ics.algebricks.compiler.algebra.operators.logical.DistinctOperato
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.EmptyTupleSourceOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.ExchangeOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.GroupByOperator;
+import edu.uci.ics.algebricks.compiler.algebra.operators.logical.IndexInsertDeleteOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.InnerJoinOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.InsertDeleteOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.LeftOuterJoinOperator;
@@ -230,7 +231,14 @@ public class IsomorphismVariableMappingVisitor implements ILogicalOperatorVisito
         mapVariablesStandard(op, arg);
         return null;
     }
-    
+
+    @Override
+    public Void visitIndexInsertDeleteOperator(IndexInsertDeleteOperator op, ILogicalOperator arg)
+            throws AlgebricksException {
+        mapVariablesStandard(op, arg);
+        return null;
+    }
+
     @Override
     public Void visitSinkOperator(SinkOperator op, ILogicalOperator arg) throws AlgebricksException {
         mapVariablesStandard(op, arg);
