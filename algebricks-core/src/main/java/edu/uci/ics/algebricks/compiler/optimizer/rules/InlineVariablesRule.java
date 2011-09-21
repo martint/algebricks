@@ -77,6 +77,9 @@ public class InlineVariablesRule implements IAlgebraicRewriteRule {
         // if (context.checkIfInDontApplySet(this, opRef.getOperator())) {
         // return false;
         // }
+        if (op.getOperatorTag() == LogicalOperatorTag.UNNEST_MAP) {
+            return new Pair<Boolean, Boolean>(false, false);
+        }
         boolean modified = false;
         boolean ecChange = false;
         int cnt = 0;
