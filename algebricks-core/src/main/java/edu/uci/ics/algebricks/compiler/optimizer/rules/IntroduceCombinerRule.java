@@ -269,8 +269,8 @@ public class IntroduceCombinerRule implements IAlgebraicRewriteRule {
             for (LogicalExpressionReference er : aggFun.getArguments()) {
                 newArgs.add(new LogicalExpressionReference(er.getExpression().cloneExpression()));
             }
-            AggregateFunctionCallExpression aggLocal = new AggregateFunctionCallExpression(fi1, false, newArgs);
-            pushedExprs.add(new LogicalExpressionReference(aggLocal));
+//            AggregateFunctionCallExpression aggLocal = new AggregateFunctionCallExpression(fi1, false, newArgs);
+//            pushedExprs.add(new LogicalExpressionReference(aggLocal));
 
             IFunctionInfo fi2 = aggFun.getStepTwoAggregate();
 
@@ -282,6 +282,8 @@ public class IntroduceCombinerRule implements IAlgebraicRewriteRule {
                 inf.stepOneResult = new VariableReferenceExpression(newAggVar);
                 inf.simAggs = new ArrayList<AggregateExprInfo>();
                 toReplaceMap.put(aggFun, inf);
+                AggregateFunctionCallExpression aggLocal = new AggregateFunctionCallExpression(fi1, false, newArgs);
+                pushedExprs.add(new LogicalExpressionReference(aggLocal));
             }
             AggregateExprInfo aei = new AggregateExprInfo();
             aei.aggExprRef = expRef;
