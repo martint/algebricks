@@ -47,7 +47,7 @@ public class IndexInsertDeleteOperator extends AbstractLogicalOperator {
             }
         }
         for (int i = 0; i < secondaryKeyExprs.size(); i++) {
-            if (visitor.transform(primaryKeyExprs.get(i))) {
+            if (visitor.transform(secondaryKeyExprs.get(i))) {
                 b = true;
             }
         }
