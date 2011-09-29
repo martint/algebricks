@@ -138,8 +138,8 @@ public class PigletMetadataProvider implements IMetadataProvider<String, String>
 
     @Override
     public Pair<IOperatorDescriptor, AlgebricksPartitionConstraint> getDeleteRuntime(String datasetName,
-            IOperatorSchema propagatedSchema, List<LogicalVariable> keys, RecordDescriptor recordDesc,
-            JobGenContext context, JobSpecification jobSpec) throws AlgebricksException {
+            IOperatorSchema propagatedSchema, List<LogicalVariable> keys, LogicalVariable payload,
+            RecordDescriptor recordDesc, JobGenContext context, JobSpecification jobSpec) throws AlgebricksException {
         return null;
     }
 

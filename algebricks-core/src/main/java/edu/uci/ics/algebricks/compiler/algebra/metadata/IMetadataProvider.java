@@ -55,7 +55,7 @@ public interface IMetadataProvider<S, I> {
             RecordDescriptor recordDesc, JobGenContext context, JobSpecification jobSpec) throws AlgebricksException;
 
     public Pair<IOperatorDescriptor, AlgebricksPartitionConstraint> getDeleteRuntime(String datasetName,
-            IOperatorSchema propagatedSchema, List<LogicalVariable> keys, RecordDescriptor recordDesc,
+            IOperatorSchema propagatedSchema, List<LogicalVariable> keys, LogicalVariable payLoadVar, RecordDescriptor recordDesc,
             JobGenContext context, JobSpecification jobSpec) throws AlgebricksException;
 
     public Pair<IOperatorDescriptor, AlgebricksPartitionConstraint> getIndexInsertRuntime(String datasetName,

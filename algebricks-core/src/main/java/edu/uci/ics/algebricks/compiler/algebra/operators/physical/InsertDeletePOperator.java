@@ -84,7 +84,7 @@ public class InsertDeletePOperator extends AbstractPhysicalOperator {
                     payload, inputDesc, context, spec);
         else
             runtimeAndConstraints = mp.getDeleteRuntime(insertDeleteOp.getDatasetName(), propagatedSchema, keys,
-                    inputDesc, context, spec);
+                    payload, inputDesc, context, spec);
 
         builder.contributeHyracksOperator(insertDeleteOp, runtimeAndConstraints.first);
         builder.contributeAlgebricksPartitionConstraint(runtimeAndConstraints.first, runtimeAndConstraints.second);
