@@ -29,6 +29,7 @@ import edu.uci.ics.algebricks.compiler.algebra.operators.logical.AbstractLogical
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.AggregateOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.AssignOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.DataSourceScanOperator;
+import edu.uci.ics.algebricks.compiler.algebra.operators.logical.DieOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.DistinctOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.EmptyTupleSourceOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.ExchangeOperator;
@@ -177,6 +178,14 @@ public class SubstituteVariableVisitor implements ILogicalOperatorVisitor<Void, 
         if (offset != null) {
             offset.substituteVar(pair.first, pair.second);
         }
+        substVarTypes(op, pair);
+        return null;
+    }
+
+    @Override
+    public Void visitDieOperator(DieOperator op, Pair<LogicalVariable, LogicalVariable> pair)
+            throws AlgebricksException {
+        op.getAfterObjects().getExpression().substituteVar(pair.first, pair.second);
         substVarTypes(op, pair);
         return null;
     }

@@ -34,6 +34,7 @@ import edu.uci.ics.algebricks.compiler.algebra.operators.logical.AbstractLogical
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.AggregateOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.AssignOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.DataSourceScanOperator;
+import edu.uci.ics.algebricks.compiler.algebra.operators.logical.DieOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.DistinctOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.EmptyTupleSourceOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.ExchangeOperator;
@@ -165,6 +166,16 @@ public class IsomorphismOperatorVisitor implements ILogicalOperatorVisitor<Boole
         if (op.getOffset() != limitOpArg.getOffset())
             return Boolean.FALSE;
         boolean isomorphic = op.getMaxObjects().getExpression().equals(limitOpArg.getMaxObjects().getExpression());
+        return isomorphic;
+    }
+
+    @Override
+    public Boolean visitDieOperator(DieOperator op, ILogicalOperator arg) throws AlgebricksException {
+        AbstractLogicalOperator aop = (AbstractLogicalOperator) arg;
+        if (aop.getOperatorTag() != LogicalOperatorTag.DIE)
+            return Boolean.FALSE;
+        DieOperator dieOpArg = (DieOperator) copyAndSubstituteVar(op, arg);
+        boolean isomorphic = op.getAfterObjects().getExpression().equals(dieOpArg.getAfterObjects().getExpression());
         return isomorphic;
     }
 
@@ -611,6 +622,11 @@ public class IsomorphismOperatorVisitor implements ILogicalOperatorVisitor<Boole
         public ILogicalOperator visitLimitOperator(LimitOperator op, Void arg) throws AlgebricksException {
             return new LimitOperator(deepCopyExpressionRef(op.getMaxObjects()).getExpression(), deepCopyExpressionRef(
                     op.getOffset()).getExpression(), op.isTopmostLimitOp());
+        }
+
+        @Override
+        public ILogicalOperator visitDieOperator(DieOperator op, Void arg) throws AlgebricksException {
+            return new DieOperator(deepCopyExpressionRef(op.getAfterObjects()).getExpression());
         }
 
         @Override

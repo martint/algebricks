@@ -18,6 +18,7 @@ import edu.uci.ics.algebricks.api.exceptions.AlgebricksException;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.AggregateOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.AssignOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.DataSourceScanOperator;
+import edu.uci.ics.algebricks.compiler.algebra.operators.logical.DieOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.DistinctOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.EmptyTupleSourceOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.ExchangeOperator;
@@ -98,4 +99,6 @@ public interface ILogicalOperatorVisitor<R, T> {
     public R visitInsertDeleteOperator(InsertDeleteOperator op, T tag) throws AlgebricksException;
 
     public R visitIndexInsertDeleteOperator(IndexInsertDeleteOperator op, T tag) throws AlgebricksException;
+
+    public R visitDieOperator(DieOperator op, T arg) throws AlgebricksException;
 }

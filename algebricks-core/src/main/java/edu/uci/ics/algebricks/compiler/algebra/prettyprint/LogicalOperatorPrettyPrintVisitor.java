@@ -25,6 +25,7 @@ import edu.uci.ics.algebricks.compiler.algebra.operators.logical.AbstractOperato
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.AggregateOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.AssignOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.DataSourceScanOperator;
+import edu.uci.ics.algebricks.compiler.algebra.operators.logical.DieOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.DistinctOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.EmptyTupleSourceOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.ExchangeOperator;
@@ -246,6 +247,13 @@ public class LogicalOperatorPrettyPrintVisitor implements ILogicalOperatorVisito
     }
 
     @Override
+    public String visitDieOperator(DieOperator op, Integer indent) {
+        StringBuilder buffer = new StringBuilder();
+        addIndent(buffer, indent).append("die after " + op.getAfterObjects().getExpression());
+        return buffer.toString();
+    }
+
+    @Override
     public String visitExchangeOperator(ExchangeOperator op, Integer indent) {
         StringBuilder buffer = new StringBuilder();
         addIndent(buffer, indent).append("exchange ");
@@ -312,7 +320,7 @@ public class LogicalOperatorPrettyPrintVisitor implements ILogicalOperatorVisito
     @Override
     public String visitInsertDeleteOperator(InsertDeleteOperator op, Integer indent) throws AlgebricksException {
         StringBuilder buffer = new StringBuilder();
-        String header = op.getOperation() == Kind.INSERT? "insert into ": "delete from ";
+        String header = op.getOperation() == Kind.INSERT ? "insert into " : "delete from ";
         addIndent(buffer, indent).append(header).append(op.getDatasetName()).append(" from ")
                 .append(op.getPayloadExpression()).append(" partitioned by ")
                 .append(op.getPrimaryKeyExpressions().toString());
@@ -323,10 +331,10 @@ public class LogicalOperatorPrettyPrintVisitor implements ILogicalOperatorVisito
     public String visitIndexInsertDeleteOperator(IndexInsertDeleteOperator op, Integer indent)
             throws AlgebricksException {
         StringBuilder buffer = new StringBuilder();
-        String header = op.getOperation() == Kind.INSERT? "insert into ": "delete from ";
-        addIndent(buffer, indent).append(header).append(op.getIndexName()).append(" on ")
-                .append(op.getDatasetName()).append(" from ").append(op.getSecondaryKeyExpressions().toString())
-                .append(" ").append(op.getPrimaryKeyExpressions().toString());
+        String header = op.getOperation() == Kind.INSERT ? "insert into " : "delete from ";
+        addIndent(buffer, indent).append(header).append(op.getIndexName()).append(" on ").append(op.getDatasetName())
+                .append(" from ").append(op.getSecondaryKeyExpressions().toString()).append(" ")
+                .append(op.getPrimaryKeyExpressions().toString());
         return buffer.toString();
     }
 
