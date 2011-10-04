@@ -8,6 +8,7 @@ import edu.uci.ics.algebricks.api.expr.IVariableTypeEnvironment;
 import edu.uci.ics.algebricks.compiler.algebra.base.LogicalExpressionReference;
 import edu.uci.ics.algebricks.compiler.algebra.base.LogicalOperatorTag;
 import edu.uci.ics.algebricks.compiler.algebra.base.LogicalVariable;
+import edu.uci.ics.algebricks.compiler.algebra.metadata.IDataSourceIndex;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.InsertDeleteOperator.Kind;
 import edu.uci.ics.algebricks.compiler.algebra.properties.VariablePropagationPolicy;
 import edu.uci.ics.algebricks.compiler.algebra.typing.ITypingContext;
@@ -16,17 +17,15 @@ import edu.uci.ics.algebricks.compiler.algebra.visitors.ILogicalOperatorVisitor;
 
 public class IndexInsertDeleteOperator extends AbstractLogicalOperator {
 
-    private final String datasetName;
-    private final String indexName;
+    private final IDataSourceIndex<?, ?> dataSourceIndex;
     private final List<LogicalExpressionReference> primaryKeyExprs;
     private final List<LogicalExpressionReference> secondaryKeyExprs;
     private final Kind operation;
 
-    public IndexInsertDeleteOperator(String datasetName, String indexName,
+    public IndexInsertDeleteOperator(IDataSourceIndex<?, ?> dataSourceIndex,
             List<LogicalExpressionReference> primaryKeyExprs, List<LogicalExpressionReference> secondaryKeyExprs,
             Kind operation) {
-        this.datasetName = datasetName;
-        this.indexName = indexName;
+        this.dataSourceIndex = dataSourceIndex;
         this.primaryKeyExprs = primaryKeyExprs;
         this.secondaryKeyExprs = secondaryKeyExprs;
         this.operation = operation;
@@ -83,12 +82,8 @@ public class IndexInsertDeleteOperator extends AbstractLogicalOperator {
         return primaryKeyExprs;
     }
 
-    public String getDatasetName() {
-        return datasetName;
-    }
-
-    public String getIndexName() {
-        return indexName;
+    public IDataSourceIndex<?, ?> getDataSourceIndex() {
+        return dataSourceIndex;
     }
 
     public List<LogicalExpressionReference> getSecondaryKeyExpressions() {

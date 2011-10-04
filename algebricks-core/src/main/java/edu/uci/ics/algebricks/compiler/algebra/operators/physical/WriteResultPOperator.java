@@ -1,7 +1,6 @@
 package edu.uci.ics.algebricks.compiler.algebra.operators.physical;
 
-import java.util.HashSet;
-import java.util.LinkedList;
+import java.util.ArrayList;
 import java.util.List;
 
 import edu.uci.ics.algebricks.api.constraints.AlgebricksPartitionConstraint;
@@ -9,20 +8,15 @@ import edu.uci.ics.algebricks.api.exceptions.AlgebricksException;
 import edu.uci.ics.algebricks.compiler.algebra.base.ILogicalOperator;
 import edu.uci.ics.algebricks.compiler.algebra.base.LogicalVariable;
 import edu.uci.ics.algebricks.compiler.algebra.base.PhysicalOperatorTag;
+import edu.uci.ics.algebricks.compiler.algebra.metadata.IDataSource;
 import edu.uci.ics.algebricks.compiler.algebra.metadata.IMetadataProvider;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.AbstractLogicalOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.IOperatorSchema;
-import edu.uci.ics.algebricks.compiler.algebra.operators.logical.OrderOperator.IOrder.OrderKind;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.WriteResultOperator;
-import edu.uci.ics.algebricks.compiler.algebra.properties.ILocalStructuralProperty;
-import edu.uci.ics.algebricks.compiler.algebra.properties.IPartitioningProperty;
 import edu.uci.ics.algebricks.compiler.algebra.properties.IPartitioningRequirementsCoordinator;
 import edu.uci.ics.algebricks.compiler.algebra.properties.IPhysicalPropertiesVector;
-import edu.uci.ics.algebricks.compiler.algebra.properties.LocalOrderProperty;
-import edu.uci.ics.algebricks.compiler.algebra.properties.OrderColumn;
 import edu.uci.ics.algebricks.compiler.algebra.properties.PhysicalRequirements;
 import edu.uci.ics.algebricks.compiler.algebra.properties.StructuralPropertiesVector;
-import edu.uci.ics.algebricks.compiler.algebra.properties.UnorderedPartitionedProperty;
 import edu.uci.ics.algebricks.compiler.optimizer.base.IOptimizationContext;
 import edu.uci.ics.algebricks.runtime.hyracks.jobgen.base.IHyracksJobBuilder;
 import edu.uci.ics.algebricks.runtime.hyracks.jobgen.impl.JobGenContext;
@@ -34,8 +28,10 @@ public class WriteResultPOperator extends AbstractPhysicalOperator {
 
     private LogicalVariable payload;
     private List<LogicalVariable> keys;
+    private IDataSource<?> dataSource;
 
-    public WriteResultPOperator(LogicalVariable payload, List<LogicalVariable> keys) {
+    public WriteResultPOperator(IDataSource<?> dataSource, LogicalVariable payload, List<LogicalVariable> keys) {
+        this.dataSource = dataSource;
         this.payload = payload;
         this.keys = keys;
     }
@@ -64,26 +60,26 @@ public class WriteResultPOperator extends AbstractPhysicalOperator {
     @Override
     public PhysicalRequirements getRequiredPropertiesForChildren(ILogicalOperator op,
             IPhysicalPropertiesVector reqdByParent) {
-        IPartitioningProperty pp = new UnorderedPartitionedProperty(new HashSet<LogicalVariable>(keys), null);
-        List<ILocalStructuralProperty> orderProps = new LinkedList<ILocalStructuralProperty>();
-        for (LogicalVariable k : keys) {
-            orderProps.add(new LocalOrderProperty(new OrderColumn(k, OrderKind.ASC)));
-        }
-        StructuralPropertiesVector[] r = new StructuralPropertiesVector[] { new StructuralPropertiesVector(pp,
-                orderProps) };
-        return new PhysicalRequirements(r, IPartitioningRequirementsCoordinator.NO_COORDINATION);
+        List<LogicalVariable> scanVariables = new ArrayList<LogicalVariable>();
+        scanVariables.addAll(keys);
+        scanVariables.add(new LogicalVariable(-1));
+        IPhysicalPropertiesVector r = dataSource.getPropertiesProvider().computePropertiesVector(scanVariables);
+        IPhysicalPropertiesVector[] requirements = new IPhysicalPropertiesVector[1];
+        requirements[0] = r;
+        return new PhysicalRequirements(requirements, IPartitioningRequirementsCoordinator.NO_COORDINATION);
     }
 
+    @SuppressWarnings({ "rawtypes", "unchecked" })
     @Override
     public void contributeRuntimeOperator(IHyracksJobBuilder builder, JobGenContext context, ILogicalOperator op,
             IOperatorSchema propagatedSchema, IOperatorSchema[] inputSchemas, IOperatorSchema outerPlanSchema)
             throws AlgebricksException {
         WriteResultOperator writeResultOp = (WriteResultOperator) op;
-        IMetadataProvider<?, ?> mp = context.getMetadataProvider();
+        IMetadataProvider mp = context.getMetadataProvider();
 
         JobSpecification spec = builder.getJobSpec();
         Pair<IOperatorDescriptor, AlgebricksPartitionConstraint> runtimeAndConstraints = mp.getWriteResultRuntime(
-                writeResultOp.getDatasetName(), propagatedSchema, keys, payload, context, spec);
+                dataSource, propagatedSchema, keys, payload, context, spec);
 
         builder.contributeHyracksOperator(writeResultOp, runtimeAndConstraints.first);
         builder.contributeAlgebricksPartitionConstraint(runtimeAndConstraints.first, runtimeAndConstraints.second);

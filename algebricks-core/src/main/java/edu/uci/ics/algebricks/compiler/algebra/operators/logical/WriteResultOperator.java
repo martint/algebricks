@@ -22,6 +22,7 @@ import edu.uci.ics.algebricks.api.expr.IVariableTypeEnvironment;
 import edu.uci.ics.algebricks.compiler.algebra.base.LogicalExpressionReference;
 import edu.uci.ics.algebricks.compiler.algebra.base.LogicalOperatorTag;
 import edu.uci.ics.algebricks.compiler.algebra.base.LogicalVariable;
+import edu.uci.ics.algebricks.compiler.algebra.metadata.IDataSource;
 import edu.uci.ics.algebricks.compiler.algebra.properties.VariablePropagationPolicy;
 import edu.uci.ics.algebricks.compiler.algebra.typing.ITypingContext;
 import edu.uci.ics.algebricks.compiler.algebra.visitors.ILogicalExpressionReferenceTransform;
@@ -29,19 +30,19 @@ import edu.uci.ics.algebricks.compiler.algebra.visitors.ILogicalOperatorVisitor;
 
 public class WriteResultOperator extends AbstractLogicalOperator {
 
-    private String datasetName;
+    private IDataSource<?> dataSource;
     private LogicalExpressionReference payloadExpr;
     private List<LogicalExpressionReference> keyExprs;
 
-    public WriteResultOperator(String datasetName, LogicalExpressionReference payload,
+    public WriteResultOperator(IDataSource<?> dataSource, LogicalExpressionReference payload,
             List<LogicalExpressionReference> keyExprs) {
-        this.datasetName = datasetName;
+        this.dataSource = dataSource;
         this.payloadExpr = payload;
         this.keyExprs = keyExprs;
     }
 
-    public String getDatasetName() {
-        return datasetName;
+    public IDataSource<?> getDataSource() {
+        return dataSource;
     }
 
     public LogicalExpressionReference getPayloadExpression() {

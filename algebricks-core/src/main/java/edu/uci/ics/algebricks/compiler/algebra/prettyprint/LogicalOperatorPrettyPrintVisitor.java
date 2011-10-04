@@ -164,7 +164,7 @@ public class LogicalOperatorPrettyPrintVisitor implements ILogicalOperatorVisito
     @Override
     public String visitWriteResultOperator(WriteResultOperator op, Integer indent) {
         StringBuilder buffer = new StringBuilder();
-        addIndent(buffer, indent).append("load ").append(op.getDatasetName()).append(" from ")
+        addIndent(buffer, indent).append("load ").append(op.getDataSource()).append(" from ")
                 .append(op.getPayloadExpression()).append(" partitioned by ").append(op.getKeyExpressions().toString());
         return buffer.toString();
     }
@@ -321,7 +321,7 @@ public class LogicalOperatorPrettyPrintVisitor implements ILogicalOperatorVisito
     public String visitInsertDeleteOperator(InsertDeleteOperator op, Integer indent) throws AlgebricksException {
         StringBuilder buffer = new StringBuilder();
         String header = op.getOperation() == Kind.INSERT ? "insert into " : "delete from ";
-        addIndent(buffer, indent).append(header).append(op.getDatasetName()).append(" from ")
+        addIndent(buffer, indent).append(header).append(op.getDataSource()).append(" from ")
                 .append(op.getPayloadExpression()).append(" partitioned by ")
                 .append(op.getPrimaryKeyExpressions().toString());
         return buffer.toString();
@@ -332,8 +332,8 @@ public class LogicalOperatorPrettyPrintVisitor implements ILogicalOperatorVisito
             throws AlgebricksException {
         StringBuilder buffer = new StringBuilder();
         String header = op.getOperation() == Kind.INSERT ? "insert into " : "delete from ";
-        addIndent(buffer, indent).append(header).append(op.getIndexName()).append(" on ").append(op.getDatasetName())
-                .append(" from ").append(op.getSecondaryKeyExpressions().toString()).append(" ")
+        addIndent(buffer, indent).append(header).append(op.getDataSourceIndex()).append(" from ")
+                .append(op.getSecondaryKeyExpressions().toString()).append(" ")
                 .append(op.getPrimaryKeyExpressions().toString());
         return buffer.toString();
     }

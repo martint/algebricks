@@ -8,6 +8,7 @@ import edu.uci.ics.algebricks.api.expr.IVariableTypeEnvironment;
 import edu.uci.ics.algebricks.compiler.algebra.base.LogicalExpressionReference;
 import edu.uci.ics.algebricks.compiler.algebra.base.LogicalOperatorTag;
 import edu.uci.ics.algebricks.compiler.algebra.base.LogicalVariable;
+import edu.uci.ics.algebricks.compiler.algebra.metadata.IDataSource;
 import edu.uci.ics.algebricks.compiler.algebra.properties.VariablePropagationPolicy;
 import edu.uci.ics.algebricks.compiler.algebra.typing.ITypingContext;
 import edu.uci.ics.algebricks.compiler.algebra.visitors.ILogicalExpressionReferenceTransform;
@@ -19,14 +20,14 @@ public class InsertDeleteOperator extends AbstractLogicalOperator {
         INSERT, DELETE
     }
 
-    private final String datasetName;
-    private LogicalExpressionReference payloadExpr;
-    private List<LogicalExpressionReference> primaryKeyExprs;
-    private Kind operation;
+    private final IDataSource<?> dataSource;
+    private final LogicalExpressionReference payloadExpr;
+    private final List<LogicalExpressionReference> primaryKeyExprs;
+    private final Kind operation;
 
-    public InsertDeleteOperator(String datasetName, LogicalExpressionReference payload,
+    public InsertDeleteOperator(IDataSource<?> dataSource, LogicalExpressionReference payload,
             List<LogicalExpressionReference> primaryKeyExprs, Kind operation) {
-        this.datasetName = datasetName;
+        this.dataSource = dataSource;
         this.payloadExpr = payload;
         this.primaryKeyExprs = primaryKeyExprs;
         this.operation = operation;
@@ -79,8 +80,8 @@ public class InsertDeleteOperator extends AbstractLogicalOperator {
         return primaryKeyExprs;
     }
 
-    public String getDatasetName() {
-        return datasetName;
+    public IDataSource<?> getDataSource() {
+        return dataSource;
     }
 
     public LogicalExpressionReference getPayloadExpression() {

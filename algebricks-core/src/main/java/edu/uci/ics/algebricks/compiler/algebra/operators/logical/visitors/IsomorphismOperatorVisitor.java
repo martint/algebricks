@@ -423,7 +423,7 @@ public class IsomorphismOperatorVisitor implements ILogicalOperatorVisitor<Boole
             return Boolean.FALSE;
         WriteResultOperator writeOpArg = (WriteResultOperator) copyAndSubstituteVar(op, arg);
         boolean isomorphic = VariableUtilities.varListEqualUnordered(op.getSchema(), writeOpArg.getSchema());
-        if (!op.getDatasetName().equals(writeOpArg.getDatasetName()))
+        if (!op.getDataSource().equals(writeOpArg.getDataSource()))
             isomorphic = false;
         if (!op.getPayloadExpression().equals(writeOpArg.getPayloadExpression()))
             isomorphic = false;
@@ -437,7 +437,7 @@ public class IsomorphismOperatorVisitor implements ILogicalOperatorVisitor<Boole
             return Boolean.FALSE;
         InsertDeleteOperator insertOpArg = (InsertDeleteOperator) copyAndSubstituteVar(op, arg);
         boolean isomorphic = VariableUtilities.varListEqualUnordered(op.getSchema(), insertOpArg.getSchema());
-        if (!op.getDatasetName().equals(insertOpArg.getDatasetName()))
+        if (!op.getDataSource().equals(insertOpArg.getDataSource()))
             isomorphic = false;
         if (!op.getPayloadExpression().equals(insertOpArg.getPayloadExpression()))
             isomorphic = false;
@@ -452,9 +452,7 @@ public class IsomorphismOperatorVisitor implements ILogicalOperatorVisitor<Boole
             return Boolean.FALSE;
         IndexInsertDeleteOperator insertOpArg = (IndexInsertDeleteOperator) copyAndSubstituteVar(op, arg);
         boolean isomorphic = VariableUtilities.varListEqualUnordered(op.getSchema(), insertOpArg.getSchema());
-        if (!op.getDatasetName().equals(insertOpArg.getDatasetName()))
-            isomorphic = false;
-        if (!op.getIndexName().equals(insertOpArg.getIndexName()))
+        if (!op.getDataSourceIndex().equals(insertOpArg.getDataSourceIndex()))
             isomorphic = false;
         return isomorphic;
     }
@@ -760,7 +758,7 @@ public class IsomorphismOperatorVisitor implements ILogicalOperatorVisitor<Boole
         public ILogicalOperator visitWriteResultOperator(WriteResultOperator op, Void arg) throws AlgebricksException {
             ArrayList<LogicalExpressionReference> newKeyExpressions = new ArrayList<LogicalExpressionReference>();
             deepCopyExpressionRefs(newKeyExpressions, op.getKeyExpressions());
-            return new WriteResultOperator(op.getDatasetName(), deepCopyExpressionRef(op.getPayloadExpression()),
+            return new WriteResultOperator(op.getDataSource(), deepCopyExpressionRef(op.getPayloadExpression()),
                     newKeyExpressions);
         }
 
@@ -768,7 +766,7 @@ public class IsomorphismOperatorVisitor implements ILogicalOperatorVisitor<Boole
         public ILogicalOperator visitInsertDeleteOperator(InsertDeleteOperator op, Void arg) throws AlgebricksException {
             List<LogicalExpressionReference> newKeyExpressions = new ArrayList<LogicalExpressionReference>();
             deepCopyExpressionRefs(newKeyExpressions, op.getPrimaryKeyExpressions());
-            return new InsertDeleteOperator(op.getDatasetName(), deepCopyExpressionRef(op.getPayloadExpression()),
+            return new InsertDeleteOperator(op.getDataSource(), deepCopyExpressionRef(op.getPayloadExpression()),
                     newKeyExpressions, op.getOperation());
         }
 
@@ -779,7 +777,7 @@ public class IsomorphismOperatorVisitor implements ILogicalOperatorVisitor<Boole
             deepCopyExpressionRefs(newPrimaryKeyExpressions, op.getPrimaryKeyExpressions());
             List<LogicalExpressionReference> newSecondaryKeyExpressions = new ArrayList<LogicalExpressionReference>();
             deepCopyExpressionRefs(newSecondaryKeyExpressions, op.getSecondaryKeyExpressions());
-            return new IndexInsertDeleteOperator(op.getDatasetName(), op.getIndexName(), newPrimaryKeyExpressions,
+            return new IndexInsertDeleteOperator(op.getDataSourceIndex(), newPrimaryKeyExpressions,
                     newSecondaryKeyExpressions, op.getOperation());
         }
 

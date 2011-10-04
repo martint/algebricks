@@ -32,6 +32,7 @@ import edu.uci.ics.algebricks.runtime.hyracks.jobgen.impl.JobGenContext;
 import edu.uci.ics.algebricks.utils.Pair;
 import edu.uci.ics.hyracks.api.dataflow.IOperatorDescriptor;
 
+@SuppressWarnings("rawtypes")
 public class DataSourceScanPOperator extends AbstractScanPOperator {
 
     private IDataSource<?> dataSource;

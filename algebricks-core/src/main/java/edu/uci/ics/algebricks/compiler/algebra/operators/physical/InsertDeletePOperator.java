@@ -1,7 +1,6 @@
 package edu.uci.ics.algebricks.compiler.algebra.operators.physical;
 
-import java.util.HashSet;
-import java.util.LinkedList;
+import java.util.ArrayList;
 import java.util.List;
 
 import edu.uci.ics.algebricks.api.constraints.AlgebricksPartitionConstraint;
@@ -9,21 +8,16 @@ import edu.uci.ics.algebricks.api.exceptions.AlgebricksException;
 import edu.uci.ics.algebricks.compiler.algebra.base.ILogicalOperator;
 import edu.uci.ics.algebricks.compiler.algebra.base.LogicalVariable;
 import edu.uci.ics.algebricks.compiler.algebra.base.PhysicalOperatorTag;
+import edu.uci.ics.algebricks.compiler.algebra.metadata.IDataSource;
 import edu.uci.ics.algebricks.compiler.algebra.metadata.IMetadataProvider;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.AbstractLogicalOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.IOperatorSchema;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.InsertDeleteOperator;
 import edu.uci.ics.algebricks.compiler.algebra.operators.logical.InsertDeleteOperator.Kind;
-import edu.uci.ics.algebricks.compiler.algebra.operators.logical.OrderOperator.IOrder.OrderKind;
-import edu.uci.ics.algebricks.compiler.algebra.properties.ILocalStructuralProperty;
-import edu.uci.ics.algebricks.compiler.algebra.properties.IPartitioningProperty;
 import edu.uci.ics.algebricks.compiler.algebra.properties.IPartitioningRequirementsCoordinator;
 import edu.uci.ics.algebricks.compiler.algebra.properties.IPhysicalPropertiesVector;
-import edu.uci.ics.algebricks.compiler.algebra.properties.LocalOrderProperty;
-import edu.uci.ics.algebricks.compiler.algebra.properties.OrderColumn;
 import edu.uci.ics.algebricks.compiler.algebra.properties.PhysicalRequirements;
 import edu.uci.ics.algebricks.compiler.algebra.properties.StructuralPropertiesVector;
-import edu.uci.ics.algebricks.compiler.algebra.properties.UnorderedPartitionedProperty;
 import edu.uci.ics.algebricks.compiler.optimizer.base.IOptimizationContext;
 import edu.uci.ics.algebricks.runtime.hyracks.jobgen.base.IHyracksJobBuilder;
 import edu.uci.ics.algebricks.runtime.hyracks.jobgen.impl.JobGenContext;
@@ -33,14 +27,17 @@ import edu.uci.ics.hyracks.api.dataflow.IOperatorDescriptor;
 import edu.uci.ics.hyracks.api.dataflow.value.RecordDescriptor;
 import edu.uci.ics.hyracks.api.job.JobSpecification;
 
+@SuppressWarnings("rawtypes")
 public class InsertDeletePOperator extends AbstractPhysicalOperator {
 
     private LogicalVariable payload;
     private List<LogicalVariable> keys;
+    private IDataSource<?> dataSource;
 
-    public InsertDeletePOperator(LogicalVariable payload, List<LogicalVariable> keys) {
+    public InsertDeletePOperator(LogicalVariable payload, List<LogicalVariable> keys, IDataSource dataSource) {
         this.payload = payload;
         this.keys = keys;
+        this.dataSource = dataSource;
     }
 
     @Override
@@ -57,34 +54,33 @@ public class InsertDeletePOperator extends AbstractPhysicalOperator {
     @Override
     public PhysicalRequirements getRequiredPropertiesForChildren(ILogicalOperator op,
             IPhysicalPropertiesVector reqdByParent) {
-        IPartitioningProperty pp = new UnorderedPartitionedProperty(new HashSet<LogicalVariable>(keys), null);
-        List<ILocalStructuralProperty> orderProps = new LinkedList<ILocalStructuralProperty>();
-        for (LogicalVariable k : keys) {
-            orderProps.add(new LocalOrderProperty(new OrderColumn(k, OrderKind.ASC)));
-        }
-        StructuralPropertiesVector[] r = new StructuralPropertiesVector[] { new StructuralPropertiesVector(pp,
-                orderProps) };
-        return new PhysicalRequirements(r, IPartitioningRequirementsCoordinator.NO_COORDINATION);
+        List<LogicalVariable> scanVariables = new ArrayList<LogicalVariable>();
+        scanVariables.addAll(keys);
+        scanVariables.add(new LogicalVariable(-1));
+        IPhysicalPropertiesVector r = dataSource.getPropertiesProvider().computePropertiesVector(scanVariables);
+        IPhysicalPropertiesVector[] requirements = new IPhysicalPropertiesVector[1];
+        requirements[0] = r;
+        return new PhysicalRequirements(requirements, IPartitioningRequirementsCoordinator.NO_COORDINATION);
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public void contributeRuntimeOperator(IHyracksJobBuilder builder, JobGenContext context, ILogicalOperator op,
             IOperatorSchema propagatedSchema, IOperatorSchema[] inputSchemas, IOperatorSchema outerPlanSchema)
             throws AlgebricksException {
         InsertDeleteOperator insertDeleteOp = (InsertDeleteOperator) op;
-        IMetadataProvider<?, ?> mp = context.getMetadataProvider();
-
+        IMetadataProvider mp = context.getMetadataProvider();
         JobSpecification spec = builder.getJobSpec();
         RecordDescriptor inputDesc = JobGenHelper.mkRecordDescriptor(op.getInputs().get(0).getOperator(),
                 inputSchemas[0], context);
 
         Pair<IOperatorDescriptor, AlgebricksPartitionConstraint> runtimeAndConstraints = null;
         if (insertDeleteOp.getOperation() == Kind.INSERT)
-            runtimeAndConstraints = mp.getInsertRuntime(insertDeleteOp.getDatasetName(), propagatedSchema, keys,
-                    payload, inputDesc, context, spec);
+            runtimeAndConstraints = mp.getInsertRuntime(dataSource, propagatedSchema, keys, payload, inputDesc,
+                    context, spec);
         else
-            runtimeAndConstraints = mp.getDeleteRuntime(insertDeleteOp.getDatasetName(), propagatedSchema, keys,
-                    payload, inputDesc, context, spec);
+            runtimeAndConstraints = mp.getDeleteRuntime(dataSource, propagatedSchema, keys, payload, inputDesc,
+                    context, spec);
 
         builder.contributeHyracksOperator(insertDeleteOp, runtimeAndConstraints.first);
         builder.contributeAlgebricksPartitionConstraint(runtimeAndConstraints.first, runtimeAndConstraints.second);
