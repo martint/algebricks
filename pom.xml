@@ -26,12 +26,12 @@
 
   <distributionManagement>
     <repository>
-      <id>asterix-releases</id>
-      <url>http://obelix.ics.uci.edu/nexus/content/repositories/asterix-releases/</url>
+      <id>algebricks-releases</id>
+      <url>http://obelix.ics.uci.edu/nexus/content/repositories/algebricks-releases/</url>
     </repository>
     <snapshotRepository>
-      <id>asterix-snapshots</id>
-      <url>http://obelix.ics.uci.edu/nexus/content/repositories/asterix-snapshots/</url>
+      <id>algebricks-snapshots</id>
+      <url>http://obelix.ics.uci.edu/nexus/content/repositories/algebricks-snapshots/</url>
     </snapshotRepository>
   </distributionManagement>
 
