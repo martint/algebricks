@@ -2,12 +2,12 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>edu.uci.ics.algebricks</groupId>
   <artifactId>algebricks-tests</artifactId>
-  <version>0.0.1</version>
+  <version>0.0.2-SNAPSHOT</version>
 
   <parent>
     <groupId>edu.uci.ics.algebricks</groupId>
     <artifactId>algebricks</artifactId>
-    <version>0.0.1</version>
+    <version>0.0.2-SNAPSHOT</version>
   </parent>
 
   <build>
@@ -64,7 +64,7 @@
     <dependency>
       <groupId>edu.uci.ics.algebricks</groupId>
       <artifactId>algebricks-core</artifactId>
-      <version>0.0.1</version>
+      <version>0.0.2-SNAPSHOT</version>
       <scope>compile</scope>
     </dependency>
     <dependency>

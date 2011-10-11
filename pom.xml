@@ -2,7 +2,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>edu.uci.ics.algebricks</groupId>
   <artifactId>algebricks</artifactId>
-  <version>0.0.1</version>
+  <version>0.0.2-SNAPSHOT</version>
   <packaging>pom</packaging>
 
   <build>
@@ -19,9 +19,9 @@
   </build>
 
   <scm>
-    <connection>scm:svn:https://algebricks.googlecode.com/svn/tags/algebricks-0.0.1</connection>
-    <developerConnection>scm:svn:https://algebricks.googlecode.com/svn/tags/algebricks-0.0.1</developerConnection>
-    <url>http://code.google.com/p/algebricks/source/browse/#svn/tags/algebricks-0.0.1</url>
+    <connection>scm:svn:https://algebricks.googlecode.com/svn/trunk/algebricks</connection>
+    <developerConnection>scm:svn:https://algebricks.googlecode.com/svn/trunk/algebricks</developerConnection>
+    <url>http://code.google.com/p/algebricks/source/browse/#svn/trunk/algebricks</url>
   </scm>
 
   <distributionManagement>
